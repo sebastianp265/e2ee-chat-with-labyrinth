@@ -1,0 +1,27 @@
+logging:
+  level:
+    org.springframework:
+      security: DEBUG
+      web: DEBUG
+    edu.pw.chat: DEBUG
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: sa
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2.console.enabled: true
+
+server:
+  servlet:
+    session:
+      timeout: 60
+      cookie:
+        same-site: strict
+        http-only: true
+        path: "/api/"
+        name: "SESSION"
+        secure: false # TODO: Change after adding secure TLS support

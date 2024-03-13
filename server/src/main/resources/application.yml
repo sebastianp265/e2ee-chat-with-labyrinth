@@ -14,3 +14,14 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
   h2.console.enabled: true
+
+server:
+  servlet:
+    session:
+      timeout: 60
+      cookie:
+        same-site: strict
+        http-only: true
+        path: "/api/"
+        name: "SESSION"
+        secure: false # TODO: Change after adding secure TLS support

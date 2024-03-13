@@ -30,7 +30,8 @@ public class AuthenticationManagerConfig {
 
     @Bean
     public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
+        HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
+        return securityContextRepository;
     }
 
     @Bean
@@ -38,7 +39,6 @@ public class AuthenticationManagerConfig {
         UserDetails userDetails = User.withDefaultPasswordEncoder()
                 .username("user")
                 .password("password")
-                .roles("USER")
                 .build();
 
         return new InMemoryUserDetailsManager(userDetails);

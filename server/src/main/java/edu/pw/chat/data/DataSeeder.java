@@ -27,7 +27,7 @@ public class DataSeeder implements ApplicationRunner {
     private final UserInfoRepository userInfoRepository;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         seed();
     }
 

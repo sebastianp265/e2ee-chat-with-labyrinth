@@ -3,7 +3,7 @@ export type LoginRequestDTO = {
     password: string
 }
 
-export type Hello = {
+export type HelloGetDTO = {
     name: string,
     principal: string,
     details: string,

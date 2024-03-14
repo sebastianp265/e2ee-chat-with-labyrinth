@@ -1,29 +1,35 @@
-import SessionExpiredAlert from "@/components/app/messages/SessionExpiredAlert.tsx";
-import {ReactNode, useEffect, useState} from "react";
+import SessionExpiredAlert from "@/components/app/SessionExpiredAlert.tsx";
+import React, {ReactElement, useEffect, useState} from "react";
 
-export interface AuthenticationProps {
-    children: ReactNode
-    authenticated: boolean
-    setAuthenticated: (authenticated: boolean) => void
+export interface ISessionProps {
+    inactivateSession?: () => void
 }
 
-export default function App() {
-    const [authenticated, setAuthenticated] = useState(true)
+interface ISessionCheckWrapper {
+    children: ReactElement
+}
+
+export default function SessionCheckWrapper({children}: Readonly<ISessionCheckWrapper>) {
+    const [sessionExpired, setSessionExpired] = useState(false)
+
+    const handleInactivateSession = () => {
+        setSessionExpired(true)
+        localStorage.removeItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY)
+    }
 
     useEffect(() => {
         function checkAuthentication() {
             console.log("Checking if session is active")
-            const sessionExpires = localStorage.getItem("session_expires")
-            if (sessionExpires == null) {
-                setAuthenticated(false)
+            const sessionExpiresAt = localStorage.getItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY)
+            if (sessionExpiresAt == null) {
+                handleInactivateSession()
                 return;
             }
 
-            const sessionMsLeft = parseInt(sessionExpires) - Date.now()
+            const sessionMsLeft = parseInt(sessionExpiresAt) - Date.now()
             console.log("Session left: ", sessionMsLeft, "ms")
             if (sessionMsLeft < 0) {
-                setAuthenticated(false)
-                localStorage.removeItem("session_expires")
+                handleInactivateSession()
                 return;
             }
             setTimeout(checkAuthentication, sessionMsLeft)
@@ -32,10 +38,15 @@ export default function App() {
         checkAuthentication()
     }, []);
 
+
+
     return (
         <>
             {
-                !authenticated && <SessionExpiredAlert/>
+                sessionExpired && <SessionExpiredAlert/>
+            }
+            {
+                React.cloneElement(children, {inactivateSession: handleInactivateSession} as ISessionProps)
             }
         </>
     )

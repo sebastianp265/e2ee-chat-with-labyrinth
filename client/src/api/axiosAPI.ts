@@ -18,7 +18,8 @@ const createAxiosInstance = () => {
     client.interceptors.response.use(
         response=> {
             console.debug("Got response: ", response)
-            localStorage.setItem("session_expires", (Date.now() + 60 * 60 * 1000).toString())
+            localStorage.setItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY,
+                (Date.now() + parseInt(import.meta.env.VITE_SESSION_EXPIRATION_TIME_MIN) * 60 * 1000).toString())
             return response;
         },
         (error: AxiosError) => {

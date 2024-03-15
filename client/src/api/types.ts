@@ -11,3 +11,16 @@ export type HelloGetDTO = {
     authorities: string[],
     sessionId: string
 }
+
+export type ConversationPreviewGetDTO = {
+    conversationId: number,
+    conversationName: string,
+    lastMessage: string,
+    lastMessageAuthorName: string
+}
+
+export type MessageGetDTO = {
+    id: number,
+    authorId: number,
+    content: string
+}

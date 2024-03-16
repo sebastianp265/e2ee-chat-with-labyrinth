@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @Entity
-public class UserInfo {
+public class ChatUser {
 
     @GeneratedValue
     @Id

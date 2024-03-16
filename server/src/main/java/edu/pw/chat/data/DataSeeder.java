@@ -12,6 +12,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -58,27 +59,28 @@ public class DataSeeder implements ApplicationRunner {
         ChatUser seba = users.get(0);
         ChatUser krzysio = users.get(1);
         ChatUser arek = users.get(2);
+        Instant now = Instant.now();
 
         Conversation conversationBetweenSebaAndKrzysio = new Conversation();
         conversationBetweenSebaAndKrzysio.setMembers(
                 new HashSet<>(List.of(seba, krzysio))
         );
-        conversationBetweenSebaAndKrzysio.setMessages(saveMessagesToRepository(
-                new Message("Hi!", seba),
-                new Message("Hello", krzysio),
-                new Message("Are you up?", seba),
-                new Message("Wanna go to my friend's party?", seba),
-                new Message("Sure", krzysio)
+        conversationBetweenSebaAndKrzysio.setMessages(saveMessagesToRepository(1L,
+                new Message("Hi!", seba, now.plusSeconds(1)),
+                new Message("Hello", krzysio, now.plusSeconds(2)),
+                new Message("Are you up?", seba, now.plusSeconds(3)),
+                new Message("Wanna go to my friend's party?", seba, now.plusSeconds(4)),
+                new Message("Sure", krzysio, now.plusSeconds(5))
         ));
 
         Conversation conversationBetweenSebaAndArek = new Conversation();
         conversationBetweenSebaAndArek.setMembers(
                 new HashSet<>(List.of(seba, arek))
         );
-        conversationBetweenSebaAndArek.setMessages(saveMessagesToRepository(
-                new Message("I will arrive at 6pm", arek),
-                new Message("Okay, see you later then", seba),
-                new Message("Have you brought the present?", arek)
+        conversationBetweenSebaAndArek.setMessages(saveMessagesToRepository(2L,
+                new Message("I will arrive at 6pm", arek, now.plusSeconds(6)),
+                new Message("Okay, see you later then", seba, now.plusSeconds(7)),
+                new Message("Have you brought the present?", arek, now.plusSeconds(8))
         ));
 
 
@@ -86,9 +88,9 @@ public class DataSeeder implements ApplicationRunner {
         conversationBetweenArekAndKrzysio.setMembers(
                 new HashSet<>(List.of(arek, krzysio))
         );
-        conversationBetweenArekAndKrzysio.setMessages(saveMessagesToRepository(
-                new Message("Hey, how you doing", arek),
-                new Message("Pretty well, watching Game Of Thrones at the moment", krzysio)
+        conversationBetweenArekAndKrzysio.setMessages(saveMessagesToRepository(3L,
+                new Message("Hey, how you doing", arek, now.plusSeconds(9)),
+                new Message("Pretty well, watching Game Of Thrones at the moment", krzysio, now.plusSeconds(10))
         ));
 
         conversationRepository.saveAll(List.of(
@@ -98,10 +100,11 @@ public class DataSeeder implements ApplicationRunner {
         ));
     }
 
-    private List<Message> saveMessagesToRepository(Message... messages) {
+    private List<Message> saveMessagesToRepository(Long conversationId, Message... messages) {
         List<Message> returnedMessages = new ArrayList<>();
 
         for(Message message : messages) {
+            message.setConversationId(conversationId);
             returnedMessages.add(messageRepository.save(message));
         }
 

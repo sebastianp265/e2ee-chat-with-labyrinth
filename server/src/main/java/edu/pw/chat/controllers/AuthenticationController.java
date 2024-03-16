@@ -1,6 +1,6 @@
 package edu.pw.chat.controllers;
 
-import edu.pw.chat.dtos.LoginRequestDTO;
+import edu.pw.chat.dtos.LoginRequestPostDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -27,13 +27,13 @@ public class AuthenticationController {
     private final SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
 
     @PostMapping("/login")
-    public void login(@RequestBody LoginRequestDTO loginRequestDTO,
+    public void login(@RequestBody LoginRequestPostDTO loginRequestPostDTO,
                       HttpServletRequest request,
                       HttpServletResponse response) {
         Authentication authenticationRequest =
                 UsernamePasswordAuthenticationToken.unauthenticated(
-                        loginRequestDTO.getUsername(),
-                        loginRequestDTO.getPassword());
+                        loginRequestPostDTO.getUsername(),
+                        loginRequestPostDTO.getPassword());
         Authentication authenticationResponse = authenticationManager
                 .authenticate(authenticationRequest);
 

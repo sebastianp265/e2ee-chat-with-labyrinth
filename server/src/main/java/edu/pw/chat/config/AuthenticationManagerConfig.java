@@ -36,12 +36,20 @@ public class AuthenticationManagerConfig {
 
     @Bean
     public UserDetailsService userDetailsService() { // TODO: REMOVE AFTER TESTING
-        UserDetails userDetails = User.withDefaultPasswordEncoder()
-                .username("user")
-                .password("password")
+        UserDetails user1 = User.withDefaultPasswordEncoder()
+                .username("seba")
+                .password("seba123")
+                .build();
+        UserDetails user2 = User.withDefaultPasswordEncoder()
+                .username("krzysio")
+                .password("krzysio123")
+                .build();
+        UserDetails user3 = User.withDefaultPasswordEncoder()
+                .username("arek")
+                .password("arek123")
                 .build();
 
-        return new InMemoryUserDetailsManager(userDetails);
+        return new InMemoryUserDetailsManager(user1, user2, user3);
     }
 
     @Bean

@@ -4,7 +4,6 @@ import edu.pw.chat.dtos.ConversationGetDTO;
 import edu.pw.chat.dtos.ConversationPreviewGetDTO;
 import edu.pw.chat.dtos.MessageGetDTO;
 import edu.pw.chat.entitities.ChatUser;
-import edu.pw.chat.entitities.Message;
 import edu.pw.chat.repository.ConversationRepository;
 import edu.pw.chat.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +35,9 @@ public class ConversationService {
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                                 "Error when getting conversation name for non group conversation"));
                 conversationPreview.setConversationName(conversationName);
+            }
+            if(conversationPreview.getLastMessageAuthorName().equals(username)) {
+                conversationPreview.setLastMessageAuthorName("You");
             }
         }
 

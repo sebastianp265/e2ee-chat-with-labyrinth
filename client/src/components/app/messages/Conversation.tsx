@@ -1,34 +1,19 @@
-import {MessageGetDTO} from "@/api/types.ts";
+import {ConversationGetDTO} from "@/api/types.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {useEffect, useState} from "react";
 
 interface IConversationProps {
     loggedUserId: number,
-    conversationId: number | undefined,
-    conversationName: string | undefined
-    messages: MessageGetDTO[]
+    conversationName: string
+    conversationData: ConversationGetDTO
 }
 
-function Conversation({conversationId, loggedUserId, messages, conversationName}: Readonly<IConversationProps>) {
-    const [chatMemberIdToName, setChatMemberIdToName] = useState<{
-        [memberId: number]: string
-    }>({})
-    useEffect(() => {
-        if (conversationId == 2) {
-            setChatMemberIdToName({
-                1: "You",
-                2: "Jack Sparrow"
-            })
-        } else {
-            setChatMemberIdToName({})
-        }
-    }, [conversationId]);
+function Conversation({loggedUserId, conversationName, conversationData}: Readonly<IConversationProps>) {
+    const {messages, userIdToName} = conversationData
 
     return (
         <div className="flex flex-col w-full">
-            <div className="border rounded-md
-                w-full p-2 mb-2">
+            <div className="border rounded-md w-full p-2 mb-2">
                 <span className="font-bold">{conversationName}</span>
             </div>
             <div className="flex flex-col space-y-1 border rounded-md
@@ -44,7 +29,7 @@ function Conversation({conversationId, loggedUserId, messages, conversationName}
                                 <div className="flex flex-col">
                                     {
                                         (!isAuthorALoggedUser && (index == 0 || message.authorId != messages[index - 1].authorId)) &&
-                                        <span className="text-xs">{chatMemberIdToName[message.authorId]}: </span>
+                                        <span className="text-xs">{userIdToName[message.authorId]}: </span>
                                     }
                                     <span className={`${isAuthorALoggedUser ?
                                         "bg-primary text-primary-foreground" : "bg-accent"

@@ -8,8 +8,9 @@ export default function LoginPage() {
     const navigate = useNavigate()
     const isNotAuthenticated = localStorage.getItem("session_expires") == null
     const handleSubmit = (loginRequest: LoginRequestDTO) => {
-        axiosAPI.post("/api/auth/login", loginRequest)
-            .then(() => {
+        axiosAPI.post<number>("/api/auth/login", loginRequest)
+            .then((response) => {
+                localStorage.setItem(import.meta.env.VITE_USER_ID, response.data.toString())
                 navigate("/")
             })
             .catch(reason => {

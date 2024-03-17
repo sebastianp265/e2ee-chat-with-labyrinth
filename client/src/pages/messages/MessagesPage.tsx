@@ -1,83 +1,63 @@
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
-import {ConversationPreviewGetDTO, MessageGetDTO} from "@/api/types.ts";
+import {ConversationGetDTO, ConversationPreviewGetDTO} from "@/api/types.ts";
 import ConversationPreview from "@/components/app/messages/ConversationPreview.tsx";
 import Conversation from "@/components/app/messages/Conversation.tsx";
 import {useEffect, useState} from "react";
+import axiosAPI from "@/api/axiosAPI.ts";
 
 export default function MessagesPage({inactivateSession}: Readonly<ISessionProps>) {
-    const loggedUserId = 1
+    const loggedUserIdString = localStorage.getItem(import.meta.env.VITE_USER_ID)
+    const loggedUserId = loggedUserIdString != null ? parseInt(loggedUserIdString) : -1
+    if (loggedUserId == -1) {
+        console.error("User id info has been removed from local storage")
+        inactivateSession?.()
+    }
+
     const [conversationPreviews, setConversationPreviews] = useState<ConversationPreviewGetDTO[]>([])
-    const [chosenConversationId, setChosenConversationId] = useState<number | undefined>(undefined)
-    const [chosenConversationName, setChosenConversationName] = useState<string | undefined>(undefined)
+    const [chosenConversationId, setChosenConversationId] = useState<number>(-1)
 
     useEffect(() => {
-        const conversationPreviewsFromAPI = [
-            {
-                conversationId: 1,
-                conversationName: "Christopher Bear",
-                lastMessage: "Hello",
-                lastMessageAuthorName: "Christopher Bear"
-            },
-            {
-                conversationId: 2,
-                conversationName: "Jack Sparrow",
-                lastMessage: "Are you up?",
-                lastMessageAuthorName: "You"
-            },
-            {
-                conversationId: 3,
-                conversationName: "John Snow",
-                lastMessage: "Winter is coming",
-                lastMessageAuthorName: "John Snow"
-            }
-        ]
-
-        setConversationPreviews(conversationPreviewsFromAPI)
-        if (conversationPreviewsFromAPI.length > 0) {
-            const firstConversationPreview = conversationPreviewsFromAPI[0]
-            setChosenConversationId(firstConversationPreview.conversationId)
-        }
+        axiosAPI.get<ConversationPreviewGetDTO[]>("/api/conversation")
+            .then(response => {
+                const conversationPreviews = response.data
+                setConversationPreviews(conversationPreviews)
+                if (conversationPreviews.length == 0) return
+                setChosenConversationId(conversationPreviews[0].conversationId)
+            })
+            .catch(error => {
+                // TODO: ERROR HANDLING
+                console.error(error)
+            })
     }, []);
 
-    const [messagesForChosenConversationId, setMessagesForChosenConversationId] = useState<MessageGetDTO[]>([])
+    const [chosenConversationName, setChosenConversationName] = useState("")
+    const [conversationData, setConversationData] = useState<ConversationGetDTO>({
+        messages: [],
+        userIdToName: {}
+    })
 
     useEffect(() => {
-        const conversationsWithChosenId = conversationPreviews.filter(
-            (conversationPreview => conversationPreview.conversationId == chosenConversationId))
-        if(conversationsWithChosenId.length == 0) return
-        setChosenConversationName(conversationsWithChosenId[0].conversationName)
-        if (chosenConversationId == 2) {
-            const messagesForChosenConversationIdFromAPI: MessageGetDTO[] = [
-                {
-                    id: 1,
-                    authorId: 2,
-                    content: "Hi!"
-                },
-                {
-                    id: 2,
-                    authorId: 1,
-                    content: "Hello man"
-                },
-                {
-                    id: 3,
-                    authorId: 2,
-                    content: "How you doing?"
-                },
-                {
-                    id: 4,
-                    authorId: 1,
-                    content: "Are you up?"
-                },
-                {
-                    id: 5,
-                    authorId: 1,
-                    content: "I got invitation for a party"
-                }
-            ]
-            setMessagesForChosenConversationId(messagesForChosenConversationIdFromAPI)
-        } else {
-            setMessagesForChosenConversationId([])
+        const conversationsWithChosenId =
+            conversationPreviews.filter((conversationPreview =>
+                conversationPreview.conversationId == chosenConversationId))
+        if (conversationsWithChosenId.length != 1) {
+            console.error("There should be only one conversation preview with chosen conversation id")
+            return;
         }
+        setConversationData({
+            messages: [],
+            userIdToName: {}
+        })
+        setChosenConversationName(conversationsWithChosenId[0].conversationName)
+
+        axiosAPI.get<ConversationGetDTO>(`/api/conversation/${chosenConversationId}`)
+            .then(response => {
+                setConversationData(response.data)
+            })
+            .catch(error => {
+                // TODO: ERROR HANDLING
+                console.error(error)
+            })
     }, [chosenConversationId, conversationPreviews]);
 
     return (
@@ -93,8 +73,11 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
                 }
             </div>
             <div className="flex p-2 flex-grow border border-l-0">
-                <Conversation conversationName={chosenConversationName} loggedUserId={loggedUserId}
-                              conversationId={chosenConversationId} messages={messagesForChosenConversationId}/>
+                {
+                    chosenConversationId != -1 &&
+                    <Conversation conversationName={chosenConversationName} loggedUserId={loggedUserId}
+                                  conversationData={conversationData}/>
+                }
             </div>
         </div>
     )

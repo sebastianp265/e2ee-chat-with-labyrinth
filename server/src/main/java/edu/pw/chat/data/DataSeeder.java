@@ -5,7 +5,7 @@ import edu.pw.chat.entitities.Conversation;
 import edu.pw.chat.entitities.Message;
 import edu.pw.chat.repository.ConversationRepository;
 import edu.pw.chat.repository.MessageRepository;
-import edu.pw.chat.repository.UserInfoRepository;
+import edu.pw.chat.repository.ChatUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -24,7 +24,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
-    private final UserInfoRepository userInfoRepository;
+    private final ChatUserRepository chatUserRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -49,9 +49,9 @@ public class DataSeeder implements ApplicationRunner {
         chatUser3.setName("arek");
 
         return List.of(
-                userInfoRepository.save(chatUser1),
-                userInfoRepository.save(chatUser2),
-                userInfoRepository.save(chatUser3)
+                chatUserRepository.save(chatUser1),
+                chatUserRepository.save(chatUser2),
+                chatUserRepository.save(chatUser3)
         );
     }
 

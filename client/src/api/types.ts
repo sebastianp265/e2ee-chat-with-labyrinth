@@ -19,7 +19,16 @@ export type ConversationPreviewGetDTO = {
     lastMessageAuthorName: string
 }
 
-export type MessageGetDTO = {
+export type ConversationGetDTO = {
+    messages: MessageGetDTO[],
+    userIdToName: UserIdToName
+}
+
+type UserIdToName = {
+    [userId: number]: string
+}
+
+type MessageGetDTO = {
     id: number,
     authorId: number,
     content: string

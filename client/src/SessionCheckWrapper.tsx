@@ -15,6 +15,7 @@ export default function SessionCheckWrapper({children}: Readonly<ISessionCheckWr
     const handleInactivateSession = () => {
         setSessionExpired(true)
         localStorage.removeItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY)
+        localStorage.removeItem(import.meta.env.VITE_USER_ID)
     }
 
     useEffect(() => {

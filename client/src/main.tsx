@@ -17,6 +17,7 @@ export function PrivateRoutes() {
             authenticated = true
         } else {
             localStorage.removeItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY)
+            localStorage.removeItem(import.meta.env.VITE_USER_ID)
         }
     }
     return (

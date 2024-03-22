@@ -12,14 +12,16 @@ public class Conversation {
 
     @Id
     @GeneratedValue
-    Long conversationId;
+    Long id;
 
     @ManyToMany
-    Set<UserInfo> userInfos;
+    Set<ChatUser> members;
 
     @OneToMany
     List<Message> messages;
 
-    String conversationName;
+    // if the conversation is not a group one (more than 2 members) then *name=null* ,
+    // else *name=receiver name*
+    String name;
 
 }

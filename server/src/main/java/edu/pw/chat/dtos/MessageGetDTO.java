@@ -9,7 +9,9 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class MessageGetDTO {
 
-    String content;
+    Long id;
 
-    boolean isSender;
+    Long authorId;
+
+    String content;
 }

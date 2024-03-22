@@ -1,21 +1,21 @@
 package edu.pw.chat.data;
 
+import edu.pw.chat.entitities.ChatUser;
 import edu.pw.chat.entitities.Conversation;
 import edu.pw.chat.entitities.Message;
-import edu.pw.chat.entitities.UserInfo;
 import edu.pw.chat.repository.ConversationRepository;
 import edu.pw.chat.repository.MessageRepository;
-import edu.pw.chat.repository.UserInfoRepository;
+import edu.pw.chat.repository.ChatUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
-    private final UserInfoRepository userInfoRepository;
+    private final ChatUserRepository chatUserRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -33,49 +33,82 @@ public class DataSeeder implements ApplicationRunner {
 
     public void seed() {
         log.debug("Running data seeder");
-        Conversation conversation = new Conversation();
 
-        List<UserInfo> users = prepareUsers();
-        List<Message> messages = prepareMessages(users.getFirst().getId(), users.getLast().getId());
-
-        conversation.setUserInfos(new HashSet<>(users));
-        conversation.setMessages(messages);
-
-        conversationRepository.save(conversation);
+        List<ChatUser> users = prepareUsers();
+        prepareConversations(users);
     }
 
-    private List<UserInfo> prepareUsers() {
-        UserInfo userInfo1 = new UserInfo();
-        userInfo1.setName("Christopher Bear");
+    private List<ChatUser> prepareUsers() {
+        ChatUser chatUser1 = new ChatUser();
+        chatUser1.setName("seba");
 
-        UserInfo userInfo2 = new UserInfo();
-        userInfo2.setName("Jack Sparrow");
+        ChatUser chatUser2 = new ChatUser();
+        chatUser2.setName("krzysio");
+
+        ChatUser chatUser3 = new ChatUser();
+        chatUser3.setName("arek");
 
         return List.of(
-                userInfoRepository.save(userInfo1),
-                userInfoRepository.save(userInfo2)
+                chatUserRepository.save(chatUser1),
+                chatUserRepository.save(chatUser2),
+                chatUserRepository.save(chatUser3)
         );
     }
 
-    private List<Message> prepareMessages(Long user1Id, Long user2Id) {
-        Message message1 = new Message();
-        message1.setAuthorId(user1Id);
-        message1.setContent("Hello!");
+    void prepareConversations(List<ChatUser> users) {
+        ChatUser seba = users.get(0);
+        ChatUser krzysio = users.get(1);
+        ChatUser arek = users.get(2);
+        Instant now = Instant.now();
 
-        Message message2 = new Message();
-        message2.setAuthorId(user2Id);
-        message2.setContent("Hi :)");
-
-        Message message3 = new Message();
-        message3.setAuthorId(user1Id);
-        message3.setContent("How are you doing?");
-
-        return List.of(
-                messageRepository.save(message1),
-                messageRepository.save(message2),
-                messageRepository.save(message3)
+        Conversation conversationBetweenSebaAndKrzysio = new Conversation();
+        conversationBetweenSebaAndKrzysio.setMembers(
+                new HashSet<>(List.of(seba, krzysio))
         );
+        conversationBetweenSebaAndKrzysio.setMessages(saveMessagesToRepository(1L,
+                new Message("Hi!", seba, now.plusSeconds(1)),
+                new Message("Hello", krzysio, now.plusSeconds(2)),
+                new Message("Are you up?", seba, now.plusSeconds(3)),
+                new Message("Wanna go to my friend's party?", seba, now.plusSeconds(4)),
+                new Message("Sure", krzysio, now.plusSeconds(5))
+        ));
+
+        Conversation conversationBetweenSebaAndArek = new Conversation();
+        conversationBetweenSebaAndArek.setMembers(
+                new HashSet<>(List.of(seba, arek))
+        );
+        conversationBetweenSebaAndArek.setMessages(saveMessagesToRepository(2L,
+                new Message("I will arrive at 6pm", arek, now.plusSeconds(6)),
+                new Message("Okay, see you later then", seba, now.plusSeconds(7)),
+                new Message("Have you brought the present?", arek, now.plusSeconds(8))
+        ));
+
+
+        Conversation conversationBetweenArekAndKrzysio = new Conversation();
+        conversationBetweenArekAndKrzysio.setMembers(
+                new HashSet<>(List.of(arek, krzysio))
+        );
+        conversationBetweenArekAndKrzysio.setMessages(saveMessagesToRepository(3L,
+                new Message("Hey, how you doing", arek, now.plusSeconds(9)),
+                new Message("Pretty well, watching Game Of Thrones at the moment", krzysio, now.plusSeconds(10))
+        ));
+
+        conversationRepository.saveAll(List.of(
+                conversationBetweenSebaAndKrzysio,
+                conversationBetweenSebaAndArek,
+                conversationBetweenArekAndKrzysio
+        ));
     }
 
+    private List<Message> saveMessagesToRepository(Long conversationId, Message... messages) {
+        List<Message> returnedMessages = new ArrayList<>();
+
+        for(Message message : messages) {
+            message.setConversationId(conversationId);
+            returnedMessages.add(messageRepository.save(message));
+        }
+
+        return returnedMessages;
+    }
 
 }

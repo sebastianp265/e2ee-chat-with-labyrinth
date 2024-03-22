@@ -7,18 +7,18 @@ logging:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password: sa
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/server
+    username: postgres
+    password: postgres
+
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-  h2.console.enabled: true
+    hibernate:
+      ddl-auto: create
 
 server:
   servlet:
     session:
-      timeout: 60
+      timeout: 60m
       cookie:
         same-site: strict
         http-only: true

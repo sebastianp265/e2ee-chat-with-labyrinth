@@ -27,8 +27,9 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
             .catch(error => {
                 // TODO: ERROR HANDLING
                 console.error(error)
+                inactivateSession?.()
             })
-    }, []);
+    }, [inactivateSession]);
 
     const [chosenConversationName, setChosenConversationName] = useState("")
     const [conversationData, setConversationData] = useState<ConversationGetDTO>({
@@ -57,8 +58,30 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
             .catch(error => {
                 // TODO: ERROR HANDLING
                 console.error(error)
+                inactivateSession?.()
             })
-    }, [chosenConversationId, conversationPreviews]);
+    }, [chosenConversationId, conversationPreviews, inactivateSession]);
+
+    const handleSendMessage = (messageContent: string) => {
+        axiosAPI.post("/api/messages", {
+            content: messageContent,
+            destinationConversationId: chosenConversationId
+        })
+            .then(() => {
+                setConversationData({
+                    messages: [
+                        ...conversationData.messages,
+                        {
+                            id: 1000,
+                            authorId: loggedUserId,
+                            content: messageContent
+                        },
+
+                    ],
+                    userIdToName: conversationData.userIdToName
+                })
+            })
+    }
 
     return (
         <div className="flex h-full">
@@ -75,7 +98,9 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
             <div className="flex p-2 flex-grow border border-l-0">
                 {
                     chosenConversationId != -1 &&
-                    <Conversation conversationName={chosenConversationName} loggedUserId={loggedUserId}
+                    <Conversation handleSendMessage={handleSendMessage}
+                                  conversationName={chosenConversationName}
+                                  loggedUserId={loggedUserId}
                                   conversationData={conversationData}/>
                 }
             </div>

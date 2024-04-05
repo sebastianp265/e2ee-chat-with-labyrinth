@@ -1,15 +1,31 @@
 import {ConversationGetDTO} from "@/api/types.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {ChangeEvent, useState} from "react";
 
 interface IConversationProps {
     loggedUserId: number,
     conversationName: string
     conversationData: ConversationGetDTO
+    handleSendMessage: (messageContent: string) => void
 }
 
-function Conversation({loggedUserId, conversationName, conversationData}: Readonly<IConversationProps>) {
+function Conversation({
+                          loggedUserId,
+                          conversationName,
+                          conversationData,
+                          handleSendMessage
+                      }: Readonly<IConversationProps>) {
     const {messages, userIdToName} = conversationData
+    const [messageToSend, setMessageToSend] = useState("")
+
+    const handleMessageToSendChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+        setMessageToSend(event.target.value)
+    }
+
+    const onSendMessage = () => {
+        handleSendMessage(messageToSend)
+    }
 
     return (
         <div className="flex flex-col w-full">
@@ -41,10 +57,13 @@ function Conversation({loggedUserId, conversationName, conversationData}: Readon
                 }
             </div>
             <div className="flex space-x-2 mt-2">
-                <Textarea className="resize-none min-h-0">
+                <Textarea
+                    value={messageToSend}
+                    onChange={handleMessageToSendChange}
+                    className="resize-none min-h-0">
                 </Textarea>
-                <Button className="mt-auto mb-auto">
-                    Submit
+                <Button onClick={onSendMessage} className="mt-auto mb-auto">
+                    Send
                 </Button>
             </div>
         </div>

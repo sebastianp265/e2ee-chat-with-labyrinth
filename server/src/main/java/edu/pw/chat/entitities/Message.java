@@ -2,6 +2,7 @@ package edu.pw.chat.entitities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,8 @@ import java.time.Instant;
 @Entity
 @NoArgsConstructor
 @IdClass(Message.MessageId.class)
+@Builder
+@AllArgsConstructor
 public class Message {
 
     @Id

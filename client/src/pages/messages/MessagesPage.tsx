@@ -1,28 +1,36 @@
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
-import {ConversationGetDTO, ConversationPreviewGetDTO} from "@/api/types.ts";
-import ConversationPreview from "@/components/app/messages/ConversationPreview.tsx";
-import Conversation from "@/components/app/messages/Conversation.tsx";
+import {MessageGetDTO, ThreadPreviewGetDTO, UserIdToName} from "@/api/types.ts";
+import ThreadPreview from "@/components/app/messages/ThreadPreview.tsx";
+import Thread from "@/components/app/messages/Thread.tsx";
 import {useEffect, useState} from "react";
 import axiosAPI from "@/api/axiosAPI.ts";
 
 export default function MessagesPage({inactivateSession}: Readonly<ISessionProps>) {
-    const loggedUserIdString = localStorage.getItem(import.meta.env.VITE_USER_ID)
-    const loggedUserId = loggedUserIdString != null ? parseInt(loggedUserIdString) : -1
-    if (loggedUserId == -1) {
+    const inboxIdOrNull = localStorage.getItem(import.meta.env.VITE_INBOX_ID)
+    const inboxId = inboxIdOrNull != null ? parseInt(inboxIdOrNull) : -1
+    if (inboxId == -1) {
+        console.error("Inbox id info has been removed from local storage")
+        inactivateSession?.()
+    }
+    const loggedUserIdOrNull = localStorage.getItem(import.meta.env.VITE_USER_ID)
+    const loggedUserId = loggedUserIdOrNull != null ? parseInt(loggedUserIdOrNull) : -1
+    if (inboxId == -1) {
         console.error("User id info has been removed from local storage")
         inactivateSession?.()
     }
 
-    const [conversationPreviews, setConversationPreviews] = useState<ConversationPreviewGetDTO[]>([])
-    const [chosenConversationId, setChosenConversationId] = useState<number>(-1)
+    const [threadPreviews, setThreadPreviews] = useState<ThreadPreviewGetDTO[]>([])
+    const [chosenThreadId, setChosenThreadId] = useState<number>(-1)
+    const [chosenThreadName, setChosenThreadName] = useState("")
 
     useEffect(() => {
-        axiosAPI.get<ConversationPreviewGetDTO[]>("/api/conversation")
+        axiosAPI.get<ThreadPreviewGetDTO[]>("/api/threads")
             .then(response => {
-                const conversationPreviews = response.data
-                setConversationPreviews(conversationPreviews)
-                if (conversationPreviews.length == 0) return
-                setChosenConversationId(conversationPreviews[0].conversationId)
+                const threadPreviews = response.data
+                setThreadPreviews(threadPreviews)
+                if (threadPreviews.length == 0) return
+                setChosenThreadId(threadPreviews[0].threadId)
+                setChosenThreadName(threadPreviews[0].threadName)
             })
             .catch(error => {
                 // TODO: ERROR HANDLING
@@ -31,55 +39,37 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
             })
     }, [inactivateSession]);
 
-    const [chosenConversationName, setChosenConversationName] = useState("")
-    const [conversationData, setConversationData] = useState<ConversationGetDTO>({
-        messages: [],
-        userIdToName: {}
-    })
+    const [messagesForChosenThread, setMessagesForChosenThread] = useState<MessageGetDTO[]>([])
+    const [userIdToNameForChosenThread, setUserIdToNameForChosenThread] = useState<UserIdToName>({})
 
     useEffect(() => {
-        const conversationsWithChosenId =
-            conversationPreviews.filter((conversationPreview =>
-                conversationPreview.conversationId == chosenConversationId))
-        if (conversationsWithChosenId.length != 1) {
-            console.error("There should be only one conversation preview with chosen conversation id")
-            return;
-        }
-        setConversationData({
-            messages: [],
-            userIdToName: {}
-        })
-        setChosenConversationName(conversationsWithChosenId[0].conversationName)
-
-        axiosAPI.get<ConversationGetDTO>(`/api/conversation/${chosenConversationId}`)
+        if(chosenThreadId == -1) return
+        axiosAPI.get<UserIdToName>(`/api/threads/${chosenThreadId}/members`)
             .then(response => {
-                setConversationData(response.data)
+                setUserIdToNameForChosenThread(response.data)
+            })
+        axiosAPI.get<MessageGetDTO[]>(`/api/messages/inbox/${inboxId}/thread/${chosenThreadId}`)
+            .then(response => {
+                setMessagesForChosenThread(response.data)
             })
             .catch(error => {
                 // TODO: ERROR HANDLING
                 console.error(error)
                 inactivateSession?.()
             })
-    }, [chosenConversationId, conversationPreviews, inactivateSession]);
+    }, [chosenThreadId, inactivateSession, inboxId]);
 
     const handleSendMessage = (messageContent: string) => {
-        axiosAPI.post("/api/messages", {
-            content: messageContent,
-            destinationConversationId: chosenConversationId
+        axiosAPI.post(`/api/messages/thread/${chosenThreadId}`, {
+            content: messageContent
         })
             .then(() => {
-                setConversationData({
-                    messages: [
-                        ...conversationData.messages,
-                        {
-                            id: 1000,
-                            authorId: loggedUserId,
-                            content: messageContent
-                        },
-
-                    ],
-                    userIdToName: conversationData.userIdToName
-                })
+                setMessagesForChosenThread([...messagesForChosenThread, {
+                    id: messagesForChosenThread.length > 0 ?
+                        messagesForChosenThread[messagesForChosenThread.length - 1].id + 1: 0,
+                    authorId: loggedUserId,
+                    content: messageContent
+                }])
             })
     }
 
@@ -87,21 +77,25 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
         <div className="flex h-full">
             <div className="flex flex-col space-y-2 border p-2">
                 {
-                    conversationPreviews.map(conversationPreview =>
-                        <ConversationPreview onClick={() => setChosenConversationId(conversationPreview.conversationId)}
-                                             chosenConversationId={chosenConversationId}
-                                             key={conversationPreview.conversationId}
-                                             conversationPreview={conversationPreview}/>
+                    threadPreviews.map(threadPreview =>
+                        <ThreadPreview onClick={() => setChosenThreadId(threadPreview.threadId)}
+                                       chosenThreadId={chosenThreadId}
+                                       threadPreview={threadPreview}
+                                       key={threadPreview.threadId}
+                        />
                     )
                 }
             </div>
             <div className="flex p-2 flex-grow border border-l-0">
                 {
-                    chosenConversationId != -1 &&
-                    <Conversation handleSendMessage={handleSendMessage}
-                                  conversationName={chosenConversationName}
-                                  loggedUserId={loggedUserId}
-                                  conversationData={conversationData}/>
+                    chosenThreadId != -1 &&
+                    <Thread
+                        threadName={chosenThreadName}
+                        loggedUserId={loggedUserId}
+                        handleSendMessage={handleSendMessage}
+                        messages={messagesForChosenThread}
+                        userIdToName={userIdToNameForChosenThread}
+                    />
                 }
             </div>
         </div>

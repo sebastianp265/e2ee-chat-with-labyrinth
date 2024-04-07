@@ -1,22 +1,23 @@
-import {ConversationGetDTO} from "@/api/types.ts";
+import {MessageGetDTO, UserIdToName} from "@/api/types.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {ChangeEvent, useState} from "react";
 
-interface IConversationProps {
-    loggedUserId: number,
-    conversationName: string
-    conversationData: ConversationGetDTO
+interface IThreadProps {
+    threadName: string
+    loggedUserId: number
+    messages: MessageGetDTO[]
+    userIdToName: UserIdToName
     handleSendMessage: (messageContent: string) => void
 }
 
-function Conversation({
+function Thread({
                           loggedUserId,
-                          conversationName,
-                          conversationData,
+                          threadName,
+                          messages,
+                          userIdToName,
                           handleSendMessage
-                      }: Readonly<IConversationProps>) {
-    const {messages, userIdToName} = conversationData
+                      }: Readonly<IThreadProps>) {
     const [messageToSend, setMessageToSend] = useState("")
 
     const handleMessageToSendChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -30,7 +31,7 @@ function Conversation({
     return (
         <div className="flex flex-col w-full">
             <div className="border rounded-md w-full p-2 mb-2">
-                <span className="font-bold">{conversationName}</span>
+                <span className="font-bold">{threadName}</span>
             </div>
             <div className="flex flex-col space-y-1 border rounded-md
                 w-full max-h-screen overflow-y-auto p-2 flex-grow">
@@ -70,4 +71,4 @@ function Conversation({
     );
 }
 
-export default Conversation;
+export default Thread;

@@ -9,41 +9,37 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.time.Instant;
 
-@Data
 @Entity
-@NoArgsConstructor
-@IdClass(Message.MessageId.class)
+@Data
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(name="inbox_thread_timestamp_index", columnList = "inbox_id, thread_id, timestamp")
+})
 public class Message {
 
-    @Id
-    private Long conversationId;
-
-    @Id
-    @GeneratedValue
-    private Long id;
-
-    private String content;
+    @ManyToOne
+    @JoinColumn(name = "inbox_id", nullable = false)
+    private ChatInbox inbox;
 
     @ManyToOne
+    @JoinColumn(name = "thread_id", nullable = false)
+    private ChatThread thread;
+
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    private Long messageId;
+
+    @ManyToOne
+    @JoinColumn(name = "author_id", nullable = false)
     private ChatUser author;
 
-    private Instant sentAt;
+    @Column(nullable = false)
+    private Instant timestamp;
 
-    public Message(String content, ChatUser author, Instant sentAt) {
-        this.content = content;
-        this.author = author;
-        this.sentAt = sentAt;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class MessageId implements Serializable {
-        private Long conversationId;
-        private Long id;
-    }
+    @Column(nullable = false)
+    private String messageData;
 
 }
 

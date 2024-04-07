@@ -1,7 +1,10 @@
 package edu.pw.chat.controllers;
 
-import edu.pw.chat.dtos.LoginRequestPostDTO;
+import edu.pw.chat.dtos.LoginRequestDTO;
+import edu.pw.chat.dtos.LoginResponseDTO;
+import edu.pw.chat.entitities.ChatInbox;
 import edu.pw.chat.entitities.ChatUser;
+import edu.pw.chat.repository.ChatInboxRepository;
 import edu.pw.chat.repository.ChatUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,29 +33,37 @@ public class AuthenticationController {
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
     private final ChatUserRepository chatUserRepository;
+    private final ChatInboxRepository chatInboxRepository;
 
     @PostMapping("/login")
-    public Long login(@RequestBody LoginRequestPostDTO loginRequestPostDTO,
-                      HttpServletRequest request,
-                      HttpServletResponse response) {
+    public LoginResponseDTO login(@RequestBody LoginRequestDTO loginRequestDTO,
+                                  HttpServletRequest request,
+                                  HttpServletResponse response) {
         Authentication authenticationRequest =
                 UsernamePasswordAuthenticationToken.unauthenticated(
-                        loginRequestPostDTO.getUsername(),
-                        loginRequestPostDTO.getPassword());
+                        loginRequestDTO.getUsername(),
+                        loginRequestDTO.getPassword());
         Authentication authenticationResponse = authenticationManager
                 .authenticate(authenticationRequest);
 
-        Long loggedUserId = chatUserRepository.findByName(loginRequestPostDTO.getUsername())
+        Long loggedUserId = chatUserRepository.findByUsername(loginRequestDTO.getUsername())
                 .map(ChatUser::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "User exists in SecurityContextRepository and not in ChatUserRepository"));
+        Long inboxId = chatInboxRepository.findChatInboxByOwner_Username(loginRequestDTO.getUsername())
+                .map(ChatInbox::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "User doesn't have it's inbox"));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authenticationResponse);
 
         securityContextHolderStrategy.setContext(context);
         securityContextRepository.saveContext(context, request, response);
-        return loggedUserId;
+        return LoginResponseDTO.builder()
+                .userId(loggedUserId)
+                .inboxId(inboxId)
+                .build();
     }
 
     public record Hello(String name,

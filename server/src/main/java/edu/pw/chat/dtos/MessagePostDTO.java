@@ -7,9 +7,7 @@ import lombok.extern.jackson.Jacksonized;
 @Value
 @Builder
 @Jacksonized
-public class ConversationMessagePostDTO {
-
-    Long destinationConversationId;
+public class MessagePostDTO {
 
     String content;
 }

@@ -7,9 +7,9 @@ import lombok.extern.jackson.Jacksonized;
 @Value
 @Builder
 @Jacksonized
-public class LoginRequestPostDTO {
+public class LoginResponseDTO {
 
-    String username;
+    Long userId;
 
-    String password;
+    Long inboxId;
 }

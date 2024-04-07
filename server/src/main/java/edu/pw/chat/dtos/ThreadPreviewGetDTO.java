@@ -7,11 +7,11 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @Data
 @Builder
-public class ConversationPreviewGetDTO {
+public class ThreadPreviewGetDTO {
 
-    Long conversationId;
+    Long threadId;
 
-    String conversationName;
+    String threadName;
 
     String lastMessage;
 

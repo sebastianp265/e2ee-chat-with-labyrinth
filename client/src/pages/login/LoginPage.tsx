@@ -1,5 +1,5 @@
 import {LoginForm} from "@/components/app/login/LoginForm.tsx";
-import {LoginRequestDTO} from "@/api/types.ts";
+import {LoginRequestDTO, LoginResponseDTO} from "@/api/types.ts";
 import axiosAPI from "@/api/axiosAPI.ts";
 import {useNavigate} from "react-router-dom";
 import {Button} from "@/components/ui/button.tsx";
@@ -8,9 +8,10 @@ export default function LoginPage() {
     const navigate = useNavigate()
     const isNotAuthenticated = localStorage.getItem("session_expires") == null
     const handleSubmit = (loginRequest: LoginRequestDTO) => {
-        axiosAPI.post<number>("/api/auth/login", loginRequest)
+        axiosAPI.post<LoginResponseDTO>("/api/auth/login", loginRequest)
             .then((response) => {
-                localStorage.setItem(import.meta.env.VITE_USER_ID, response.data.toString())
+                localStorage.setItem(import.meta.env.VITE_USER_ID, response.data.userId.toString())
+                localStorage.setItem(import.meta.env.VITE_INBOX_ID, response.data.inboxId.toString())
                 navigate("/")
             })
             .catch(reason => {

@@ -3,6 +3,11 @@ export type LoginRequestDTO = {
     password: string
 }
 
+export type LoginResponseDTO = {
+    userId: number,
+    inboxId: number
+}
+
 export type HelloGetDTO = {
     name: string,
     principal: string,
@@ -12,23 +17,18 @@ export type HelloGetDTO = {
     sessionId: string
 }
 
-export type ConversationPreviewGetDTO = {
-    conversationId: number,
-    conversationName: string,
+export type ThreadPreviewGetDTO = {
+    threadId: number,
+    threadName: string,
     lastMessage: string,
     lastMessageAuthorName: string
 }
 
-export type ConversationGetDTO = {
-    messages: MessageGetDTO[],
-    userIdToName: UserIdToName
-}
-
-type UserIdToName = {
+export type UserIdToName = {
     [userId: number]: string
 }
 
-type MessageGetDTO = {
+export type MessageGetDTO = {
     id: number,
     authorId: number,
     content: string

@@ -13,7 +13,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
+
+app:
+  labyrinth:
+    labyrinthID: 1
+    mailboxRootSalt: ABCDEFGH
 
 server:
   servlet:

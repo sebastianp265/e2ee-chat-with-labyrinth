@@ -1,6 +1,6 @@
 import {PrivateKey} from "@signalapp/libsignal-client"
 
-export const KEY_LENGTH_BYTES = 64
+export const KEY_LENGTH_BYTES = 32
 
 export function generate_x25519_keypair() {
     const priv_key = PrivateKey.generate()

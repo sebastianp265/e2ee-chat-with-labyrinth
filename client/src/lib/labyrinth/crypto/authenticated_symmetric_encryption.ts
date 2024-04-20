@@ -9,10 +9,7 @@ export function encrypt(key: Buffer, aad: Buffer, plaintext: string) {
 }
 
 export function decrypt(key: Buffer, aad: Buffer, ciphertext: Buffer) {
-    const aes = Aes256GcmSiv.new(key)
-    const nonce = ciphertext.subarray(0, NONCE_LENGTH)
-    const decrypted = aes.decrypt(ciphertext.subarray(NONCE_LENGTH), nonce, aad)
-    return decrypted.toString()
+    return aes_gcm_256_decrypt(key, aad, ciphertext)
 }
 
 export function aes_gcm_256_encrypt(key: Buffer, nonce: Buffer, aad: Buffer, plaintext: string) {
@@ -23,3 +20,11 @@ export function aes_gcm_256_encrypt(key: Buffer, nonce: Buffer, aad: Buffer, pla
         aes.encrypt(Buffer.from(plaintext), nonce, aad)
     ])
 }
+
+export function aes_gcm_256_decrypt(key: Buffer, aad: Buffer, ciphertext: Buffer) {
+    const aes = Aes256GcmSiv.new(key)
+    const nonce = ciphertext.subarray(0, NONCE_LENGTH)
+    const decrypted = aes.decrypt(ciphertext.subarray(NONCE_LENGTH), nonce, aad)
+    return decrypted.toString()
+}
+

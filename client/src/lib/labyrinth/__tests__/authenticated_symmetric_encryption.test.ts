@@ -4,9 +4,9 @@ import {LibSignalErrorBase} from "@signalapp/libsignal-client";
 
 describe('authenticated symmetric encryption', () => {
     test('should get the same message after encryption and decryption with same keys and aad', () => {
-        const plaintext = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+        const plaintext = Buffer.from("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
             " Pellentesque a odio id mauris condimentum lacinia. Sed nibh nunc, pharetra in vestibulum vel," +
-            " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus."
+            " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus.")
         const key = Buffer.alloc(256 / 8)
         crypto.getRandomValues(key)
         const aad = Buffer.alloc(8)
@@ -15,13 +15,13 @@ describe('authenticated symmetric encryption', () => {
         const ciphertext = encrypt(key, aad, plaintext)
         const plaintext_after_decryption = decrypt(key, aad, ciphertext)
 
-        expect(plaintext_after_decryption).toBe(plaintext)
+        expect(plaintext_after_decryption).toEqual(plaintext)
     })
 
     test('should throw error when different key is used', () => {
-        const plaintext = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+        const plaintext = Buffer.from("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
             " Pellentesque a odio id mauris condimentum lacinia. Sed nibh nunc, pharetra in vestibulum vel," +
-            " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus."
+            " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus.")
         const key = Buffer.alloc(256 / 8)
         crypto.getRandomValues(key)
         const aad = Buffer.alloc(8)
@@ -36,9 +36,9 @@ describe('authenticated symmetric encryption', () => {
     })
 
     test('should throw error when different aad is used', () => {
-        const plaintext = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+        const plaintext = Buffer.from("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
             " Pellentesque a odio id mauris condimentum lacinia. Sed nibh nunc, pharetra in vestibulum vel," +
-            " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus."
+            " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus.")
         const key = Buffer.alloc(256 / 8)
         crypto.getRandomValues(key)
         const aad = Buffer.alloc(8)

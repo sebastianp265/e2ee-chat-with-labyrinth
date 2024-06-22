@@ -1,6 +1,6 @@
 import {PrivateKey, PublicKey} from "@signalapp/libsignal-client";
 import {generate_x25519_keypair, KEY_LENGTH_BYTES} from "@/lib/labyrinth/crypto/utils.ts";
-import {kdf} from "@/lib/labyrinth/crypto/key_derivation.ts";
+import {kdf_one_key} from "@/lib/labyrinth/crypto/key_derivation.ts";
 import {
     aes_gcm_256_decrypt,
     aes_gcm_256_encrypt,
@@ -14,7 +14,7 @@ export function pk_encrypt(
     sender_auth_priv: PrivateKey,
     psk: Buffer,
     aad: Buffer,
-    plaintext: string
+    plaintext: Buffer
 ) {
     if (psk.length > 32) {
         throw Error("Pre-shared key must be at max 32 bytes long")
@@ -33,7 +33,7 @@ export function pk_encrypt(
         aad
     ])
 
-    const subkey = kdf(fresh_secret, psk, inner_aad)
+    const subkey = kdf_one_key(fresh_secret, psk, inner_aad)
     const nonce = Buffer.alloc(NONCE_LENGTH, 0)
     const ciphertext = aes_gcm_256_encrypt(Buffer.from(subkey), nonce, aad, plaintext)
     return Buffer.concat([
@@ -73,7 +73,7 @@ export function pk_decrypt(
         pub_ephem.getPublicKeyBytes(),
         aad
     ])
-    const subkey = kdf(fresh_secret, psk, inner_aad)
+    const subkey = kdf_one_key(fresh_secret, psk, inner_aad)
 
     return aes_gcm_256_decrypt(Buffer.from(subkey), aad, ciphertext)
 }

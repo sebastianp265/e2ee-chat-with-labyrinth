@@ -15,7 +15,7 @@ describe("labyrinth public key encryption", () => {
         const aad = random(8)
 
         // sender prepares the message
-        const plaintext = "Hello Alice!"
+        const plaintext = Buffer.from("Hello Alice!")
 
         const ciphertext = pk_encrypt(recipient_enc_pub, sender_auth_pub, sender_auth_priv, psk, aad, plaintext)
         // ciphertext is sent to recipient

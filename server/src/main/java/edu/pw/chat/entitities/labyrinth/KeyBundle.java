@@ -1,35 +1,36 @@
-package edu.pw.chat.entitities;
+package edu.pw.chat.entitities.labyrinth;
 
+import edu.pw.chat.entitities.ChatUser;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
-import java.util.Set;
 
+@Entity
 @Getter
 @Setter
 @ToString
 @RequiredArgsConstructor
-@Entity
-@Builder
-@AllArgsConstructor
-public class ChatThread {
+public class KeyBundle {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    // if the conversation is not a group one (more than 2 members) then *name=null* ,
-    // else *name=receiver name*
-    private String name;
+    @ManyToOne
+    private ChatUser chatUser;
 
-    @ManyToMany
-    @ToString.Exclude
-    private Set<ChatInbox> subscribedInboxes;
+    private byte[] deviceKeyPub;
+
+    private byte[] epochStorageKeyPub;
+    private byte[] epochStorageKeySig;
+
+    private byte[] epochStorageAuthKeyPub;
+    private byte[] epochStorageAuthKeySig;
 
     @Override
     public final boolean equals(Object o) {
@@ -38,8 +39,8 @@ public class ChatThread {
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        ChatThread that = (ChatThread) o;
-        return getId() != null && Objects.equals(getId(), that.getId());
+        KeyBundle keyBundle = (KeyBundle) o;
+        return getId() != null && Objects.equals(getId(), keyBundle.getId());
     }
 
     @Override

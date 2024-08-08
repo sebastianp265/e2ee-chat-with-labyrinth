@@ -11,7 +11,6 @@ export default function LoginPage() {
         axiosAPI.post<LoginResponseDTO>("/api/auth/login", loginRequest)
             .then((response) => {
                 localStorage.setItem(import.meta.env.VITE_USER_ID, response.data.userId.toString())
-                localStorage.setItem(import.meta.env.VITE_INBOX_ID, response.data.inboxId.toString())
                 navigate("/")
             })
             .catch(reason => {

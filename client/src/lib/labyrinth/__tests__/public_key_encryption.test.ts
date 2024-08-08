@@ -20,6 +20,6 @@ describe("labyrinth public key encryption", () => {
         const ciphertext = pk_encrypt(recipient_enc_pub, sender_auth_pub, sender_auth_priv, psk, aad, plaintext)
         // ciphertext is sent to recipient
         const decrypted_plaintext = pk_decrypt(recipient_enc_pub, recipient_enc_priv, sender_auth_pub, psk, aad, ciphertext)
-        expect(decrypted_plaintext).toBe(plaintext)
+        expect(decrypted_plaintext).toEqual(plaintext)
     })
 })

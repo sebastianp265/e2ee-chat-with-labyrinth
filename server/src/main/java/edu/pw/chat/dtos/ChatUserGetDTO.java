@@ -5,7 +5,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ChatMemberIdNamePair {
+public class ChatUserGetDTO {
 
     Long userId;
     String visibleName;

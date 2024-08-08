@@ -16,14 +16,14 @@ const createAxiosInstance = () => {
     })
 
     client.interceptors.response.use(
-        response=> {
+        response => {
             console.debug("Got response: ", response)
             localStorage.setItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY,
                 (Date.now() + parseInt(import.meta.env.VITE_SESSION_EXPIRATION_TIME_MIN) * 60 * 1000).toString())
             return response;
         },
         (error: AxiosError) => {
-            if(error.request) {
+            if (error.request) {
                 console.error(error.request)
             } else {
                 console.error("Request was not made: ", error.message)

@@ -50,7 +50,7 @@ public class AuthenticationController {
                 .map(ChatUser::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "User exists in SecurityContextRepository and not in ChatUserRepository"));
-        Long inboxId = chatInboxRepository.findChatInboxByOwner_Username(loginRequestDTO.getUsername())
+        Long inboxId = chatInboxRepository.findByOwner_Username(loginRequestDTO.getUsername())
                 .map(ChatInbox::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "User doesn't have it's inbox"));

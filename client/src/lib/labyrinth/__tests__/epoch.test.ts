@@ -13,7 +13,7 @@ describe("Labyrinth", () => {
     test("After Alice opening new epoch with Bob, Bob should be able to derive the same epoch data", () => {
         // common
         const prevEpoch: Epoch = {
-            id: Buffer.of(0x0F),
+            id: "epoch1",
             sequenceID: 1n,
             rootKey: random(32)
         }
@@ -21,36 +21,35 @@ describe("Labyrinth", () => {
         // on Alice device
         const aliceKeyBundle = initializeLabyrinth()
         const aliceDevice: SelfDevice = {
-            id: Buffer.of(0x02),
+            id: "device1",
             keyBundle: aliceKeyBundle
         }
 
         // on Bob device
         const bobKeyBundle = initializeLabyrinth()
         const bobDevice: SelfDevice = {
-            id: Buffer.of(0x03),
+            id: "device2",
             keyBundle: bobKeyBundle
         }
 
         // on Alice device
         const bobDeviceFromAlicePerspective: ForeignDevice = {
-            id: Buffer.of(0x03),
+            id: "device2",
             keyBundle: bobKeyBundle.public
         }
 
         // on Bob device
         const aliceDeviceFromBobPerspective: ForeignDevice = {
-            id: Buffer.of(0x02),
+            id: "device1",
             keyBundle: aliceKeyBundle.public
         }
 
         // on Alice device - Alice opens new epoch
-        const newEpochID = Buffer.of(0xFF)
         const {
-            newEpoch: newEpochOnAliceDevice,
+            newEpochWithoutAssignedID: newEpochOnAliceDevice,
             newEpochEntropy,
             newEpochDistributionPreSharedKey
-        } = openNewEpoch(prevEpoch, newEpochID)
+        } = openNewEpoch(prevEpoch)
 
 
         const encryptedNewEpochEntropy = encryptNewEpochEntropy(
@@ -68,8 +67,7 @@ describe("Labyrinth", () => {
             bobDevice,
             aliceDeviceFromBobPerspective,
             prevEpoch,
-            encryptedNewEpochEntropy,
-            Buffer.of(0xFF)
+            encryptedNewEpochEntropy
         )
 
         expect(newEpochOnBobDevice).toStrictEqual(newEpochOnAliceDevice)

@@ -26,11 +26,19 @@ public class ChatThreadController {
     }
 
     @GetMapping("/{threadId}/members")
-    public Map<Long, String> getMembersIdToNameMapByThreadId(@PathVariable Long threadId,
-                                                      Principal principal) {
+    public Map<Long, String> getMemberIdToNameMapByThreadId(@PathVariable Long threadId,
+                                                            Principal principal) {
         String username = principal.getName();
         log.debug("Getting members id to name map by threadId = {} for user with name = {}", threadId, username);
-        return chatThreadService.getMembersIdToNameMapByThreadId(threadId, username);
+        return chatThreadService.getMemberIdToNameMapByThreadId(threadId, username);
+    }
+
+    @PostMapping("/with-user/{userId}")
+    public ThreadPreviewGetDTO createThreadWithUser(@PathVariable Long userId,
+                                                    Principal principal) {
+        String username = principal.getName();
+        log.debug("Creating thread with id = {} for user with name = {}", userId, username);
+        return chatThreadService.createThreadWithUser(userId, username);
     }
 
 }

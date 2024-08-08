@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface ChatInboxRepository extends CrudRepository<ChatInbox, Long> {
 
-    Optional<ChatInbox> findChatInboxByOwner_Username(String username);
+    Optional<ChatInbox> findByOwner_Username(String username);
+
+    Optional<ChatInbox> findByOwner_Id(Long id);
 }

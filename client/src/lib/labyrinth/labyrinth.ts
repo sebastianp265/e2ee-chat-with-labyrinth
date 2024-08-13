@@ -1,29 +1,10 @@
-import {PrivateKey, PublicKey} from "@signalapp/libsignal-client";
 import {pk_sig_keygen, pk_sign} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_auth_keygen, pk_enc_keygen} from "@/lib/labyrinth/crypto/public_key_encryption.ts";
-
-export type LabyrinthPublicKeyBundle = {
-    deviceKeyPub: PublicKey
-
-    epochStorageKeyPub: PublicKey
-    epochStorageKeySig: Buffer
-
-    epochStorageAuthKeyPub: PublicKey
-    epochStorageAuthKeySig: Buffer
-}
-
-export type LabyrinthPrivateKeyBundle = {
-    deviceKeyPriv: PrivateKey
-
-    epochStorageKeyPriv: PrivateKey
-
-    epochStorageAuthKeyPriv: PrivateKey
-}
-
-export type LabyrinthKeyBundle = {
-    public: LabyrinthPublicKeyBundle
-    private: LabyrinthPrivateKeyBundle
-}
+import {
+    LabyrinthKeyBundle,
+    LabyrinthPrivateKeyBundle,
+    LabyrinthPublicKeyBundle
+} from "@/lib/labyrinth/labyrinth-types.ts";
 
 /**
  * Generates key bundle which consists of:
@@ -35,7 +16,7 @@ export type LabyrinthKeyBundle = {
  *
  * @returns key bundle (private and shared parts)
  */
-export function initializeLabyrinth(): LabyrinthKeyBundle {
+export function generateKeyBundle(): LabyrinthKeyBundle {
     const {priv_key_sig: deviceKeyPriv, pub_key_sig: deviceKeyPub} = pk_sig_keygen()
     const {priv_key_enc: epochStorageKeyPriv, pub_key_enc: epochStorageKeyPub} = pk_enc_keygen()
     const epochStorageKeySig = pk_sign(deviceKeyPriv, Buffer.of(0x30), epochStorageKeyPub.getPublicKeyBytes())

@@ -1,4 +1,4 @@
-import {mac} from "@/lib/labyrinth/crypto/message_authentication.ts";
+import {mac} from "@/lib/labyrinth/crypto/message-authentication.ts";
 
 describe('message authentication', () => {
     test('should return the same mac after running twice on the same message', () => {

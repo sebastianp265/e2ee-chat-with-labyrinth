@@ -1,9 +1,9 @@
-import {kdf_one_key, kdf_two_keys} from "@/lib/labyrinth/crypto/key_derivation.ts";
+import {kdf_one_key, kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {random} from "@/lib/labyrinth/crypto/utils.ts";
-import {encrypt} from "@/lib/labyrinth/crypto/authenticated_symmetric_encryption.ts";
-import {mac} from "@/lib/labyrinth/crypto/message_authentication.ts";
+import {encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
+import {mac} from "@/lib/labyrinth/crypto/message-authentication.ts";
 import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
-import {pk_encrypt} from "@/lib/labyrinth/crypto/public_key_encryption.ts";
+import {pk_encrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {
     DeviceIDToEncryptedEpochEntropyMap,
     Epoch,

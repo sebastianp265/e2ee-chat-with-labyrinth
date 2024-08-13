@@ -1,8 +1,8 @@
-import {kdf_one_key, kdf_two_keys} from "@/lib/labyrinth/crypto/key_derivation.ts";
+import {kdf_one_key, kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
-import {pk_decrypt} from "@/lib/labyrinth/crypto/public_key_encryption.ts";
-import {decrypt} from "@/lib/labyrinth/crypto/authenticated_symmetric_encryption.ts";
-import {authenticateToEpoch} from "@/lib/labyrinth/epoch/create_new_epoch.ts";
+import {pk_decrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
+import {decrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
+import {authenticateToEpoch} from "@/lib/labyrinth/epoch/create-new-epoch.ts";
 import {Epoch, ForeignDevice, LabyrinthWebClient, SelfDevice} from "@/lib/labyrinth/labyrinth-types.ts";
 import {EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 

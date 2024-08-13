@@ -1,11 +1,11 @@
 import {PrivateKey, PublicKey} from "@signalapp/libsignal-client";
 import {generate_x25519_keypair, KEY_LENGTH_BYTES} from "@/lib/labyrinth/crypto/utils.ts";
-import {kdf_one_key} from "@/lib/labyrinth/crypto/key_derivation.ts";
+import {kdf_one_key} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {
     aes_gcm_256_decrypt,
     aes_gcm_256_encrypt,
     NONCE_LENGTH
-} from "@/lib/labyrinth/crypto/authenticated_symmetric_encryption.ts";
+} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
 
 // labyrinth hpke encrypt (public key encryption)
 export function pk_encrypt(

@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals"
-import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated_symmetric_encryption.ts"
+import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts"
 import {LibSignalErrorBase} from "@signalapp/libsignal-client";
 
 describe('authenticated symmetric encryption', () => {

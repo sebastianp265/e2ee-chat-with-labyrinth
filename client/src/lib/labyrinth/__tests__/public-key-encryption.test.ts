@@ -1,4 +1,4 @@
-import {pk_auth_keygen, pk_decrypt, pk_enc_keygen, pk_encrypt} from "@/lib/labyrinth/crypto/public_key_encryption.ts";
+import {pk_auth_keygen, pk_decrypt, pk_enc_keygen, pk_encrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {KEY_LENGTH_BYTES, random} from "@/lib/labyrinth/crypto/utils.ts";
 
 describe("labyrinth public key encryption", () => {

@@ -1,5 +1,5 @@
 import {pk_sig_keygen, pk_sign} from "@/lib/labyrinth/crypto/signing.ts";
-import {pk_auth_keygen, pk_enc_keygen} from "@/lib/labyrinth/crypto/public_key_encryption.ts";
+import {pk_auth_keygen, pk_enc_keygen} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {
     LabyrinthKeyBundle,
     LabyrinthPrivateKeyBundle,

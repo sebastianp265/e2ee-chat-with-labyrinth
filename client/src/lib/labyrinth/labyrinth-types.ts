@@ -29,13 +29,13 @@ export type Epoch = {
     rootKey: Buffer,
 }
 
-export type ForeignDevice = {
+export type PublicDevice = {
     id: string,
     mac: Buffer
     keyBundle: LabyrinthPublicKeyBundle
 }
 
-export type SelfDevice = {
+export type PrivateDevice = {
     id: string,
     keyBundle: LabyrinthKeyBundle
 }
@@ -45,26 +45,29 @@ export type DeviceIDToEncryptedEpochEntropyMap = {
 }
 
 export type EpochRecoveryData = {
+    epochID: string,
     encryptedEpochSequenceID: Buffer,
     encryptedEpochRootKey: Buffer
 }
 
-export type EpochIDAndEncryptedEntropy = {
+export type EpochJoinData = {
     epochID: string,
-    encryptedEpochEntropy: Buffer
+    encryptedEpochEntropy: Buffer,
+    senderDevice: PublicDevice
 }
 
 export type LabyrinthWebClient = {
     // upload encrypted new epoch entropy and return epochID assigned by server
-    uploadEncryptedNewEpochEntropy: (newEpochSequenceID: string, deviceIDToEncryptedEpochEntropyMap: DeviceIDToEncryptedEpochEntropyMap) => string,
-    authenticateToEpoch: (epochID: string, epochDeviceMac: Buffer) => void,
-    uploadEpochRecoveryData: (epochID: string, epochRecoveryData: EpochRecoveryData) => void,
-    getForeignDevicesInEpoch: (epochID: string) => ForeignDevice[]
+    uploadEpochJoinData: (newEpochSequenceID: string, deviceIDToEncryptedEpochEntropyMap: DeviceIDToEncryptedEpochEntropyMap) => Promise<string>,
+
+    uploadAuthenticationData: (epochID: string, epochDeviceMac: Buffer) => Promise<void>,
+    uploadEpochRecoveryData: (epochRecoveryData: EpochRecoveryData) => Promise<void>,
+    getDevicesInEpoch: (epochID: string) => Promise<PublicDevice[]>
 
     // joining newer epoch
-    getEncryptedEpochEntropy: (epochSequenceID: string) => EpochIDAndEncryptedEntropy,
+    getEpochJoinData: (epochSequenceID: string) => Promise<EpochJoinData>,
 
     // joining older epoch
-    getEpochRecoveryData: (epochSequenceID: string) => { epochID: string } & EpochRecoveryData
+    getEpochRecoveryData: (epochSequenceID: string) => Promise<EpochRecoveryData>
 }
 

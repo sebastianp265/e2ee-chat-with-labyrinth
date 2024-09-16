@@ -1,7 +1,6 @@
 import {Epoch} from "@/lib/labyrinth/labyrinth-types.ts";
-import {LinkedList} from "linked-list-typescript";
 
-class UnknownEpochError extends Error {
+export class UnknownEpochError extends Error {
     constructor() {
         super();
 
@@ -9,7 +8,7 @@ class UnknownEpochError extends Error {
     }
 }
 
-class EpochAlreadyExistError extends Error {
+export class EpochAlreadyExistError extends Error {
     constructor() {
         super();
 
@@ -17,7 +16,7 @@ class EpochAlreadyExistError extends Error {
     }
 }
 
-class OmittedEpochError extends Error {
+export class OmittedEpochError extends Error {
     constructor() {
         super();
 
@@ -27,17 +26,38 @@ class OmittedEpochError extends Error {
 
 interface IEpochStorage {
     sequenceIDToEpoch: { [sequenceID: string]: Epoch }
-    epochs: LinkedList<Epoch>
+    epochs: Epoch[]
 }
 
 export class EpochStorage {
     private readonly sequenceIDToEpoch: { [sequenceID: string]: Epoch }
-    private readonly epochs: LinkedList<Epoch>
+    private readonly epochs: Epoch[]
 
-    constructor()
     constructor(epochStorage?: IEpochStorage) {
         this.sequenceIDToEpoch = epochStorage?.sequenceIDToEpoch ?? {}
-        this.epochs = epochStorage?.epochs ?? new LinkedList<Epoch>()
+        this.epochs = epochStorage?.epochs ?? []
+    }
+
+    shallowCopy(): EpochStorage {
+        return new EpochStorage(
+            {
+                sequenceIDToEpoch: this.sequenceIDToEpoch,
+                epochs: this.epochs
+            } as IEpochStorage
+        )
+    }
+
+    deepCopy(): EpochStorage {
+        const epochsCopied = this.epochs.map((epochToCopy) => {
+            return {...epochToCopy}
+        })
+
+        const sequenceIDToEpochCopied = {} as { [sequenceID: string]: Epoch }
+        for (const epochCopied of epochsCopied) {
+            sequenceIDToEpochCopied[epochCopied.sequenceID] = epochCopied
+        }
+
+        return new EpochStorage({epochs: epochsCopied, sequenceIDToEpoch: sequenceIDToEpochCopied})
     }
 
     getEpoch(sequenceID: string): Epoch {
@@ -49,12 +69,16 @@ export class EpochStorage {
         return epoch
     }
 
+    isEpochPresent(sequenceID: string): boolean {
+        return Object.hasOwn(this.sequenceIDToEpoch, sequenceID)
+    }
+
     getOldestEpoch() {
-        return this.epochs.head
+        return this.epochs[0]
     }
 
     getNewestEpoch() {
-        return this.epochs.tail
+        return this.epochs[this.epochs.length - 1]
     }
 
     addOlderEpoch(olderEpoch: Epoch) {
@@ -66,14 +90,14 @@ export class EpochStorage {
             throw new EpochAlreadyExistError()
         }
         if (this.epochs.length !== 0) {
-            const oldestKnownEpochSequenceID = BigInt(this.epochs.head.sequenceID)
+            const oldestKnownEpochSequenceID = BigInt(this.getOldestEpoch().sequenceID)
 
             if (oldestKnownEpochSequenceID - 1n !== olderEpochSequenceID) {
                 throw new OmittedEpochError()
             }
         }
 
-        this.epochs.prepend(olderEpoch)
+        this.epochs.unshift(olderEpoch)
         this.sequenceIDToEpoch[olderEpoch.sequenceID] = olderEpoch
     }
 
@@ -85,15 +109,15 @@ export class EpochStorage {
         if (Object.hasOwn(this.sequenceIDToEpoch, newerEpoch.sequenceID)) {
             throw new EpochAlreadyExistError()
         }
-        if (this.epochs.length !== 0) {
-            const newestKnownEpochSequenceID = BigInt(this.epochs.head.sequenceID)
+        if (this.epochs.length > 0) {
+            const newestKnownEpochSequenceID = BigInt(this.getNewestEpoch().sequenceID)
 
             if (newestKnownEpochSequenceID + 1n !== newerEpochSequenceID) {
                 throw new OmittedEpochError()
             }
         }
 
-        this.epochs.append(newerEpoch)
+        this.epochs.push(newerEpoch)
         this.sequenceIDToEpoch[newerEpoch.sequenceID] = newerEpoch
     }
 }

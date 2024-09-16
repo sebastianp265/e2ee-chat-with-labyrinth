@@ -3,7 +3,7 @@ import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_decrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {decrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
 import {authenticateToEpoch} from "@/lib/labyrinth/epoch/create-new-epoch.ts";
-import {Epoch, ForeignDevice, LabyrinthWebClient, SelfDevice} from "@/lib/labyrinth/labyrinth-types.ts";
+import {Epoch, LabyrinthWebClient, PrivateDevice} from "@/lib/labyrinth/labyrinth-types.ts";
 import {EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 
 class InvalidEpochStorageAuthKey extends Error {
@@ -15,16 +15,15 @@ class InvalidEpochStorageAuthKey extends Error {
 }
 
 // Performs joining to epoch with desiredEpochSequenceID, function mutates passed epochStorage
-export function joinEpoch(selfDevice: SelfDevice,
-                          senderDevice: ForeignDevice,
-                          epochStorage: EpochStorage,
-                          desiredEpochSequenceID: bigint,
-                          labyrinthWebClient: LabyrinthWebClient): void {
+export async function joinEpoch(privateDevice: PrivateDevice,
+                                epochStorage: EpochStorage,
+                                desiredEpochSequenceIDString: string,
+                                labyrinthWebClient: LabyrinthWebClient): Promise<void> {
+    const desiredEpochSequenceID = BigInt(desiredEpochSequenceIDString)
     let newestKnownEpoch = epochStorage.getNewestEpoch()
     for (let i = BigInt(newestKnownEpoch.sequenceID) + 1n; i <= desiredEpochSequenceID; i++) {
-        newestKnownEpoch = joinNewerEpoch(
-            selfDevice,
-            senderDevice,
+        newestKnownEpoch = await joinNewerEpoch(
+            privateDevice,
             newestKnownEpoch,
             labyrinthWebClient
         )
@@ -36,7 +35,7 @@ export function joinEpoch(selfDevice: SelfDevice,
     }
     let oldestKnownEpoch = epochStorage.getOldestEpoch()
     for (let i = BigInt(oldestKnownEpoch.sequenceID) - 1n; i >= desiredEpochSequenceID; i--) {
-        oldestKnownEpoch = joinOlderEpoch(
+        oldestKnownEpoch = await joinOlderEpoch(
             oldestKnownEpoch,
             labyrinthWebClient
         )
@@ -44,11 +43,12 @@ export function joinEpoch(selfDevice: SelfDevice,
     }
 }
 
-function joinNewerEpoch(selfDevice: SelfDevice,
-                        senderDevice: ForeignDevice,
-                        newestKnownEpoch: Epoch,
-                        labyrinthWebClient: LabyrinthWebClient): Epoch {
+async function joinNewerEpoch(privateDevice: PrivateDevice,
+                              newestKnownEpoch: Epoch,
+                              labyrinthWebClient: LabyrinthWebClient): Promise<Epoch> {
     const newerEpochSequenceID = (BigInt(newestKnownEpoch.sequenceID) + 1n).toString()
+    const epochJoinDataPromise = labyrinthWebClient.getEpochJoinData(newerEpochSequenceID)
+
     const [newerEpochChainingKey, newerEpochDistributionPreSharedKey] = kdf_two_keys(
         newestKnownEpoch.rootKey,
         Buffer.alloc(0),
@@ -57,8 +57,9 @@ function joinNewerEpoch(selfDevice: SelfDevice,
 
     const {
         epochID: newerEpochID,
-        encryptedEpochEntropy: encryptedNewerEpochEntropy
-    } = labyrinthWebClient.getEncryptedEpochEntropy(newerEpochSequenceID)
+        encryptedEpochEntropy: encryptedNewerEpochEntropy,
+        senderDevice
+    } = await epochJoinDataPromise
 
     const isValidEpochStorageAuthKey = pk_verify(
         senderDevice.keyBundle.deviceKeyPub,
@@ -71,8 +72,8 @@ function joinNewerEpoch(selfDevice: SelfDevice,
     }
 
     const newerEpochEntropy = pk_decrypt(
-        selfDevice.keyBundle.public.epochStorageKeyPub,
-        selfDevice.keyBundle.private.epochStorageKeyPriv,
+        privateDevice.keyBundle.public.epochStorageKeyPub,
+        privateDevice.keyBundle.private.epochStorageKeyPriv,
         senderDevice.keyBundle.epochStorageAuthKeyPub,
         newerEpochDistributionPreSharedKey,
         Buffer.from(`epoch_${newerEpochSequenceID}`),
@@ -85,12 +86,12 @@ function joinNewerEpoch(selfDevice: SelfDevice,
         Buffer.from("epoch_root_key")
     )
 
-    authenticateToEpoch(
+    await authenticateToEpoch(
         newerEpochID,
         newerEpochRootKey,
         newerEpochSequenceID,
-        selfDevice.keyBundle.public.deviceKeyPub.serialize(),
-        labyrinthWebClient.authenticateToEpoch
+        privateDevice.keyBundle.public.deviceKeyPub.serialize(),
+        labyrinthWebClient.uploadAuthenticationData
     )
 
     return {
@@ -100,18 +101,19 @@ function joinNewerEpoch(selfDevice: SelfDevice,
     }
 }
 
-function joinOlderEpoch(oldestKnownEpoch: Epoch,
-                        labyrinthWebClient: LabyrinthWebClient): Epoch {
+async function joinOlderEpoch(oldestKnownEpoch: Epoch,
+                              labyrinthWebClient: LabyrinthWebClient): Promise<Epoch> {
     if (oldestKnownEpoch.sequenceID === "0") {
         throw new RangeError("There cannot be older epoch than one with sequenceID = 0")
     }
     const olderEpochSequenceID = (BigInt(oldestKnownEpoch.sequenceID) - 1n).toString()
 
+    const epochRecoveryDataPromise = labyrinthWebClient.getEpochRecoveryData(olderEpochSequenceID)
     const {
         epochID: olderEpochID,
         encryptedEpochSequenceID: encryptedOlderEpochSequenceID,
         encryptedEpochRootKey: encryptedOlderEpochRootKey
-    } = labyrinthWebClient.getEpochRecoveryData(olderEpochSequenceID)
+    } = await epochRecoveryDataPromise
 
     const olderEpochDataStorageKey = kdf_one_key(
         oldestKnownEpoch.rootKey,

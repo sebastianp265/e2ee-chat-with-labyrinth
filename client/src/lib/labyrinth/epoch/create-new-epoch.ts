@@ -8,15 +8,16 @@ import {
     DeviceIDToEncryptedEpochEntropyMap,
     Epoch,
     EpochRecoveryData,
-    ForeignDevice,
     LabyrinthWebClient,
-    SelfDevice
+    PrivateDevice,
+    PublicDevice
 } from "@/lib/labyrinth/labyrinth-types.ts";
 
 
-export function createNewEpochBasedOnCurrent(currentEpoch: Epoch,
-                                             labyrinthWebClient: LabyrinthWebClient,
-                                             selfDevice: SelfDevice): Epoch {
+export async function createNewEpochBasedOnCurrent(currentEpoch: Epoch,
+                                                   labyrinthWebClient: LabyrinthWebClient,
+                                                   selfDevice: PrivateDevice): Promise<Epoch> {
+    const foreignDevicesPromise = labyrinthWebClient.getDevicesInEpoch(currentEpoch.id)
     const [epochChainingKey, epochDistributionPreSharedKey] = kdf_two_keys(
         currentEpoch.rootKey,
         Buffer.alloc(0),
@@ -31,7 +32,7 @@ export function createNewEpochBasedOnCurrent(currentEpoch: Epoch,
     )
     const newEpochSequenceID = (BigInt(currentEpoch.sequenceID) + 1n).toString()
 
-    encryptAndUploadEpochRecoveryData(
+    await encryptAndUploadEpochRecoveryData(
         currentEpoch,
         newEpochRootKey,
         newEpochSequenceID,
@@ -40,23 +41,23 @@ export function createNewEpochBasedOnCurrent(currentEpoch: Epoch,
 
     const currentEpochDeviceMacKey = createEpochDeviceMacKey(currentEpoch.rootKey, currentEpoch.sequenceID)
 
-    const foreignDevices = labyrinthWebClient.getForeignDevicesInEpoch(currentEpoch.id)
-    const newEpochID = encryptAndUploadNewEpochEntropy(
+    const foreignDevices = await foreignDevicesPromise
+    const newEpochID = await encryptAndUploadNewEpochEntropy(
         epochDistributionPreSharedKey,
         currentEpochDeviceMacKey,
         newEpochSequenceID,
         newEpochEntropy,
         selfDevice,
         foreignDevices,
-        labyrinthWebClient.uploadEncryptedNewEpochEntropy
+        labyrinthWebClient.uploadEpochJoinData
     )
 
-    authenticateToEpoch(
+    await authenticateToEpoch(
         newEpochID,
         newEpochRootKey,
         newEpochSequenceID,
         selfDevice.keyBundle.public.deviceKeyPub.serialize(),
-        labyrinthWebClient.authenticateToEpoch
+        labyrinthWebClient.uploadAuthenticationData
     )
 
     return {
@@ -66,15 +67,10 @@ export function createNewEpochBasedOnCurrent(currentEpoch: Epoch,
     }
 }
 
-export type EncryptedCurrentEpochSecrets = {
-    epochSequenceID: Buffer,
-    epochRootKey: Buffer
-}
-
-function encryptAndUploadEpochRecoveryData(currentEpoch: Epoch,
-                                           newEpochRootKey: Buffer,
-                                           newEpochSequenceID: string,
-                                           uploadEpochRecoveryData: (epochID: string, epochRecoveryData: EpochRecoveryData) => void) {
+async function encryptAndUploadEpochRecoveryData(currentEpoch: Epoch,
+                                                 newEpochRootKey: Buffer,
+                                                 newEpochSequenceID: string,
+                                                 uploadEpochRecoveryData: (epochRecoveryData: EpochRecoveryData) => Promise<void>) {
     const newEpochDataStorageKey = kdf_one_key(
         newEpochRootKey,
         Buffer.alloc(0),
@@ -93,16 +89,15 @@ function encryptAndUploadEpochRecoveryData(currentEpoch: Epoch,
         currentEpoch.rootKey
     )
 
-    uploadEpochRecoveryData(currentEpoch.id,
-        {
-            encryptedEpochSequenceID: encryptedCurrentEpochSequenceID,
-            encryptedEpochRootKey: encryptedCurrentEpochRootKey
-        }
-    )
+    return uploadEpochRecoveryData({
+        encryptedEpochSequenceID: encryptedCurrentEpochSequenceID,
+        encryptedEpochRootKey: encryptedCurrentEpochRootKey,
+        epochID: currentEpoch.id
+    })
 }
 
-export function createEpochDeviceMacKey(epochRootKey: Buffer,
-                                        epochSequenceID: string) {
+function createEpochDeviceMacKey(epochRootKey: Buffer,
+                                 epochSequenceID: string) {
     return kdf_one_key(
         epochRootKey,
         Buffer.alloc(0),
@@ -110,28 +105,27 @@ export function createEpochDeviceMacKey(epochRootKey: Buffer,
     )
 }
 
-export function authenticateToEpoch(epochID: string,
-                                    epochRootKey: Buffer,
-                                    epochSequenceID: string,
-                                    selfDeviceKeyPub: Buffer,
-                                    uploadEpochDeviceMac: (epochID: string, epochDeviceMac: Buffer) => void) {
+export async function authenticateToEpoch(epochID: string,
+                                          epochRootKey: Buffer,
+                                          epochSequenceID: string,
+                                          selfDeviceKeyPub: Buffer,
+                                          uploadAuthenticationData: (epochID: string, epochDeviceMac: Buffer) => Promise<void>) {
     const epochDeviceMacKey = createEpochDeviceMacKey(epochRootKey, epochSequenceID)
 
     const epochDeviceMac = mac(epochDeviceMacKey, selfDeviceKeyPub)
-    uploadEpochDeviceMac(epochID, epochDeviceMac)
+    return uploadAuthenticationData(epochID, epochDeviceMac)
 }
 
-function encryptAndUploadNewEpochEntropy(epochDistributionPreSharedKey: Buffer,
-                                         currentEpochDeviceMacKey: Buffer,
-                                         newEpochSequenceID: string,
-                                         newEpochEntropy: Buffer,
-                                         selfDeviceInEpoch: SelfDevice,
-                                         foreignDevicesInEpoch: ForeignDevice[],
-                                         uploadEncryptedNewEpochEntropy:
-                                             (
-                                                 newEpochSequenceID: string,
-                                                 deviceIDToEncryptedEpochEntropyMap: DeviceIDToEncryptedEpochEntropyMap
-                                             ) => string): string {
+async function encryptAndUploadNewEpochEntropy(epochDistributionPreSharedKey: Buffer,
+                                               currentEpochDeviceMacKey: Buffer,
+                                               newEpochSequenceID: string,
+                                               newEpochEntropy: Buffer,
+                                               selfDeviceInEpoch: PrivateDevice,
+                                               foreignDevicesInEpoch: PublicDevice[],
+                                               uploadEpochJoinData: (
+                                                   newEpochSequenceID: string,
+                                                   deviceIDToEncryptedEpochEntropyMap: DeviceIDToEncryptedEpochEntropyMap
+                                               ) => Promise<string>): Promise<string> {
     const deviceIDToNewEpochEntropy: { [deviceID: string]: Buffer } = {}
 
     for (const foreignDevice of foreignDevicesInEpoch) {
@@ -160,6 +154,6 @@ function encryptAndUploadNewEpochEntropy(epochDistributionPreSharedKey: Buffer,
         )
     }
 
-    return uploadEncryptedNewEpochEntropy(newEpochSequenceID, deviceIDToNewEpochEntropy)
+    return uploadEpochJoinData(newEpochSequenceID, deviceIDToNewEpochEntropy)
 }
 

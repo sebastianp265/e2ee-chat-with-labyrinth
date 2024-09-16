@@ -1,4 +1,3 @@
-import {MessageGetDTO, UserIdToName} from "@/api/types.ts";
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {ChangeEvent, useState} from "react";
@@ -12,8 +11,8 @@ interface IThreadProps {
 }
 
 function Thread({
-                          loggedUserId,
                           threadName,
+                          loggedUserId,
                           messages,
                           userIdToName,
                           handleSendMessage

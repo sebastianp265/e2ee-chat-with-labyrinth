@@ -11,7 +11,7 @@ interface ThreadPreviewProps {
     onClick: () => void
 }
 
-function ThreadPreview({threadPreview, onClick, chosenThreadId}: Readonly<ThreadPreviewProps>) {
+function ChatThreadPreview({threadPreview, onClick, chosenThreadId}: Readonly<ThreadPreviewProps>) {
     const {
         threadID,
         threadName,
@@ -28,4 +28,4 @@ function ThreadPreview({threadPreview, onClick, chosenThreadId}: Readonly<Thread
     );
 }
 
-export default ThreadPreview;
+export default ChatThreadPreview;

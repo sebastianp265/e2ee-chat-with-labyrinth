@@ -1,5 +1,4 @@
-import {LabyrinthPublicKeyBundle} from "@/lib/labyrinth/labyrinth.ts";
-import {ForeignDevice} from "@/lib/labyrinth/epoch.ts";
+import {PublicDevice} from "@/lib/labyrinth/labyrinth-types.ts";
 
 export type LoginRequestDTO = {
     username: string,
@@ -23,29 +22,20 @@ export type ThreadPreviewEncryptedGetDTO = {
     threadID: string,
     threadName: string,
     lastMessageEncryptedContent: Buffer,
-    metadata: {
-        epoch: {
-            id: string,
-            sequenceID: bigint
-        }
-        authorPublicKeyBundle: LabyrinthPublicKeyBundle
-    }
+    epochSequenceID: string
     lastMessageAuthorVisibleName: string
-}
-
-export type UserIdToNameMap = {
-    [userID: number]: string
 }
 
 export type EncryptedMessageGetDTO = {
     id: string,
+    epochSequenceID: string,
     authorID: string,
     encryptedContent: Buffer
 }
 
 export type SharedEntropyGetDTO = {
     newEpochID: string,
-    senderDevice: ForeignDevice
+    senderDevice: PublicDevice
     encryptedEntropy: Buffer
 }
 

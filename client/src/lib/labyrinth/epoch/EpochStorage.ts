@@ -38,6 +38,19 @@ export class EpochStorage {
         this.epochs = epochStorage?.epochs ?? []
     }
 
+    toJSONString(): string {
+        const epochStorage = {
+            sequenceIDToEpoch: this.sequenceIDToEpoch,
+            epochs: this.epochs,
+        } as IEpochStorage;
+
+        return JSON.stringify(epochStorage);
+    }
+
+    static fromJSONString(jsonString: string): EpochStorage {
+        return new EpochStorage(JSON.parse(jsonString))
+    }
+
     shallowCopy(): EpochStorage {
         return new EpochStorage(
             {

@@ -7,14 +7,16 @@ import {decryptMessage} from "@/lib/labyrinth/labyrinth.ts";
 import {PrivateDevice} from "@/lib/labyrinth/labyrinth-types.ts";
 
 
-export default function useChatMessages(inboxID: string,
-                                        chosenThreadID: string,
-                                        selfDevice: PrivateDevice,
-                                        epochStorage: EpochStorage,
-                                        setError: React.Dispatch<string>) {
+export default function useChatMessagesState(inboxID: string | null,
+                                             chosenThreadID: string | null,
+                                             selfDevice: PrivateDevice | null,
+                                             epochStorage: EpochStorage | null,
+                                             setError: React.Dispatch<string>) {
     const [messages, setMessages] = useState<IMessage[]>([])
 
     useEffect(() => {
+        if(inboxID === null || chosenThreadID === null || selfDevice === null || epochStorage === null) return
+
         axiosAPI.get<EncryptedMessageGetDTO[]>(`/api/inbox/${inboxID}/thread/${chosenThreadID}/messages`)
             .then((response) => {
                 const encryptedMessages = response.data

@@ -2,13 +2,13 @@ import {DEVICE_KEY} from "@/constants.ts";
 import {PrivateDevice} from "@/lib/labyrinth/labyrinth-types.ts";
 import {useEffect, useState} from "react";
 
-function loadDeviceInfoFromLocalStorage(): PrivateDevice | undefined {
+function loadDeviceInfoFromLocalStorage(): PrivateDevice | null {
     const deviceInfoJSONString = localStorage.getItem(DEVICE_KEY)
-    return deviceInfoJSONString !== null ? (JSON.parse(deviceInfoJSONString) as PrivateDevice) : undefined
+    return deviceInfoJSONString !== null ? (JSON.parse(deviceInfoJSONString) as PrivateDevice) : null
 }
 
-function saveDeviceInfoToLocalStorage(deviceInfo: PrivateDevice | undefined) {
-    if (deviceInfo === undefined) {
+function saveDeviceInfoToLocalStorage(deviceInfo: PrivateDevice | null) {
+    if (deviceInfo === null) {
         localStorage.removeItem(DEVICE_KEY);
     } else {
         localStorage.setItem(DEVICE_KEY, JSON.stringify(deviceInfo))
@@ -16,12 +16,12 @@ function saveDeviceInfoToLocalStorage(deviceInfo: PrivateDevice | undefined) {
 }
 
 export default function useDeviceInfo() {
-    const [deviceInfo, setDeviceInfo] = useState<PrivateDevice | undefined>(loadDeviceInfoFromLocalStorage())
+    const [deviceInfo, setDeviceInfo] = useState<PrivateDevice | null>(loadDeviceInfoFromLocalStorage())
 
     useEffect(() => {
         saveDeviceInfoToLocalStorage(deviceInfo);
     }, [deviceInfo])
 
-    return {deviceInfo, setDeviceInfo} as const
+    return [deviceInfo, setDeviceInfo] as const
 }
 

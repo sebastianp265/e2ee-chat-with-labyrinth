@@ -15,7 +15,7 @@ function saveDeviceInfoToLocalStorage(deviceInfo: PrivateDevice | null) {
     }
 }
 
-export default function useDeviceInfo() {
+export default function useDeviceInfoState() {
     const [deviceInfo, setDeviceInfo] = useState<PrivateDevice | null>(loadDeviceInfoFromLocalStorage())
 
     useEffect(() => {

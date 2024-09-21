@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import axiosAPI from "@/api/axiosAPI.ts";
-import {HelloGetDTO} from "@/api/types.ts";
+import {HelloGetDTO} from "@/api/api-types.ts";
 import {Button} from "@/components/ui/button.tsx";
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
 

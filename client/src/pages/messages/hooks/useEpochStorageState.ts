@@ -1,10 +1,10 @@
 import {EPOCH_STORAGE_KEY} from "@/constants.ts";
 import {EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
-import {useRef, useState} from "react";
+import {useState} from "react";
 
 function loadEpochStorageFromLocalStorage() {
     const epochStorageJSONString = localStorage.getItem(EPOCH_STORAGE_KEY)
-    return epochStorageJSONString !== null ? new EpochStorage(JSON.parse(epochStorageJSONString)) : new EpochStorage()
+    return epochStorageJSONString !== null ? new EpochStorage(JSON.parse(epochStorageJSONString)) : null
 }
 
 export function saveEpochStorageToLocalStorage(epochStorage: EpochStorage | null) {
@@ -15,6 +15,6 @@ export function saveEpochStorageToLocalStorage(epochStorage: EpochStorage | null
     }
 }
 
-export default function useEpochStorageRef() {
-    return useState<EpochStorage>(loadEpochStorageFromLocalStorage())
+export default function useEpochStorageState() {
+    return useState<EpochStorage | null>(loadEpochStorageFromLocalStorage())
 }

@@ -1,5 +1,5 @@
 import {LoginForm} from "@/components/app/login/LoginForm.tsx";
-import {LoginRequestDTO, LoginResponseDTO} from "@/api/types.ts";
+import {LoginRequestDTO, LoginResponseDTO} from "@/api/api-types.ts";
 import axiosAPI from "@/api/axiosAPI.ts";
 import {useNavigate} from "react-router-dom";
 import {Button} from "@/components/ui/button.tsx";

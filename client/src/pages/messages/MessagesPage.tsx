@@ -1,192 +1,67 @@
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
-import {
-    EncryptedPrevEpochMetadataGetDTO,
-    SharedEntropyGetDTO,
-    ThreadPreviewEncryptedGetDTO,
-    UserIdToNameMap
-} from "@/api/types.ts";
-import ThreadPreview, {ThreadPreviewDTO} from "@/components/app/messages/ThreadPreview.tsx";
-import Thread from "@/components/app/messages/Thread.tsx";
-import {useEffect, useState} from "react";
-import axiosAPI from "@/api/axiosAPI.ts";
+import ChatThreadPreview from "@/components/app/messages/ChatThreadPreview.tsx";
+import ChatThread from "@/components/app/messages/ChatThread.tsx";
+import {useState} from "react";
 import {Button} from "@/components/ui/button.tsx";
 import UserPreview from "@/components/app/messages/UserPreview.tsx";
+import useChatThreadPreviews from "@/pages/messages/hooks/useChatThreadPreviews.ts";
+import useDeviceInfoState from "@/pages/messages/hooks/useDeviceInfoState.ts";
+import useEpochStorageState from "@/pages/messages/hooks/useEpochStorageState.ts";
+import useChatMessagesState from "@/pages/messages/hooks/useChatMessagesState.ts";
+import {INBOX_ID_KEY} from "@/constants.ts";
+import useFriendsState from "@/pages/messages/hooks/useFriendsState.ts";
 import {usePrivateRouteContext} from "@/main.tsx";
-import {decryptPrevEpoch, Epoch, joinNewEpoch, SelfDevice} from "@/lib/labyrinth/epoch.ts";
-import {initializeLabyrinth} from "@/lib/labyrinth/labyrinth.ts";
-import {kdf_one_key} from "@/lib/labyrinth/crypto/key_derivation.ts";
-import {decrypt} from "@/lib/labyrinth/crypto/authenticated_symmetric_encryption.ts";
+import useUserIDToNameMapForChosenThreadState from "@/pages/messages/hooks/useUserIDToNameMapForChosenThreadState.ts";
+
+function loadInboxIDFromLocalStorage() {
+    return localStorage.getItem(INBOX_ID_KEY)
+}
 
 export default function MessagesPage({inactivateSession}: Readonly<ISessionProps>) {
     const {loggedUserID} = usePrivateRouteContext()
-    const [threadIDToEpochMap, setThreadIDToEpochMap]
-        = useState<{ [threadID: string]: Epoch }>({})
-    const [device, setDevice] = useState<SelfDevice | undefined>()
-    const [threadPreviews, setThreadPreviews] = useState<ThreadPreviewDTO[]>([])
-    const [chosenThreadPreview, setChosenThreadPreview] = useState<ThreadPreviewDTO | undefined>()
 
-    useEffect(() => {
-        const threadIDToEpochMapSaved = localStorage.getItem(`epochs_user_${loggedUserID}`)
-        if (threadIDToEpochMapSaved != null) {
-            setThreadIDToEpochMap(JSON.parse(threadIDToEpochMapSaved))
-        }
-    }, []);
+    const [deviceInfo, setDeviceInfo] = useDeviceInfoState()
+    const [epochStorage, setEpochStorage] = useEpochStorageState()
+    const [inboxID, setInboxID] = useState<string | null>(loadInboxIDFromLocalStorage())
 
-    useEffect(() => {
-        const deviceSerialized = localStorage.getItem(`device_user_${loggedUserID}`)
-        if (deviceSerialized == null) {
-            const keyBundle = initializeLabyrinth()
-            axiosAPI.post(`api/labyrinth/device/register`, keyBundle)
-                .then(response => {
-                    const deviceID = response.data
-                    const deviceToSave = {
-                        id: deviceID,
-                        keyBundle: keyBundle
-                    }
-                    localStorage.setItem(`device_user_${loggedUserID}`, JSON.stringify(deviceToSave))
-                    setDevice(deviceToSave)
-                })
-        } else {
-            const deviceDeserialized: SelfDevice = JSON.parse(deviceSerialized)
-            setDevice(deviceDeserialized)
-        }
-    }, []);
+    const [error, setError] = useState<string | null>(null);
 
-    const decryptMessage = (epoch: Epoch, threadID: string, messageContentEncrypted: Buffer) => {
-        const messageKey = kdf_one_key(
-            epoch.rootKey,
-            Buffer.alloc(0),
-            Buffer.from(`message_key_in_epoch_${epoch.sequenceID.toString()}_cipher_version_3_thread_${threadID}`)
-        )
-        return decrypt(
-            messageKey,
-            Buffer.from(`message_thread_${threadID}`),
-            messageContentEncrypted
-        ).toString()
-    }
+    const [chosenThreadID, setChosenThreadID] = useState<string | null>(null)
+    const [chatThreadPreviews, setChatThreadPreviews] = useChatThreadPreviews(
+        inboxID,
+        deviceInfo,
+        epochStorage,
+        setError,
+        setChosenThreadID
+    )
 
-    useEffect(() => {
-        if (device == undefined) return
+    const [messagesForChosenThread, setMessagesForChosenThread] = useChatMessagesState(
+        inboxID,
+        chosenThreadID,
+        deviceInfo,
+        epochStorage,
+        setError
+    )
 
-        // check if new epoch root keys wait
-        axiosAPI.get<ThreadPreviewEncryptedGetDTO[]>("/api/threads")
-            .then(response => {
-                const visibleThreadPreviews: ThreadPreviewDTO[] = []
-                for (const threadPreviewEncrypted of response.data) {
-                    let currentEpochToDecrypt = threadIDToEpochMap[threadPreviewEncrypted.threadID]
-                    if (currentEpochToDecrypt != undefined) {
-                        while (threadPreviewEncrypted.metadata.epoch.sequenceID < currentEpochToDecrypt.sequenceID) {
-                            const response = await axiosAPI.get<EncryptedPrevEpochMetadataGetDTO>(`api/labyrinth/epoch/encrypted/
-                            by-thread/${threadPreviewEncrypted.threadID}/by-sequence-id/${currentEpochToDecrypt.sequenceID}`)
+    const [userIDToNameMapForChosenThread, setUserIDToNameMapForChosenThread] = useUserIDToNameMapForChosenThreadState(
+        chosenThreadID,
+        setError
+    )
 
-                            // TODO: do error handling
-                            const currentEpochToDecryptWithoutID = decryptPrevEpoch(
-                                currentEpochToDecrypt.rootKey,
-                                currentEpochToDecrypt.sequenceID,
-                                response.data
-                            )
-
-                            currentEpochToDecrypt = {
-                                ...currentEpochToDecryptWithoutID,
-                                id: response.data.id
-                            }
-                        }
-                        while (threadPreviewEncrypted.metadata.epoch.sequenceID > currentEpochToDecrypt.sequenceID) {
-                            const response = await axiosAPI.get<SharedEntropyGetDTO>(`api/labyrinth/epoch/entropy
-                            /by-thread/${threadPreviewEncrypted.threadID}/by-sequence-id/${currentEpochToDecrypt.sequenceID}`)
-
-                            // TODO: do error handling
-                            currentEpochToDecrypt = {
-                                ...joinNewEpoch(
-                                    device,
-                                    response.data.senderDevice,
-                                    currentEpochToDecrypt,
-                                    response.data.encryptedEntropy
-                                ),
-                                id: response.data.newEpochID
-                            }
-
-                            setThreadIDToEpochMap({
-                                ...threadIDToEpochMap,
-                                [threadPreviewEncrypted.threadID]: currentEpochToDecrypt
-                            })
-                        }
-                        visibleThreadPreviews.push({
-                            threadID: threadPreviewEncrypted.threadID,
-                            threadName: threadPreviewEncrypted.threadName,
-                            lastMessageAuthorVisibleName: threadPreviewEncrypted.lastMessageAuthorVisibleName,
-                            lastMessage: decryptMessage(
-                                currentEpochToDecrypt,
-                                threadPreviewEncrypted.threadID,
-                                threadPreviewEncrypted.lastMessageEncryptedContent
-                            )
-                        })
-                    }
-                }
-            })
-            .catch(error => {
-                // TODO: ERROR HANDLING
-                console.error(error)
-                inactivateSession?.()
-            })
-    }, [inactivateSession]);
-
-    const [messagesForChosenThread, setMessagesForChosenThread] = useState<MessageGetDTO[]>([])
-    const [userIdToNameForChosenThread, setUserIdToNameForChosenThread] = useState<UserIdToName>({})
-
-    useEffect(() => {
-        if (chosenThreadPreview == undefined) return
-        axiosAPI.get<UserIdToNameMap>(`/api/threads/${chosenThreadPreview.threadId}/members`)
-            .then(response => {
-                setUserIdToNameForChosenThread(response.data)
-            })
-        axiosAPI.get<MessageGetDTO[]>(`/api/messages/device/${}/thread/${chosenThreadPreview.threadId}`)
-            .then(response => {
-                setMessagesForChosenThread(response.data)
-            })
-            .catch(error => {
-                // TODO: ERROR HANDLING
-                console.error(error)
-                inactivateSession?.()
-            })
-    }, [chosenThreadId, inactivateSession, inboxId]);
-
-    const handleSendMessage = (messageContent: string) => {
-        axiosAPI.post(`/api/messages/thread/${chosenThreadId}`, {
-            content: messageContent
-        })
-            .then(() => {
-                setMessagesForChosenThread([...messagesForChosenThread, {
-                    id: messagesForChosenThread.length > 0 ?
-                        messagesForChosenThread[messagesForChosenThread.length - 1].id + 1 : 0,
-                    authorId: loggedUserId,
-                    content: messageContent
-                }])
-            })
-    }
-
-    const [friends, setFriends] = useState<UserGetDTO[]>([])
-
-    useEffect(() => {
-        setFriends([
-            {
-                userId: 1,
-                visibleName: "Krzysztof"
-            },
-            {
-                userId: 2,
-                visibleName: "Arkadiusz"
-            }
-        ])
-    }, []);
+    const [friends, setFriends] = useFriendsState(
+        setError
+    )
 
     const [newConversationPanelOpen, setNewConversationPanelOpen] = useState(false)
 
-    const createThread = (userId: number) => {
-        axiosAPI.post(`api/threads/with-user/${userId}`)
-            .then(response => {
-                re
-            })
+    const createThreadWith = async (userID: string) => {
+        // TODO:
+        console.log("Creating thread not implemented yet!")
+    }
+
+    const sendMessage = async (messageContent: string) {
+        // TODO:
+        console.log("Sending message not implemented yet")
     }
 
     return (
@@ -200,32 +75,33 @@ export default function MessagesPage({inactivateSession}: Readonly<ISessionProps
                 {
                     newConversationPanelOpen &&
                     friends.map(friend =>
-                        <UserPreview key={friend.userId}
-                                     userId={friend.userId}
+                        <UserPreview key={friend.userID}
+                                     userID={friend.userID}
                                      visibleName={friend.visibleName}
-                                     onClick={createThread}/>
+                                     onClick={() => createThreadWith(friend.userID)}/>
                     )
                 }
                 {
                     !newConversationPanelOpen &&
-                    threadPreviews.map(threadPreview =>
-                        <ThreadPreview onClick={() => setChosenThreadId(threadPreview.threadId)}
-                                       chosenThreadId={chosenThreadId}
-                                       threadPreview={threadPreview}
-                                       key={threadPreview.threadId}
+                    chatThreadPreviews.map(threadPreview =>
+                        <ChatThreadPreview
+                            key={threadPreview.threadID}
+                            onClick={() => setChosenThreadID(threadPreview.threadID)}
+                            chosenChatThreadID={chosenThreadID}
+                            chatThreadPreview={threadPreview}
                         />
                     )
                 }
             </div>
             <div className="flex p-2 flex-grow border border-l-0">
                 {
-                    chosenThreadId != -1 &&
-                    <Thread
-                        threadName={chosenThreadName}
-                        loggedUserId={loggedUserId}
-                        handleSendMessage={handleSendMessage}
+                    chosenThreadID !== undefined &&
+                    <ChatThread
+                        threadName={chatThreadPreviews.find(preview => preview.threadID === chosenThreadID)!.threadName}
+                        loggedUserID={loggedUserID}
+                        handleSendMessage={sendMessage}
                         messages={messagesForChosenThread}
-                        userIdToName={userIdToNameForChosenThread}
+                        userIDToName={userIDToNameMapForChosenThread}
                     />
                 }
             </div>

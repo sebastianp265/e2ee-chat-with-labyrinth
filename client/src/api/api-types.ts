@@ -45,3 +45,6 @@ export type EncryptedPrevEpochMetadataGetDTO = {
     rootKey: Buffer
 }
 
+export type UserIDToNameMap = {
+    [key: string]: string
+}

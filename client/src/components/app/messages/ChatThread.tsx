@@ -2,21 +2,27 @@ import {Textarea} from "@/components/ui/textarea.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {ChangeEvent, useState} from "react";
 
-interface IThreadProps {
+export interface IMessage {
+    id: string,
+    authorID: string,
+    content: string
+}
+
+export interface IChatThreadProps {
     threadName: string
-    loggedUserId: number
-    messages: MessageGetDTO[]
-    userIdToName: UserIdToName
+    loggedUserID: string
+    messages: IMessage[]
+    userIDToName: { [userID: string]: string }
     handleSendMessage: (messageContent: string) => void
 }
 
-function Thread({
-                          threadName,
-                          loggedUserId,
-                          messages,
-                          userIdToName,
-                          handleSendMessage
-                      }: Readonly<IThreadProps>) {
+function ChatThread({
+                        threadName,
+                        loggedUserID,
+                        messages,
+                        userIDToName,
+                        handleSendMessage
+                    }: Readonly<IChatThreadProps>) {
     const [messageToSend, setMessageToSend] = useState("")
 
     const handleMessageToSendChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -36,16 +42,16 @@ function Thread({
                 w-full max-h-screen overflow-y-auto p-2 flex-grow">
                 {
                     messages.map((message, index) => {
-                        const isAuthorALoggedUser = message.authorId === loggedUserId
+                        const isAuthorALoggedUser = message.authorID === loggedUserID
                         return (
                             <div key={message.id}
                                  className={`${isAuthorALoggedUser ?
                                      "place-self-end"
                                      : "place-self-start"} max-w-[50%]`}>
-                                <div className="flex flex-col">
+                                <div className="flex flecx-col">
                                     {
-                                        (!isAuthorALoggedUser && (index == 0 || message.authorId != messages[index - 1].authorId)) &&
-                                        <span className="text-xs">{userIdToName[message.authorId]}: </span>
+                                        (!isAuthorALoggedUser && (index == 0 || message.authorID != messages[index - 1].authorID)) &&
+                                        <span className="text-xs">{userIDToName[message.authorID]}: </span>
                                     }
                                     <span className={`${isAuthorALoggedUser ?
                                         "bg-primary text-primary-foreground" : "bg-accent"
@@ -70,4 +76,4 @@ function Thread({
     );
 }
 
-export default Thread;
+export default ChatThread;

@@ -124,7 +124,7 @@ export class EpochStorage {
     }
 
     public add(epochToAdd: Epoch) {
-        if (Object.hasOwn(this.sequenceIDToEpoch, epochToAdd.sequenceID)) {
+        if (this.isEpochPresent(epochToAdd.sequenceID)) {
             throw new EpochAlreadyExistError(epochToAdd.sequenceID)
         }
         const epochToAddSequenceIDInt = BigInt(epochToAdd.sequenceID)

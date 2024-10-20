@@ -5,18 +5,19 @@ import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_encrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {
     encryptVirtualDeviceRecoverSecrets,
+    VirtualDevice,
     VirtualDeviceEncryptedRecoverSecrets
 } from "@/lib/labyrinth/device/virtual-device.ts";
 import {
     DevicePublicKeyBundle,
     DevicePublicKeyBundleWithoutEpochStorageAuthKeyPair,
     ThisDevice,
-    VirtualDevice,
 } from "@/lib/labyrinth/device/device.ts";
-import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-to-epoch.ts";
+import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
 import {Epoch, EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 
 export type OpenFirstEpochBody = {
+    virtualDeviceID: string,
     virtualDeviceEncryptedRecoverySecrets: VirtualDeviceEncryptedRecoverSecrets,
     firstEpochMembershipProof: {
         epochThisDeviceMac: Buffer,
@@ -61,6 +62,7 @@ export async function openFirstEpoch(devicePublicKeyBundle: DevicePublicKeyBundl
     )
 
     const openFirstEpochResponse = await webClient.openFirstEpoch({
+        virtualDeviceID: virtualDevice.id,
         firstEpochMembershipProof: {
             epochThisDeviceMac,
             epochVirtualDeviceMac
@@ -115,9 +117,13 @@ export type OpenNewEpochBasedOnCurrentBody = {
     encryptedCurrentEpochJoinData: EncryptedCurrentEpochJoinData
 }
 
+export type OpenNewEpochBasedOnCurrentResponse = {
+    openedEpochID: string
+}
+
 export type OpenNewEpochBasedOnCurrentWebClient = {
     getDevicesInEpoch: (epochID: string) => Promise<GetDevicesInEpochResponse>
-    openNewEpochBasedOnCurrent: (currentEpochID: string, requestBody: OpenNewEpochBasedOnCurrentBody) => Promise<string>
+    openNewEpochBasedOnCurrent: (currentEpochID: string, requestBody: OpenNewEpochBasedOnCurrentBody) => Promise<OpenNewEpochBasedOnCurrentResponse>
 }
 
 // TODO: DONE
@@ -143,32 +149,34 @@ export async function openNewEpochBasedOnCurrent(currentEpoch: Epoch,
 
     const devicesInEpoch = await devicesInEpochPromise
 
-    return {
-        id: await webClient.openNewEpochBasedOnCurrent(currentEpoch.id, {
-                encryptedNewEpochEntropyForEveryDeviceInEpoch: encryptNewEpochEntropyForEveryDeviceInEpoch(
-                    currentEpoch,
+    const {openedEpochID} = await webClient.openNewEpochBasedOnCurrent(currentEpoch.id, {
+            encryptedNewEpochEntropyForEveryDeviceInEpoch: encryptNewEpochEntropyForEveryDeviceInEpoch(
+                currentEpoch,
+                newEpochWithoutID,
+                thisDevice,
+                devicesInEpoch,
+                epochDistributionPreSharedKey,
+                newEpochEntropy
+            ),
+            newEpochMembershipProof: {
+                epochThisDeviceMac: generateEpochDeviceMac(
                     newEpochWithoutID,
-                    thisDevice,
-                    devicesInEpoch,
-                    epochDistributionPreSharedKey,
-                    newEpochEntropy
+                    thisDevice.keyBundle.public.deviceKeyPub.getPublicKeyBytes()
                 ),
-                newEpochMembershipProof: {
-                    epochThisDeviceMac: generateEpochDeviceMac(
-                        newEpochWithoutID,
-                        thisDevice.keyBundle.public.deviceKeyPub.getPublicKeyBytes()
-                    ),
-                    epochVirtualDeviceMac: generateEpochDeviceMac(
-                        newEpochWithoutID,
-                        devicesInEpoch.virtualDevice.keyBundle.deviceKeyPub.getPublicKeyBytes()
-                    )
-                },
-                encryptedCurrentEpochJoinData: encryptCurrentEpochJoinData(
-                    currentEpoch,
-                    newEpochWithoutID
-                ),
-            }
-        ),
+                epochVirtualDeviceMac: generateEpochDeviceMac(
+                    newEpochWithoutID,
+                    devicesInEpoch.virtualDevice.keyBundle.deviceKeyPub.getPublicKeyBytes()
+                )
+            },
+            encryptedCurrentEpochJoinData: encryptCurrentEpochJoinData(
+                currentEpoch,
+                newEpochWithoutID
+            ),
+        }
+    )
+
+    return {
+        id: openedEpochID,
         sequenceID: newEpochWithoutID.sequenceID,
         rootKey: newEpochWithoutID.rootKey
     }

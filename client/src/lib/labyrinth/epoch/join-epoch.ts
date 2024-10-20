@@ -3,10 +3,7 @@ import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_decrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {decrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
 import {Epoch, EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
-import {
-    DeviceKeyBundleWithoutEpochStorageAuthKeyPair,
-    DevicePublicKeyBundle
-} from "@/lib/labyrinth/device/device.ts";
+import {DeviceKeyBundleWithoutEpochStorageAuthKeyPair, DevicePublicKeyBundle} from "@/lib/labyrinth/device/device.ts";
 import {PublicKey} from "@signalapp/libsignal-client";
 
 // TODO: Extend some unexpected labyrinth error
@@ -38,15 +35,14 @@ export type GetOlderEpochJoinData = {
     encryptedEpochRootKey: Buffer,
 }
 
-export type AuthenticateDeviceToEpochResponse = {
-    deviceID: string
+export type GetNewestEpochSequenceIDResponse = {
+    newestEpochSequenceID: string
 }
 
 export type JoinEpochWebClient = {
     getNewerEpochJoinData: (newerEpochSequenceID: string) => Promise<GetNewerEpochJoinData>
     getOlderEpochJoinData: (olderEpochSequenceID: string) => Promise<GetOlderEpochJoinData>
-    getNewestEpochSequenceID: () => Promise<string>
-    authenticateDeviceToEpoch: (devicePublicKeyBundle: DevicePublicKeyBundle) => Promise<AuthenticateDeviceToEpochResponse>
+    getNewestEpochSequenceID: () => Promise<GetNewestEpochSequenceIDResponse>
 }
 
 // TODO: Virtual devices require only virtual device info to chain forward, however for backwards chaining,
@@ -67,7 +63,7 @@ export async function joinAllEpochs(deviceKeyBundle: DeviceKeyBundleWithoutEpoch
 async function chainForward(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorageAuthKeyPair,
                             epochStorage: EpochStorage,
                             joinEpochWebClient: JoinEpochWebClient): Promise<void> {
-    const newestEpochSequenceID = await joinEpochWebClient.getNewestEpochSequenceID()
+    const {newestEpochSequenceID} = await joinEpochWebClient.getNewestEpochSequenceID()
 
     let newestKnownEpoch = epochStorage.getNewestEpoch()
     while (newestEpochSequenceID !== newestKnownEpoch.sequenceID) {

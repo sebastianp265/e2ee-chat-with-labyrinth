@@ -2,6 +2,15 @@ import {kdf_one_key} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {mac} from "@/lib/labyrinth/crypto/message-authentication.ts";
 import {Epoch, EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 
+export type AuthenticateDeviceToEpochRequestBody = {
+    epochDeviceMac: Buffer
+}
+
+export type AuthenticateDeviceToEpochWebClient = {
+    authenticateDeviceToEpoch: (epochID: string,
+                                authenticateDeviceToEpochRequestBody: AuthenticateDeviceToEpochRequestBody) => Promise<void>
+}
+
 export function generateEpochDeviceMac(epoch: Epoch | EpochWithoutID,
                                        deviceKeyPub: Buffer) {
     const epochDeviceMacKey = kdf_one_key(

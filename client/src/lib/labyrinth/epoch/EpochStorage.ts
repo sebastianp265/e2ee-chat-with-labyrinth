@@ -57,37 +57,47 @@ export type EpochWithoutID = {
     rootKey: Buffer,
 }
 
-interface EpochStorageData {
+export type EpochStorageSerialized = {
     newestEpochSequenceID: string | null
     oldestEpochSequenceID: string | null
     sequenceIDToEpoch: { [sequenceID: string]: Epoch }
 }
 
 export class EpochStorage {
-    private readonly epochStorageData: EpochStorageData
+    private newestEpochSequenceID: string | null
+    private oldestEpochSequenceID: string | null
+    private readonly sequenceIDToEpoch: { [sequenceID: string]: Epoch }
 
-    constructor(epochStorageData?: EpochStorageData) {
-        if (epochStorageData) {
-            this.epochStorageData = structuredClone(epochStorageData)
+    private constructor(epochStorageSerialized?: EpochStorageSerialized) {
+        if (epochStorageSerialized) {
+            this.newestEpochSequenceID = epochStorageSerialized.newestEpochSequenceID
+            this.oldestEpochSequenceID = epochStorageSerialized.oldestEpochSequenceID
+            this.sequenceIDToEpoch = structuredClone(epochStorageSerialized.sequenceIDToEpoch)
         } else {
-            this.epochStorageData = {
-                newestEpochSequenceID: null,
-                oldestEpochSequenceID: null,
-                sequenceIDToEpoch: {}
-            }
+            this.newestEpochSequenceID = null
+            this.oldestEpochSequenceID = null
+            this.sequenceIDToEpoch = {}
         }
     }
 
-    toJSONString(): string {
-        return JSON.stringify(this.epochStorageData);
+    public static deserialize(epochStorageObject: EpochStorageSerialized): EpochStorage {
+        return new EpochStorage(epochStorageObject)
     }
 
-    static fromJSONString(jsonString: string): EpochStorage {
-        return new EpochStorage(JSON.parse(jsonString))
+    public serialize(): EpochStorageSerialized {
+        return {
+            newestEpochSequenceID: this.newestEpochSequenceID,
+            oldestEpochSequenceID: this.oldestEpochSequenceID,
+            sequenceIDToEpoch: structuredClone(this.sequenceIDToEpoch)
+        }
     }
 
-    getEpoch(sequenceID: string): Epoch {
-        const epoch = this.epochStorageData.sequenceIDToEpoch[sequenceID]
+    public static createEmpty() {
+        return new EpochStorage()
+    }
+
+    public getEpoch(sequenceID: string): Epoch {
+        const epoch = this.sequenceIDToEpoch[sequenceID]
         if (epoch === undefined) {
             throw new EpochDoesNotExistError(sequenceID)
         }
@@ -95,26 +105,26 @@ export class EpochStorage {
         return epoch
     }
 
-    isEpochPresent(sequenceID: string): boolean {
-        return Object.hasOwn(this.epochStorageData.sequenceIDToEpoch, sequenceID)
+    public isEpochPresent(sequenceID: string): boolean {
+        return Object.hasOwn(this.sequenceIDToEpoch, sequenceID)
     }
 
-    getOldestEpoch() {
-        if (this.epochStorageData.oldestEpochSequenceID === null) {
+    public getOldestEpoch() {
+        if (this.oldestEpochSequenceID === null) {
             throw new NoEpochExistsInEpochStorageError()
         }
-        return this.epochStorageData.sequenceIDToEpoch[this.epochStorageData.oldestEpochSequenceID]
+        return this.sequenceIDToEpoch[this.oldestEpochSequenceID]
     }
 
-    getNewestEpoch() {
-        if (this.epochStorageData.newestEpochSequenceID === null) {
+    public getNewestEpoch() {
+        if (this.newestEpochSequenceID === null) {
             throw new NoEpochExistsInEpochStorageError()
         }
-        return this.epochStorageData.sequenceIDToEpoch[this.epochStorageData.newestEpochSequenceID]
+        return this.sequenceIDToEpoch[this.newestEpochSequenceID]
     }
 
-    add(epochToAdd: Epoch) {
-        if (Object.hasOwn(this.epochStorageData.sequenceIDToEpoch, epochToAdd.sequenceID)) {
+    public add(epochToAdd: Epoch) {
+        if (Object.hasOwn(this.sequenceIDToEpoch, epochToAdd.sequenceID)) {
             throw new EpochAlreadyExistError(epochToAdd.sequenceID)
         }
         const epochToAddSequenceIDInt = BigInt(epochToAdd.sequenceID)
@@ -122,18 +132,18 @@ export class EpochStorage {
             throw new NegativeEpochSequenceIDError()
         }
 
-        if (Object.keys(this.epochStorageData.sequenceIDToEpoch).length === 0) {
-            this.epochStorageData.sequenceIDToEpoch[epochToAdd.sequenceID] = epochToAdd
-            this.epochStorageData.oldestEpochSequenceID = epochToAdd.sequenceID
-            this.epochStorageData.newestEpochSequenceID = epochToAdd.sequenceID
+        if (Object.keys(this.sequenceIDToEpoch).length === 0) {
+            this.sequenceIDToEpoch[epochToAdd.sequenceID] = epochToAdd
+            this.oldestEpochSequenceID = epochToAdd.sequenceID
+            this.newestEpochSequenceID = epochToAdd.sequenceID
         } else {
-            const possibleOlderEpochSequenceIDInt = BigInt(this.epochStorageData.oldestEpochSequenceID!) - 1n
-            const possibleNewerEpochSequenceIDInt = BigInt(this.epochStorageData.newestEpochSequenceID!) + 1n
+            const possibleOlderEpochSequenceIDInt = BigInt(this.oldestEpochSequenceID!) - 1n
+            const possibleNewerEpochSequenceIDInt = BigInt(this.newestEpochSequenceID!) + 1n
 
             if (possibleOlderEpochSequenceIDInt === epochToAddSequenceIDInt) {
-                this.epochStorageData.oldestEpochSequenceID = epochToAdd.sequenceID
+                this.oldestEpochSequenceID = epochToAdd.sequenceID
             } else if (possibleNewerEpochSequenceIDInt === epochToAddSequenceIDInt) {
-                this.epochStorageData.newestEpochSequenceID = epochToAdd.sequenceID
+                this.newestEpochSequenceID = epochToAdd.sequenceID
             } else {
                 throw new OmittedEpochError(
                     possibleOlderEpochSequenceIDInt.toString(),
@@ -142,7 +152,7 @@ export class EpochStorage {
                 )
             }
 
-            this.epochStorageData.sequenceIDToEpoch[epochToAdd.sequenceID] = epochToAdd
+            this.sequenceIDToEpoch[epochToAdd.sequenceID] = epochToAdd
         }
     }
 

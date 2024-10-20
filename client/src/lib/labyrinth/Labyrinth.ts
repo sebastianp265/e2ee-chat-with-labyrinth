@@ -1,25 +1,11 @@
-import {Epoch, EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
+import {Epoch, EpochStorage, EpochStorageSerialized} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 import {joinAllEpochs} from "@/lib/labyrinth/epoch/join-epoch.ts";
-import {
-    decryptVirtualDeviceRecoverSecrets,
-    deriveVirtualDeviceIDAndDecryptionKey,
-    generateRecoveryCode
-} from "@/lib/labyrinth/device/virtual-device.ts";
 import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
-import {
-    generateDeviceKeyBundle,
-    generateVirtualDeviceKeyBundle,
-    ThisDevice,
-    VirtualDevice
-} from "@/lib/labyrinth/device/device.ts";
-import {openFirstEpoch} from "@/lib/labyrinth/epoch/open-new-epoch.ts";
 import {LabyrinthWebClient} from "@/lib/labyrinth/labyrinth-web-client.ts";
 import {kdf_one_key} from "@/lib/labyrinth/crypto/key-derivation.ts";
-
-export type LabyrinthData = {
-    device: ThisDevice;
-    epochStorage: EpochStorage;
-}
+import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
+import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device.ts";
+import {ThisDevice, ThisDeviceSerialized} from "@/lib/labyrinth/device/device.ts";
 
 export type LabyrinthMessage = {
     threadID: string;
@@ -33,116 +19,102 @@ export type LabyrinthMessageEncrypted = {
     ciphertext: Buffer
 }
 
+type LabyrinthSerialized = {
+    thisDeviceSerialized: ThisDeviceSerialized,
+    epochStorageSerialized: EpochStorageSerialized
+}
+
 export class Labyrinth {
-    private readonly labyrinthData: LabyrinthData
+    private readonly thisDevice: ThisDevice;
+    private readonly epochStorage: EpochStorage;
 
-    public static async fromFirstInitialization(userID: string, labyrinthWebClient: LabyrinthWebClient): Promise<{
-        labyrinthInstance: Labyrinth,
-        recoveryCode: string
-    }> {
-        const deviceKeyBundle = generateDeviceKeyBundle()
-
-        const recoveryCode = generateRecoveryCode()
+    public static async fromFirstEpoch(userID: string, labyrinthWebClient: LabyrinthWebClient) {
         const {
-            virtualDeviceID,
-            virtualDeviceDecryptionKey
-        } = deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
-        const virtualDevice: VirtualDevice = {
-            id: virtualDeviceID,
-            keyBundle: generateVirtualDeviceKeyBundle()
-        }
-
-        const {
-            deviceID,
-            firstEpoch
-        } = await openFirstEpoch(
-            deviceKeyBundle.public,
-            virtualDeviceDecryptionKey,
             virtualDevice,
-            labyrinthWebClient
-        )
+            virtualDeviceDecryptionKey,
+            recoveryCode,
+        } = VirtualDevice.fromFirstEpoch(userID)
 
-        const device: ThisDevice = {
-            id: deviceID,
-            keyBundle: deviceKeyBundle
-        }
+        const {
+            firstEpoch,
+            thisDevice
+        } = await ThisDevice.fromFirstEpoch(virtualDevice, virtualDeviceDecryptionKey, labyrinthWebClient)
 
-        const epochStorage = new EpochStorage()
+        const epochStorage = EpochStorage.createEmpty()
         epochStorage.add(firstEpoch)
 
-        const labyrinthData: LabyrinthData = {
-            device,
-            epochStorage
-        }
-
-        const labyrinthInstance = new Labyrinth(labyrinthData)
+        const labyrinthInstance = new Labyrinth(thisDevice, epochStorage)
 
         return {
             labyrinthInstance,
-            recoveryCode: recoveryCode
+            recoveryCode
         }
     }
 
     public static async fromRecoveryCode(userID: string, recoveryCode: string, labyrinthWebClient: LabyrinthWebClient): Promise<Labyrinth> {
         const {
-            virtualDeviceID,
-            virtualDeviceDecryptionKey
-        } = deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
+            virtualDevice,
+            epoch
+        } = await VirtualDevice.fromRecoveryCode(userID, recoveryCode, labyrinthWebClient)
 
-        const {
-            epochID,
-            virtualDeviceEncryptedRecoverySecrets
-        } = labyrinthWebClient.getVirtualDeviceRecoverySecrets(virtualDeviceID)
-
-        const {
-            virtualDeviceKeyBundle,
-            epochWithoutID
-        } = decryptVirtualDeviceRecoverSecrets(
-            virtualDeviceDecryptionKey,
-            virtualDeviceEncryptedRecoverySecrets
-        )
-
-        const epochStorage = new EpochStorage()
-
-        const epoch = {
-            id: epochID,
-            ...epochWithoutID
-        }
+        const epochStorage = EpochStorage.createEmpty()
         epochStorage.add(epoch)
-
-        const virtualDevice = {
-            id: virtualDeviceID,
-            keyBundle: virtualDeviceKeyBundle
-        } as VirtualDevice
 
         await joinAllEpochs(virtualDevice.keyBundle, epochStorage, labyrinthWebClient)
 
-        const deviceKeyBundle = generateDeviceKeyBundle()
+        const thisDevice = await ThisDevice.fromRecoveryCode(labyrinthWebClient)
 
-        const {deviceID} = await labyrinthWebClient.authenticateDeviceToEpoch(deviceKeyBundle.public)
-        const device = {
-            id: deviceID,
-            keyBundle: deviceKeyBundle
-        } as ThisDevice
-
-        return new Labyrinth(
+        const newestRecoveredEpoch = epochStorage.getNewestEpoch()
+        await labyrinthWebClient.authenticateDeviceToEpoch(
+            newestRecoveredEpoch.id,
             {
-                device,
-                epochStorage
+                epochDeviceMac: generateEpochDeviceMac(newestRecoveredEpoch, thisDevice.keyBundle.public.deviceKeyPub.getPublicKeyBytes())
             }
         )
+
+        return new Labyrinth(thisDevice, epochStorage)
     }
 
-    public static async fromJSONString(labyrinthDataJSONString: string, labyrinthWebClient: LabyrinthWebClient): Promise<Labyrinth> {
-        const labyrinthData: LabyrinthData = JSON.parse(labyrinthDataJSONString)
-        await joinAllEpochs(labyrinthData.device.keyBundle, labyrinthData.epochStorage, labyrinthWebClient)
+    public static async deserialize(labyrinthSerialized: LabyrinthSerialized, labyrinthWebClient: LabyrinthWebClient): Promise<Labyrinth> {
+        const {
+            thisDeviceSerialized,
+            epochStorageSerialized
+        } = labyrinthSerialized
+        const thisDevice = ThisDevice.deserialize(thisDeviceSerialized)
+        const epochStorage = EpochStorage.deserialize(epochStorageSerialized)
 
-        return new Labyrinth(labyrinthData)
+        const newestEpochBeforePotentiallyJoiningNewer = epochStorage.getNewestEpoch()
+        await joinAllEpochs(thisDevice.keyBundle, epochStorage, labyrinthWebClient)
+        const newestEpochAfter = epochStorage.getNewestEpoch()
+
+        const hasJoinedNewerEpoch = newestEpochBeforePotentiallyJoiningNewer.sequenceID !== newestEpochAfter.sequenceID
+
+        if (hasJoinedNewerEpoch) {
+            await labyrinthWebClient.authenticateDeviceToEpoch(
+                newestEpochAfter.id,
+                {
+                    epochDeviceMac: generateEpochDeviceMac(
+                        newestEpochAfter,
+                        thisDevice.keyBundle.public.deviceKeyPub.getPublicKeyBytes()
+                    )
+                }
+            )
+        }
+
+        return new Labyrinth(thisDevice, epochStorage)
+    }
+
+    public serialize(): LabyrinthSerialized {
+        return {
+            thisDeviceSerialized: this.thisDevice.serialize(),
+            epochStorageSerialized: this.epochStorage.serialize()
+        }
     }
 
     //Labyrinth instance is created based on LabyrinthData stored on the device, if it is null then recoverLabyrinthData() or createFirstVirtualDevice() should be called before using
-    private constructor(labyrinthData: LabyrinthData) {
-        this.labyrinthData = structuredClone(labyrinthData)
+    private constructor(thisDevice: ThisDevice, epochStorage: EpochStorage) {
+        this.thisDevice = thisDevice
+        this.epochStorage = epochStorage
     }
 
     public encrypt({threadID, epochSequenceID, plaintext}: LabyrinthMessage): Buffer {
@@ -164,7 +136,7 @@ export class Labyrinth {
     private getEncryptionKey(threadID: string, epochSequenceID: string): Buffer {
         return deriveMessageKey(
             threadID,
-            this.labyrinthData.epochStorage.getEpoch(epochSequenceID)
+            this.epochStorage.getEpoch(epochSequenceID)
         )
     }
 

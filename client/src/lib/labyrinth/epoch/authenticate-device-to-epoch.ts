@@ -1,9 +1,11 @@
 import {kdf_one_key} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {mac} from "@/lib/labyrinth/crypto/message-authentication.ts";
 import {Epoch, EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
+import {PublicKey} from "@/lib/labyrinth/crypto/keys.ts";
+import {encode, encodeToBase64} from "@/lib/labyrinth/crypto/utils.ts";
 
 export type AuthenticateDeviceToEpochRequestBody = {
-    epochDeviceMac: Buffer
+    epochDeviceMac: Uint8Array
 }
 
 export type AuthenticateDeviceToEpochWebClient = {
@@ -11,13 +13,13 @@ export type AuthenticateDeviceToEpochWebClient = {
                                 authenticateDeviceToEpochRequestBody: AuthenticateDeviceToEpochRequestBody) => Promise<void>
 }
 
-export function generateEpochDeviceMac(epoch: Epoch | EpochWithoutID,
-                                       deviceKeyPub: Buffer) {
-    const epochDeviceMacKey = kdf_one_key(
+export async function generateEpochDeviceMac(epoch: Epoch | EpochWithoutID,
+                                             deviceKeyPub: PublicKey) {
+    const epochDeviceMacKey = await kdf_one_key(
         epoch.rootKey,
-        Buffer.alloc(0),
-        Buffer.from(`epoch_devices_${Buffer.from(epoch.sequenceID).toString('base64')}`)
+        Uint8Array.of(),
+        encode(`epoch_devices_${encodeToBase64(epoch.sequenceID)}`)
     )
 
-    return mac(epochDeviceMacKey, deviceKeyPub)
+    return mac(epochDeviceMacKey, deviceKeyPub.getPublicKeyBytes())
 }

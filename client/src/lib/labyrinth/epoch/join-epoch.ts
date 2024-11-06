@@ -4,7 +4,8 @@ import {pk_decrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {decrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
 import {Epoch, EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 import {DeviceKeyBundleWithoutEpochStorageAuthKeyPair, DevicePublicKeyBundle} from "@/lib/labyrinth/device/device.ts";
-import {PublicKey} from "@signalapp/libsignal-client";
+import {PublicKey} from "@/lib/labyrinth/crypto/keys.ts";
+import {decode, encode, encodeToBase64} from "@/lib/labyrinth/crypto/utils.ts";
 
 // TODO: Extend some unexpected labyrinth error
 class InvalidEpochStorageAuthKey extends Error {
@@ -81,10 +82,10 @@ async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorag
                               joinEpochWebClient: JoinEpochWebClient): Promise<Epoch> {
     const newerEpochSequenceID = (BigInt(newestKnownEpoch.sequenceID) + 1n).toString()
 
-    const [newerEpochChainingKey, newerEpochDistributionPreSharedKey] = kdf_two_keys(
+    const [newerEpochChainingKey, newerEpochDistributionPreSharedKey] = await kdf_two_keys(
         newestKnownEpoch.rootKey,
-        Buffer.alloc(0),
-        Buffer.from(`epoch_chaining_${newestKnownEpoch.sequenceID}_${newestKnownEpoch.id}`)
+        Uint8Array.of(),
+        encode(`epoch_chaining_${newestKnownEpoch.sequenceID}_${newestKnownEpoch.id}`)
     )
 
     const {
@@ -106,26 +107,26 @@ async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorag
     const isValidEpochStorageAuthKey = pk_verify(
         senderDevice.deviceKeyPub,
         senderDevice.epochStorageAuthKeySig,
-        Buffer.of(0x31),
+        Uint8Array.of(0x31),
         senderDevice.epochStorageAuthKeyPub.getPublicKeyBytes()
     )
     if (!isValidEpochStorageAuthKey) {
         throw new InvalidEpochStorageAuthKey()
     }
 
-    const newerEpochEntropy = pk_decrypt(
+    const newerEpochEntropy = await pk_decrypt(
         deviceKeyBundle.public.epochStorageKeyPub,
         deviceKeyBundle.private.epochStorageKeyPriv,
         senderDevice.epochStorageAuthKeyPub,
         newerEpochDistributionPreSharedKey,
-        Buffer.from(`epoch_${newerEpochSequenceID}`),
+        encode(`epoch_${newerEpochSequenceID}`),
         encryptedNewerEpochEntropy
     )
 
-    const newerEpochRootKey = kdf_one_key(
+    const newerEpochRootKey = await kdf_one_key(
         newerEpochEntropy,
         newerEpochChainingKey,
-        Buffer.from("epoch_root_key")
+        encode("epoch_root_key")
     )
 
     return {
@@ -157,24 +158,26 @@ async function joinOlderEpoch(oldestKnownEpoch: Epoch,
         encryptedEpochRootKey: encryptedOlderEpochRootKey
     } = await joinEpochWebClient.getOlderEpochJoinData(olderEpochSequenceID)
 
-    const olderEpochDataStorageKey = kdf_one_key(
+    const olderEpochDataStorageKey = await kdf_one_key(
         oldestKnownEpoch.rootKey,
-        Buffer.alloc(0),
-        Buffer.from(`epoch_data_storage_${Buffer.from(oldestKnownEpoch.sequenceID).toString('base64')}`)
+        Uint8Array.of(),
+        encode(`epoch_data_storage_${encodeToBase64(oldestKnownEpoch.sequenceID)}`)
     )
 
-    const expectedOlderEpochSequenceID = decrypt(
-        olderEpochDataStorageKey,
-        Buffer.from("epoch_data_metadata"),
-        encryptedOlderEpochSequenceID
+    const expectedOlderEpochSequenceID = decode(
+        await decrypt(
+            olderEpochDataStorageKey,
+            encode("epoch_data_metadata"),
+            encryptedOlderEpochSequenceID
+        )
     )
-    if (olderEpochSequenceID !== expectedOlderEpochSequenceID.toString()) {
+    if (olderEpochSequenceID !== expectedOlderEpochSequenceID) {
         throw new Error("Older epoch metadata has been corrupted")
     }
 
-    const olderEpochRootKey = decrypt(
+    const olderEpochRootKey = await decrypt(
         olderEpochDataStorageKey,
-        Buffer.from("epoch_data_metadata"),
+        encode("epoch_data_metadata"),
         encryptedOlderEpochRootKey
     )
 

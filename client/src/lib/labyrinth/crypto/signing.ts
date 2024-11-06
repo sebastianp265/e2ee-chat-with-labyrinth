@@ -1,30 +1,23 @@
-import {PrivateKey, PublicKey} from "@signalapp/libsignal-client"
-import {generate_x25519_keypair} from "@/lib/labyrinth/crypto/utils.ts";
+import {concat, cryptoAssert} from "@/lib/labyrinth/crypto/utils.ts";
+import {generate_key_pair, PrivateKey, PublicKey} from "@/lib/labyrinth/crypto/keys.ts";
 
 export function pk_sig_keygen() {
-    const keypair = generate_x25519_keypair()
-    return {priv_key_sig: keypair.priv_key, pub_key_sig: keypair.pub_key}
-}
-
-function assert_valid_use_case_byte(use_case_byte: Buffer) {
-    if (use_case_byte.length != 1) {
-        throw new Error("Buffer with use_case_byte doesn't have exactly one byte")
-    }
+    return generate_key_pair()
 }
 
 export function pk_sign(priv_key: PrivateKey,
-                        use_case_byte: Buffer,
-                        data: Buffer) {
-    assert_valid_use_case_byte(use_case_byte)
+                        use_case_byte: Uint8Array,
+                        data: Uint8Array) {
+    cryptoAssert(use_case_byte.length === 1)
 
-    return priv_key.sign(Buffer.concat([use_case_byte, data]))
+    return priv_key.sign(concat(use_case_byte, data))
 }
 
 export function pk_verify(pub_key: PublicKey,
-                          signature: Buffer,
-                          use_case_byte: Buffer,
-                          data: Buffer) {
-    assert_valid_use_case_byte(use_case_byte)
+                          signature: Uint8Array,
+                          use_case_byte: Uint8Array,
+                          data: Uint8Array) {
+    cryptoAssert(use_case_byte.length === 1)
 
-    return pub_key.verify(Buffer.concat([use_case_byte, data]), signature)
+    return pub_key.verify(concat(use_case_byte, data), signature)
 }

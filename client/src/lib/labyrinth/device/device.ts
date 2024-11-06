@@ -1,8 +1,8 @@
-import {PrivateKey, PublicKey} from "@signalapp/libsignal-client";
 import {pk_sig_keygen, pk_sign} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_auth_keygen, pk_enc_keygen} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {openFirstEpoch, OpenFirstEpochWebClient} from "@/lib/labyrinth/epoch/open-new-epoch.ts";
 import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device.ts";
+import {PrivateKey, PublicKey} from "@/lib/labyrinth/crypto/keys.ts";
 
 // Common for "normal" and virtual devices
 
@@ -15,7 +15,7 @@ export type DevicePublicKeyBundleWithoutEpochStorageAuthKeyPair = {
     deviceKeyPub: PublicKey
 
     epochStorageKeyPub: PublicKey
-    epochStorageKeySig: Buffer
+    epochStorageKeySig: Uint8Array
 }
 
 export type DevicePrivateKeyBundleWithoutEpochStorageAuthKeyPair = {
@@ -30,20 +30,20 @@ export type ThisDeviceSerialized = {
     id: string,
     keyBundle: {
         public: {
-            deviceKeyPub: Buffer,
+            deviceKeyPub: Uint8Array,
 
-            epochStorageKeyPub: Buffer,
-            epochStorageKeySig: Buffer
+            epochStorageKeyPub: Uint8Array,
+            epochStorageKeySig: Uint8Array
 
-            epochStorageAuthKeyPub: Buffer,
-            epochStorageAuthKeySig: Buffer,
+            epochStorageAuthKeyPub: Uint8Array,
+            epochStorageAuthKeySig: Uint8Array,
         },
         private: {
-            deviceKeyPriv: Buffer,
+            deviceKeyPriv: Uint8Array,
 
-            epochStorageKeyPriv: Buffer,
+            epochStorageKeyPriv: Uint8Array,
 
-            epochStorageAuthKeyPriv: Buffer,
+            epochStorageAuthKeyPriv: Uint8Array,
         }
     }
 }
@@ -56,7 +56,7 @@ export type DeviceKeyBundle = {
 // "Normal" devices have additional pair of keys used for sending new epoch entropy via public key encryption
 export type DevicePublicKeyBundle = DevicePublicKeyBundleWithoutEpochStorageAuthKeyPair & {
     epochStorageAuthKeyPub: PublicKey
-    epochStorageAuthKeySig: Buffer
+    epochStorageAuthKeySig: Uint8Array
 }
 
 // "Normal" devices have additional pair of keys used for sending new epoch entropy via public key encryption
@@ -125,7 +125,7 @@ export class ThisDevice {
     }
 
     public static async fromFirstEpoch(virtualDevice: VirtualDevice,
-                                       virtualDeviceDecryptionKey: Buffer,
+                                       virtualDeviceDecryptionKey: Uint8Array,
                                        labyrinthWebClient: OpenFirstEpochWebClient) {
         const deviceKeyBundle = generateDeviceKeyBundle()
 
@@ -157,12 +157,12 @@ export class ThisDevice {
 }
 
 function generateDeviceKeyBundle(): DeviceKeyBundle {
-    const {priv_key_sig: deviceKeyPriv, pub_key_sig: deviceKeyPub} = pk_sig_keygen()
-    const {priv_key_enc: epochStorageKeyPriv, pub_key_enc: epochStorageKeyPub} = pk_enc_keygen()
-    const epochStorageKeySig = pk_sign(deviceKeyPriv, Buffer.of(0x30), epochStorageKeyPub.getPublicKeyBytes())
+    const {privateKey: deviceKeyPriv, publicKey: deviceKeyPub} = pk_sig_keygen()
+    const {privateKey: epochStorageKeyPriv, publicKey: epochStorageKeyPub} = pk_enc_keygen()
+    const epochStorageKeySig = pk_sign(deviceKeyPriv, Uint8Array.of(0x30), epochStorageKeyPub.getPublicKeyBytes())
 
-    const {priv_key_auth: epochStorageAuthKeyPriv, pub_key_auth: epochStorageAuthKeyPub} = pk_auth_keygen()
-    const epochStorageAuthKeySig = pk_sign(deviceKeyPriv, Buffer.of(0x31), epochStorageAuthKeyPub.getPublicKeyBytes())
+    const {privateKey: epochStorageAuthKeyPriv, publicKey: epochStorageAuthKeyPub} = pk_auth_keygen()
+    const epochStorageAuthKeySig = pk_sign(deviceKeyPriv, Uint8Array.of(0x31), epochStorageAuthKeyPub.getPublicKeyBytes())
 
     const privateKeyBundle: DevicePrivateKeyBundle = {
         deviceKeyPriv,

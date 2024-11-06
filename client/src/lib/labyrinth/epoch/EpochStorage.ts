@@ -49,12 +49,12 @@ export class NegativeEpochSequenceIDError extends EpochStorageError {
 export type Epoch = {
     id: string,
     sequenceID: string,
-    rootKey: Buffer,
+    rootKey: Uint8Array,
 }
 
 export type EpochWithoutID = {
     sequenceID: string,
-    rootKey: Buffer,
+    rootKey: Uint8Array,
 }
 
 export type EpochStorageSerialized = {

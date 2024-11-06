@@ -6,20 +6,9 @@ import {kdf_one_key} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
 import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device.ts";
 import {ThisDevice, ThisDeviceSerialized} from "@/lib/labyrinth/device/device.ts";
+import {decode, encode} from "@/lib/labyrinth/crypto/utils.ts";
 
-export type LabyrinthMessage = {
-    threadID: string;
-    epochSequenceID: string;
-    plaintext: string;
-}
-
-export type LabyrinthMessageEncrypted = {
-    threadID: string,
-    epochSequenceID: string,
-    ciphertext: Buffer
-}
-
-type LabyrinthSerialized = {
+export type LabyrinthSerialized = {
     thisDeviceSerialized: ThisDeviceSerialized,
     epochStorageSerialized: EpochStorageSerialized
 }
@@ -33,7 +22,7 @@ export class Labyrinth {
             virtualDevice,
             virtualDeviceDecryptionKey,
             recoveryCode,
-        } = VirtualDevice.fromFirstEpoch(userID)
+        } = await VirtualDevice.fromFirstEpoch(userID)
 
         const {
             firstEpoch,
@@ -68,7 +57,7 @@ export class Labyrinth {
         await labyrinthWebClient.authenticateDeviceToEpoch(
             newestRecoveredEpoch.id,
             {
-                epochDeviceMac: generateEpochDeviceMac(newestRecoveredEpoch, thisDevice.keyBundle.public.deviceKeyPub.getPublicKeyBytes())
+                epochDeviceMac: await generateEpochDeviceMac(newestRecoveredEpoch, thisDevice.keyBundle.public.deviceKeyPub)
             }
         )
 
@@ -93,9 +82,9 @@ export class Labyrinth {
             await labyrinthWebClient.authenticateDeviceToEpoch(
                 newestEpochAfter.id,
                 {
-                    epochDeviceMac: generateEpochDeviceMac(
+                    epochDeviceMac: await generateEpochDeviceMac(
                         newestEpochAfter,
-                        thisDevice.keyBundle.public.deviceKeyPub.getPublicKeyBytes()
+                        thisDevice.keyBundle.public.deviceKeyPub
                     )
                 }
             )
@@ -117,29 +106,38 @@ export class Labyrinth {
         this.epochStorage = epochStorage
     }
 
-    public encrypt({threadID, epochSequenceID, plaintext}: LabyrinthMessage): Buffer {
-        return encrypt(
-            this.getEncryptionKey(threadID, epochSequenceID),
-            Buffer.from(`message_thread_${threadID}`),
-            Buffer.from(plaintext)
+    public async encrypt(threadID: string, epochSequenceID: string, plaintext: string): Promise<Uint8Array> {
+        return await encrypt(
+            await this.getEncryptionKey(threadID, epochSequenceID),
+            encode(`message_thread_${threadID}`),
+            encode(plaintext),
         )
     }
 
-    public decrypt({threadID, epochSequenceID, ciphertext}: LabyrinthMessageEncrypted): string {
-        return decrypt(
-            this.getEncryptionKey(threadID, epochSequenceID),
-            Buffer.from(`message_thread_${threadID}`),
-            ciphertext
-        ).toString()
+    public async decrypt(threadID: string, epochSequenceID: string, ciphertext: Buffer): Promise<string> {
+        return decode(
+            await decrypt(
+                await this.getEncryptionKey(threadID, epochSequenceID),
+                encode(`message_thread_${threadID}`),
+                ciphertext,
+            )
+        )
     }
 
-    private getEncryptionKey(threadID: string, epochSequenceID: string): Buffer {
-        return deriveMessageKey(
+    private async getEncryptionKey(threadID: string, epochSequenceID: string): Promise<Uint8Array> {
+        return await deriveMessageKey(
             threadID,
             this.epochStorage.getEpoch(epochSequenceID)
         )
     }
 
+    public getNewestEpochSequenceID() {
+        return this.epochStorage.getNewestEpoch().sequenceID
+    }
+
+    public getNewestEpochID() {
+        return this.epochStorage.getNewestEpoch().id
+    }
 }
 
 const CIPHER_VERSION = 1

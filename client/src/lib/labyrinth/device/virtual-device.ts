@@ -1,7 +1,6 @@
 import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
-import {PrivateKey} from "@signalapp/libsignal-client";
 import {pk_sig_keygen, pk_sign} from "@/lib/labyrinth/crypto/signing.ts";
-import {random} from "../crypto/utils.ts";
+import {decode, encode, random} from "../crypto/utils.ts";
 import {kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 import {
@@ -10,6 +9,8 @@ import {
     DevicePublicKeyBundleWithoutEpochStorageAuthKeyPair
 } from "@/lib/labyrinth/device/device.ts";
 import {pk_enc_keygen} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
+import {PrivateKey} from "@/lib/labyrinth/crypto/keys.ts";
+import {decodeFromBase64, encodeToBase64} from "@/lib/labyrinth/crypto/utils.ts";
 
 export type VirtualDeviceKeyBundle = DeviceKeyBundleWithoutEpochStorageAuthKeyPair
 
@@ -26,12 +27,12 @@ export class VirtualDevice {
         this.keyBundle = keyBundle
     }
 
-    public static fromFirstEpoch(userID: string) {
+    public static async fromFirstEpoch(userID: string) {
         const recoveryCode = generateRecoveryCode()
         const {
             virtualDeviceID,
             virtualDeviceDecryptionKey
-        } = deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
+        } = await deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
         const keyBundle = generateVirtualDeviceKeyBundle()
         const virtualDevice = new VirtualDevice(virtualDeviceID, keyBundle)
 
@@ -48,7 +49,7 @@ export class VirtualDevice {
         const {
             virtualDeviceID,
             virtualDeviceDecryptionKey
-        } = deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
+        } = await deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
 
         const {
             epochID,
@@ -58,7 +59,7 @@ export class VirtualDevice {
         const {
             virtualDeviceKeyBundle,
             epochWithoutID
-        } = decryptVirtualDeviceRecoverSecrets(
+        } = await decryptVirtualDeviceRecoverSecrets(
             virtualDeviceDecryptionKey,
             virtualDeviceEncryptedRecoverySecrets
         )
@@ -79,8 +80,8 @@ export class VirtualDevice {
 }
 
 function generateVirtualDeviceKeyBundle(): VirtualDeviceKeyBundle {
-    const {priv_key_sig: deviceKeyPriv, pub_key_sig: deviceKeyPub} = pk_sig_keygen()
-    const {priv_key_enc: epochStorageKeyPriv, pub_key_enc: epochStorageKeyPub} = pk_enc_keygen()
+    const {privateKey: deviceKeyPriv, publicKey: deviceKeyPub} = pk_sig_keygen()
+    const {privateKey: epochStorageKeyPriv, publicKey: epochStorageKeyPub} = pk_enc_keygen()
     const epochStorageKeySig = pk_sign(deviceKeyPriv, Buffer.of(0x30), epochStorageKeyPub.getPublicKeyBytes())
 
     const privateKeyBundle: VirtualDevicePrivateKeyBundle = {
@@ -126,59 +127,59 @@ export class InvalidRecoveryCodeFormatError extends Error {
     }
 }
 
-function deriveVirtualDeviceIDAndDecryptionKey(userID: string, recoveryCode: string) {
+async function deriveVirtualDeviceIDAndDecryptionKey(userID: string, recoveryCode: string) {
     if (recoveryCode.length !== 40) throw new InvalidRecoveryCodeFormatError("Recovery code has to be 40 characters long")
 
-    const ikm = Buffer.from(recoveryCode.slice(3, 37))
-    const info = Buffer.from(`BackupRecoveryCode_v${recoveryCode[0]}_${recoveryCode[1]}_${userID}`)
+    const ikm = encode(recoveryCode.slice(3, 37))
+    const info = encode(`BackupRecoveryCode_v${recoveryCode[0]}_${recoveryCode[1]}_${userID}`)
 
-    const [virtualDeviceID, virtualDeviceDecryptionKey] = kdf_two_keys(
+    const [virtualDeviceID, virtualDeviceDecryptionKey] = await kdf_two_keys(
         ikm,
-        Buffer.alloc(0),
+        Uint8Array.of(),
         info,
         16,
         32
     )
 
     return {
-        virtualDeviceID: virtualDeviceID.toString(),
-        virtualDeviceDecryptionKey
+        virtualDeviceID: decode(virtualDeviceID),
+        virtualDeviceDecryptionKey,
     }
 }
 
 export type VirtualDeviceEncryptedRecoverSecrets = {
-    encryptedEpochSequenceID: Buffer,
-    encryptedEpochRootKey: Buffer,
-    encryptedDeviceKeyPriv: Buffer,
-    encryptedEpochStorageKeyPriv: Buffer,
-    epochStorageKeySig: Buffer,
+    encryptedEpochSequenceID: Uint8Array,
+    encryptedEpochRootKey: Uint8Array,
+    encryptedDeviceKeyPriv: Uint8Array,
+    encryptedEpochStorageKeyPriv: Uint8Array,
+    epochStorageKeySig: Uint8Array,
 }
 
-export function encryptVirtualDeviceRecoverSecrets(virtualDeviceDecryptionKey: Buffer,
-                                                   epochWithoutID: EpochWithoutID,
-                                                   virtualDeviceKeyBundle: VirtualDeviceKeyBundle): VirtualDeviceEncryptedRecoverSecrets {
-    const encryptedEpochSequenceID = encrypt(
+export async function encryptVirtualDeviceRecoverSecrets(virtualDeviceDecryptionKey: Uint8Array,
+                                                         epochWithoutID: EpochWithoutID,
+                                                         virtualDeviceKeyBundle: VirtualDeviceKeyBundle): Promise<VirtualDeviceEncryptedRecoverSecrets> {
+    const encryptedEpochSequenceID = await encrypt(
         virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:epoch_anon_id"),
-        Buffer.from(Buffer.from(epochWithoutID.sequenceID).toString('base64'))
+        encode("virtual_device:epoch_anon_id"),
+        encode(encodeToBase64(epochWithoutID.sequenceID)),
     )
 
-    const encryptedEpochRootKey = encrypt(
+    const encryptedEpochRootKey = await encrypt(
         virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:epoch_root_key"),
-        epochWithoutID.rootKey
+        encode("virtual_device:epoch_root_key"),
+        epochWithoutID.rootKey,
     )
 
-    const encryptedDeviceKeyPriv = encrypt(
+    const encryptedDeviceKeyPriv = await encrypt(
         virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:virtual_device_private_key"),
-        virtualDeviceKeyBundle.private.deviceKeyPriv.serialize()
+        encode("virtual_device:virtual_device_private_key"),
+        virtualDeviceKeyBundle.private.deviceKeyPriv.serialize(),
     )
 
-    const encryptedEpochStorageKeyPriv = encrypt(
+    const encryptedEpochStorageKeyPriv = await encrypt(
         virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:epoch_storage_key_priv"),
-        virtualDeviceKeyBundle.private.epochStorageKeyPriv.serialize()
+        encode("virtual_device:epoch_storage_key_priv"),
+        virtualDeviceKeyBundle.private.epochStorageKeyPriv.serialize(),
     )
 
     return {
@@ -199,46 +200,55 @@ export class InvalidEpochStorageKeySignature extends Error {
     }
 }
 
-function decryptVirtualDeviceRecoverSecrets(virtualDeviceDecryptionKey: Buffer,
-                                            virtualDeviceRecoverSecretsEncrypted: VirtualDeviceEncryptedRecoverSecrets): {
-    epochWithoutID: EpochWithoutID,
-    virtualDeviceKeyBundle: VirtualDeviceKeyBundle
-} {
-    const epochSequenceID = Buffer.from(decrypt(
-        virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:epoch_anon_id"),
-        virtualDeviceRecoverSecretsEncrypted.encryptedEpochSequenceID,
-    ).toString(), "base64").toString()
+async function decryptVirtualDeviceRecoverSecrets(virtualDeviceDecryptionKey: Uint8Array,
+                                                  virtualDeviceRecoverSecretsEncrypted: VirtualDeviceEncryptedRecoverSecrets): Promise<{
+    epochWithoutID: EpochWithoutID;
+    virtualDeviceKeyBundle: VirtualDeviceKeyBundle;
+}> {
 
-    const epochRootKey = decrypt(
+    const epochSequenceID = decodeFromBase64(
+        decode(
+            await decrypt(
+                virtualDeviceDecryptionKey,
+                encode("virtual_device:epoch_anon_id"),
+                virtualDeviceRecoverSecretsEncrypted.encryptedEpochSequenceID,
+            )
+        )
+    )
+
+    const epochRootKey = await decrypt(
         virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:epoch_root_key"),
+        encode("virtual_device:epoch_root_key"),
         virtualDeviceRecoverSecretsEncrypted.encryptedEpochRootKey
     )
 
-    const deviceKeyPriv = PrivateKey.deserialize(encrypt(
-        virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:virtual_device_private_key"),
-        virtualDeviceRecoverSecretsEncrypted.encryptedDeviceKeyPriv
-    ))
+    const deviceKeyPriv = PrivateKey.deserialize(
+        await encrypt(
+            virtualDeviceDecryptionKey,
+            encode("virtual_device:virtual_device_private_key"),
+            virtualDeviceRecoverSecretsEncrypted.encryptedDeviceKeyPriv
+        )
+    )
 
     const deviceKeyPub = deviceKeyPriv.getPublicKey()
 
-    const epochStorageKeyPriv = PrivateKey.deserialize(encrypt(
-        virtualDeviceDecryptionKey,
-        Buffer.from("virtual_device:epoch_storage_key_priv"),
-        virtualDeviceRecoverSecretsEncrypted.encryptedEpochStorageKeyPriv
-    ))
+    const epochStorageKeyPriv = PrivateKey.deserialize(
+        await encrypt(
+            virtualDeviceDecryptionKey,
+            encode("virtual_device:epoch_storage_key_priv"),
+            virtualDeviceRecoverSecretsEncrypted.encryptedEpochStorageKeyPriv
+        )
+    )
 
     const epochStorageKeyPub = epochStorageKeyPriv.getPublicKey()
 
     const epochStorageKeySig = pk_sign(
         deviceKeyPriv,
-        Buffer.of(0x30),
+        Uint8Array.of(0x30),
         epochStorageKeyPub.getPublicKeyBytes()
     )
 
-    if (!virtualDeviceRecoverSecretsEncrypted.epochStorageKeySig.equals(epochStorageKeySig)) {
+    if (Buffer.compare(virtualDeviceRecoverSecretsEncrypted.epochStorageKeySig, epochStorageKeySig) !== 0) {
         throw new InvalidEpochStorageKeySignature()
     }
 

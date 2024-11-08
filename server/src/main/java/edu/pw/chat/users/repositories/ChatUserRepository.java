@@ -1,4 +1,4 @@
-package edu.pw.chat.labyrinth.repository.user;
+package edu.pw.chat.users.repositories;
 
 import edu.pw.chat.users.entities.ChatUser;
 import org.springframework.data.repository.CrudRepository;

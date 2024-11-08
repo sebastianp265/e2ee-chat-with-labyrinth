@@ -1,4 +1,4 @@
-package edu.pw.chat.labyrinth.repository.chat;
+package edu.pw.chat.labyrinth.repositories;
 
 import edu.pw.chat.labyrinth.entities.ChatInbox;
 import org.springframework.data.repository.CrudRepository;

@@ -15,11 +15,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
-app:
-  labyrinth:
-    labyrinthID: 1
-    mailboxRootSalt: ABCDEFGH
-
 server:
   servlet:
     session:

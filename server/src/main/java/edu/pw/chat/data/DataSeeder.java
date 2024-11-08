@@ -1,30 +1,26 @@
 package edu.pw.chat.data;
 
-import edu.pw.chat.entitities.ChatInbox;
-import edu.pw.chat.entitities.ChatThread;
-import edu.pw.chat.entitities.ChatUser;
-import edu.pw.chat.entitities.Message;
-import edu.pw.chat.repository.ChatInboxRepository;
-import edu.pw.chat.repository.ChatThreadRepository;
-import edu.pw.chat.repository.ChatUserRepository;
-import edu.pw.chat.repository.MessageRepository;
+import edu.pw.chat.entitities.chat.ChatInbox;
+import edu.pw.chat.entitities.user.ChatUser;
+import edu.pw.chat.entitities.user.FriendRelation;
+import edu.pw.chat.repository.chat.ChatInboxRepository;
+import edu.pw.chat.repository.user.ChatUserRepository;
+import edu.pw.chat.repository.user.FriendRelationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.util.Set;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class DataSeeder implements ApplicationRunner {
 
-    private final MessageRepository messageRepository;
     private final ChatUserRepository chatUserRepository;
-    private final ChatThreadRepository chatThreadRepository;
+    private final FriendRelationRepository friendRelationRepository;
     private final ChatInboxRepository chatInboxRepository;
 
     @Override
@@ -54,65 +50,64 @@ public class DataSeeder implements ApplicationRunner {
                         .build()
         );
 
-
-        ChatInbox sebaInbox = chatInboxRepository.save(
+        chatInboxRepository.save(
                 ChatInbox.builder()
                         .owner(seba)
                         .build()
         );
-        ChatInbox krzysioInbox = chatInboxRepository.save(
+        chatInboxRepository.save(
                 ChatInbox.builder()
                         .owner(krzysio)
                         .build()
         );
-        ChatInbox arekInbox = chatInboxRepository.save(
+        chatInboxRepository.save(
                 ChatInbox.builder()
                         .owner(arek)
                         .build()
         );
 
-        ChatThread chatThreadBetweenSebaAndKrzysio = chatThreadRepository.save(ChatThread.builder()
-                .subscribedInboxes(Set.of(sebaInbox, krzysioInbox))
-                .build());
-        sendMessage(seba, chatThreadBetweenSebaAndKrzysio, "Hi!");
-        sendMessage(krzysio, chatThreadBetweenSebaAndKrzysio, "Hello");
-        sendMessage(seba, chatThreadBetweenSebaAndKrzysio, "Are you up?");
-        sendMessage(seba, chatThreadBetweenSebaAndKrzysio, "Wanna go to my friend's party?");
-        sendMessage(krzysio, chatThreadBetweenSebaAndKrzysio, "Sure");
+        friendRelationRepository.saveAll(
+                List.of(
+                        FriendRelation
+                                .builder()
+                                .chatUser(seba)
+                                .chatUserFriend(krzysio)
+                                .status(FriendRelation.Status.ACCEPTED)
+                                .build(),
+                        FriendRelation
+                                .builder()
+                                .chatUser(krzysio)
+                                .chatUserFriend(seba)
+                                .status(FriendRelation.Status.ACCEPTED)
+                                .build(),
 
-        ChatThread chatThreadBetweenSebaAndArek = chatThreadRepository.save(
-                ChatThread.builder()
-                        .subscribedInboxes(Set.of(sebaInbox, arekInbox))
-                        .build()
+                        FriendRelation
+                                .builder()
+                                .chatUser(seba)
+                                .chatUserFriend(arek)
+                                .status(FriendRelation.Status.ACCEPTED)
+                                .build(),
+                        FriendRelation
+                                .builder()
+                                .chatUser(arek)
+                                .chatUserFriend(seba)
+                                .status(FriendRelation.Status.ACCEPTED)
+                                .build(),
+
+                        FriendRelation
+                                .builder()
+                                .chatUser(krzysio)
+                                .chatUserFriend(arek)
+                                .status(FriendRelation.Status.PENDING)
+                                .build(),
+                        FriendRelation
+                                .builder()
+                                .chatUser(arek)
+                                .chatUserFriend(krzysio)
+                                .status(FriendRelation.Status.PENDING)
+                                .build()
+                )
         );
-        sendMessage(arek, chatThreadBetweenSebaAndArek, "I will arrive at 6pm");
-        sendMessage(seba, chatThreadBetweenSebaAndArek, "Okay, see you later then");
-        sendMessage(arek, chatThreadBetweenSebaAndArek, "Have you brought the present?");
-
-        ChatThread chatThreadBetweenArekAndKrzysio = chatThreadRepository.save(
-                ChatThread.builder()
-                        .subscribedInboxes(Set.of(arekInbox, krzysioInbox))
-                        .build()
-        );
-        sendMessage(arek, chatThreadBetweenArekAndKrzysio, "Hey, how you doing");
-        sendMessage(krzysio, chatThreadBetweenArekAndKrzysio, "Pretty well, watching Game Of Thrones at the moment");
-
-    }
-
-    private int sentMessages = 0;
-
-    private void sendMessage(ChatUser author, ChatThread destinationThread, String messageData) {
-        for (ChatInbox chatInbox : destinationThread.getSubscribedInboxes()) {
-            Message messageToSave = Message.builder()
-                    .thread(destinationThread)
-                    .inbox(chatInbox)
-                    .author(author)
-                    .timestamp(Instant.now().plusSeconds(sentMessages))
-                    .messageData(messageData)
-                    .build();
-            sentMessages++;
-            messageRepository.save(messageToSave);
-        }
     }
 
 }

@@ -20,7 +20,8 @@ public class AuthenticationManagerConfig {
     @Bean
     public AuthenticationManager authenticationManager(
             UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder
+    ) {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setUserDetailsService(userDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder);
@@ -30,12 +31,12 @@ public class AuthenticationManagerConfig {
 
     @Bean
     public SecurityContextRepository securityContextRepository() {
-        HttpSessionSecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
-        return securityContextRepository;
+        return new HttpSessionSecurityContextRepository();
     }
 
     @Bean
-    public UserDetailsService userDetailsService() { // TODO: REMOVE AFTER TESTING
+    public UserDetailsService userDetailsService() {
+        // TODO: REMOVE AFTER TESTING
         UserDetails user1 = User.withDefaultPasswordEncoder()
                 .username("seba")
                 .password("seba123")

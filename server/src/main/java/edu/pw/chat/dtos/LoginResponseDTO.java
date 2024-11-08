@@ -10,6 +10,5 @@ import lombok.extern.jackson.Jacksonized;
 public class LoginResponseDTO {
 
     Long userId;
-
     Long inboxId;
 }

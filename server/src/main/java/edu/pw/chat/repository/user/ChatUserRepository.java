@@ -1,6 +1,6 @@
-package edu.pw.chat.repository;
+package edu.pw.chat.repository.user;
 
-import edu.pw.chat.entitities.ChatUser;
+import edu.pw.chat.entitities.user.ChatUser;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;

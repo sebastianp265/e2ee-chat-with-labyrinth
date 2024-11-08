@@ -1,11 +1,17 @@
 package edu.pw.chat.entitities.labyrinth;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -18,13 +24,11 @@ public class Epoch {
     @GeneratedValue
     private Long id;
 
-    private String epochRootKey;
-    private Long epochSequenceID;
-    private String epochMetadata;
+    private Long sequenceID;
 
-    @OneToMany
     @ToString.Exclude
-    private List<KeyBundle> keyBundles;
+    @OneToMany
+    private Set<Device> devicesInEpoch;
 
     @Override
     public final boolean equals(Object o) {

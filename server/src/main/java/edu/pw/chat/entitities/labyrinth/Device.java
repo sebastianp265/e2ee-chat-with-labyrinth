@@ -3,8 +3,10 @@ package edu.pw.chat.entitities.labyrinth;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
@@ -20,8 +22,13 @@ public class Device {
     @GeneratedValue
     private Long id;
 
-    @OneToOne
-    private KeyBundle keyBundle;
+    private byte[] deviceKeyPub;
+
+    private byte[] epochStorageKeyPub;
+    private byte[] epochStorageKeySig;
+
+    private byte[] epochStorageAuthKeyPub;
+    private byte[] epochStorageAuthKeySig;
 
     @Override
     public final boolean equals(Object o) {

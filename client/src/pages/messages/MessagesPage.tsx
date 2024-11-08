@@ -1,7 +1,6 @@
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
 import {useEffect, useState} from "react";
 import {usePrivateRouteContext} from "@/main.tsx";
-import {AxiosError} from "axios";
 import WelcomeToLabyrinthAlertDialog from "@/pages/messages/WelcomeToLabyrinthAlertDialog.tsx";
 import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
 import ChatContent from "@/pages/messages/ChatContent.tsx";

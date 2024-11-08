@@ -18,22 +18,22 @@ class InvalidEpochStorageAuthKey extends Error {
 
 export type GetNewerEpochJoinData = {
     epochID: string,
-    encryptedEpochEntropy: Buffer,
+    encryptedEpochEntropy: Uint8Array,
     senderDevicePublicKeyBundleSerialized: {
-        deviceKeyPub: Buffer,
+        deviceKeyPub: Uint8Array,
 
-        epochStorageKeyPub: Buffer,
-        epochStorageKeySig: Buffer,
+        epochStorageKeyPub: Uint8Array,
+        epochStorageKeySig: Uint8Array,
 
-        epochStorageAuthKeyPub: Buffer,
-        epochStorageAuthKeySig: Buffer,
+        epochStorageAuthKeyPub: Uint8Array,
+        epochStorageAuthKeySig: Uint8Array,
     }
 }
 
 export type GetOlderEpochJoinData = {
     epochID: string,
-    encryptedEpochSequenceID: Buffer,
-    encryptedEpochRootKey: Buffer,
+    encryptedEpochSequenceID: Uint8Array,
+    encryptedEpochRootKey: Uint8Array,
 }
 
 export type GetNewestEpochSequenceIDResponse = {

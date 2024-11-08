@@ -114,7 +114,7 @@ export class Labyrinth {
         )
     }
 
-    public async decrypt(threadID: string, epochSequenceID: string, ciphertext: Buffer): Promise<string> {
+    public async decrypt(threadID: string, epochSequenceID: string, ciphertext: Uint8Array): Promise<string> {
         return decode(
             await decrypt(
                 await this.getEncryptionKey(threadID, epochSequenceID),
@@ -145,7 +145,7 @@ const CIPHER_VERSION = 1
 function deriveMessageKey(threadID: string, epoch: Epoch) {
     return kdf_one_key(
         epoch.rootKey,
-        Buffer.alloc(0),
-        Buffer.from(`message_key_in_epoch_${epoch.sequenceID}_cipher_version_${CIPHER_VERSION}_${threadID}`)
+        Uint8Array.of(),
+        encode(`message_key_in_epoch_${epoch.sequenceID}_cipher_version_${CIPHER_VERSION}_${threadID}`)
     )
 }

@@ -1,49 +1,71 @@
+import axiosInstance from "@/api/axios/axiosInstance.ts";
+import {LabyrinthWebClient} from "@/lib/labyrinth/labyrinth-web-client.ts";
 import {
-    DeviceIDToEncryptedEpochEntropyMap,
-    EpochJoinData,
-    EpochRecoveryData,
-    LabyrinthWebClient,
-    PublicDevice
-} from "@/lib/labyrinth/labyrinth-types.ts";
-import axiosAPI from "@/api/axiosAPI.ts";
+    GetDevicesInEpochResponse,
+    OpenFirstEpochResponse,
+    OpenFirstEpochWebClient,
+    OpenNewEpochBasedOnCurrentResponse,
+    OpenNewEpochBasedOnCurrentWebClient
+} from "@/lib/labyrinth/epoch/open-new-epoch.ts";
+import {
+    GetNewerEpochJoinData,
+    GetNewestEpochSequenceIDResponse,
+    GetOlderEpochJoinData,
+    JoinEpochWebClient
+} from "@/lib/labyrinth/epoch/join-epoch.ts";
+import {
+    GetVirtualDeviceRecoverySecretsResponse,
+    GetVirtualDeviceRecoverySecretsWebClient
+} from "@/lib/labyrinth/device/virtual-device.ts";
+import {AuthenticateDeviceToEpochWebClient} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
+import {UploadDevicePublicKeyBundleWebClient} from "@/lib/labyrinth/device/device.ts";
 
-async function uploadEpochJoinData(newEpochSequenceID: string,
-                                   deviceIDToEncryptedEpochEntropyMap: DeviceIDToEncryptedEpochEntropyMap): Promise<string> {
-    const response = await axiosAPI.post<string>(`api/labyrinth/epoch/by-sequence-id/${newEpochSequenceID}/join-data`, deviceIDToEncryptedEpochEntropyMap)
-    return response.data
+const openFirstEpochWebClient: OpenFirstEpochWebClient = {
+    openFirstEpoch: async (requestBody) =>
+        (await axiosInstance.post<OpenFirstEpochResponse>(`api/labyrinth/epochs/open-first`, requestBody)).data,
 }
 
-async function uploadAuthenticationData(epochID: string,
-                                        epochDeviceMac: Buffer): Promise<void> {
-    await axiosAPI.post<void>(`api/labyrinth/epoch/${epochID}/authenticate`, epochDeviceMac)
+const openNewEpochBasedOnCurrentWebClient: OpenNewEpochBasedOnCurrentWebClient = {
+    getDevicesInEpoch: async (epochID) =>
+        (await axiosInstance.get<GetDevicesInEpochResponse>(`api/labyrinth/epochs/${epochID}/devices`)).data,
+
+    openNewEpochBasedOnCurrent: async (currentEpochID, requestBody) =>
+        (await axiosInstance.post<OpenNewEpochBasedOnCurrentResponse>(`api/labyrinth/epochs/open-based-on-current/${currentEpochID}`, requestBody)).data,
 }
 
-async function uploadEpochRecoveryData(epochRecoveryData: EpochRecoveryData): Promise<void> {
-    await axiosAPI.post<void>(`api/labyrinth/epoch/recovery-data`, epochRecoveryData)
+const joinEpochWebClient: JoinEpochWebClient = {
+    getNewerEpochJoinData: async (newerEpochSequenceID) =>
+        (await axiosInstance.get<GetNewerEpochJoinData>(`api/labyrinth/epochs/by-sequence-id/${newerEpochSequenceID}/newer-epoch-join-data`)).data,
+
+    getOlderEpochJoinData: async (olderEpochSequenceID) =>
+        (await axiosInstance.get<GetOlderEpochJoinData>(`api/labyrinth/epochs/by-sequence-id/${olderEpochSequenceID}/older-epoch-join-data`)).data,
+
+    getNewestEpochSequenceID: async () =>
+        (await axiosInstance.get<GetNewestEpochSequenceIDResponse>(`api/labyrinth/epochs/newest-sequence-id`)).data,
 }
 
-async function getDevicesInEpoch(epochID: string): Promise<PublicDevice[]> {
-    const response = await axiosAPI.get<PublicDevice[]>(`api/labyrinth/epoch/${epochID}/devices`)
-    return response.data
+const getVirtualDeviceRecoverySecretsWebClient: GetVirtualDeviceRecoverySecretsWebClient = {
+    getVirtualDeviceRecoverySecrets: async (virtualDeviceID) =>
+        (await axiosInstance.get<GetVirtualDeviceRecoverySecretsResponse>(`api/labyrinth/virtual-device/${virtualDeviceID}/recovery-secrets`)).data,
 }
 
-async function getEpochJoinData(epochSequenceID: string): Promise<EpochJoinData> {
-    const response = await axiosAPI.get<EpochJoinData>(`api/labyrinth/epoch/by-sequence-id/${epochSequenceID}/join-data`)
-    return response.data
+const authenticateDeviceToEpochWebClient: AuthenticateDeviceToEpochWebClient = {
+    authenticateDeviceToEpoch: async (epochID, authenticateDeviceToEpochRequestBody) =>
+        (await axiosInstance.post(`api/labyrinth/epochs/${epochID}/authenticate`, authenticateDeviceToEpochRequestBody)).data,
 }
 
-async function getEpochRecoveryData(epochSequenceID: string): Promise<EpochRecoveryData> {
-    const response = await axiosAPI.get<EpochRecoveryData>(`api/labyrinth/epoch/by-sequence-id/${epochSequenceID}/recovery-data`)
-    return response.data
+const uploadDevicePublicKeyBundleWebClient: UploadDevicePublicKeyBundleWebClient = {
+    uploadDevicePublicKeyBundle: async (devicePublicKeyBundle) =>
+        (await axiosInstance.post(`api/labyrinth/device/key-bundle`, devicePublicKeyBundle)).data,
 }
 
 const labyrinthWebClientImpl = {
-    uploadEpochRecoveryData,
-    getEpochRecoveryData,
-    getDevicesInEpoch,
-    getEpochJoinData,
-    uploadAuthenticationData,
-    uploadEpochJoinData
+    ...openFirstEpochWebClient,
+    ...openNewEpochBasedOnCurrentWebClient,
+    ...joinEpochWebClient,
+    ...getVirtualDeviceRecoverySecretsWebClient,
+    ...authenticateDeviceToEpochWebClient,
+    ...uploadDevicePublicKeyBundleWebClient,
 } as LabyrinthWebClient
 
 export default labyrinthWebClientImpl

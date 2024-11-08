@@ -196,7 +196,7 @@ async function encryptCurrentEpochJoinData(currentEpoch: Epoch,
 
     const encryptedCurrentEpochRootKey = await encrypt(
         newEpochDataStorageKey,
-        Buffer.from("epoch_data_metadata"),
+        encode("epoch_data_metadata"),
         currentEpoch.rootKey
     )
 
@@ -234,7 +234,7 @@ async function encryptNewEpochEntropyForEveryDeviceInEpoch(currentEpoch: Epoch,
         const isValidEpochStorageKey = pk_verify(
             deviceInEpoch.keyBundle.deviceKeyPub,
             deviceInEpoch.keyBundle.epochStorageKeySig,
-            Buffer.of(0x30),
+            Uint8Array.of(0x30),
             deviceInEpoch.keyBundle.epochStorageKeyPub.serialize()
         )
 
@@ -247,7 +247,7 @@ async function encryptNewEpochEntropyForEveryDeviceInEpoch(currentEpoch: Epoch,
             thisDevice.keyBundle.public.epochStorageAuthKeyPub,
             thisDevice.keyBundle.private.epochStorageAuthKeyPriv,
             epochDistributionPreSharedKey,
-            Buffer.from(`epoch_${newEpochWithoutID.sequenceID}`),
+            encode(`epoch_${newEpochWithoutID.sequenceID}`),
             newEpochEntropy
         )
     }

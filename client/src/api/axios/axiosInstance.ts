@@ -1,4 +1,5 @@
 import axios, {AxiosError} from "axios";
+import {SESSION_EXPIRATION_TIME_MIN, SESSION_EXPIRES_AT_KEY} from "@/constants.ts";
 
 const createAxiosInstance = () => {
     const client = axios.create({
@@ -11,23 +12,25 @@ const createAxiosInstance = () => {
     });
 
     client.interceptors.request.use(request => {
-        console.debug("Making request:", request)
+        console.debug("Making request: ", request)
         return request
     })
 
     client.interceptors.response.use(
         response => {
             console.debug("Got response: ", response)
-            localStorage.setItem(import.meta.env.VITE_SESSION_EXPIRES_AT_LOCAL_STORAGE_KEY,
-                (Date.now() + parseInt(import.meta.env.VITE_SESSION_EXPIRATION_TIME_MIN) * 60 * 1000).toString())
+            localStorage.setItem(SESSION_EXPIRES_AT_KEY, (Date.now() + SESSION_EXPIRATION_TIME_MIN * 60 * 100).toString())
             return response;
         },
         (error: AxiosError) => {
-            if (error.request) {
-                console.error(error.request)
+            if (error.response) {
+                console.debug("[interceptor] Server responded with error: ", error.message)
+            } else if (error.request) {
+                console.debug("[interceptor] No response from the server: ", error.message)
             } else {
-                console.error("Request was not made: ", error.message)
+                console.debug("[interceptor] Setting up request failed: ", error.message)
             }
+
             return Promise.reject(error)
         }
     )
@@ -35,5 +38,5 @@ const createAxiosInstance = () => {
     return client
 }
 
-const axiosAPI = createAxiosInstance()
-export default axiosAPI
+const axiosInstance = createAxiosInstance()
+export default axiosInstance

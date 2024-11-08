@@ -1,6 +1,6 @@
 import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
 import {pk_sig_keygen, pk_sign} from "@/lib/labyrinth/crypto/signing.ts";
-import {decode, encode, random} from "../crypto/utils.ts";
+import {bytes_equal, decode, encode, random} from "../crypto/utils.ts";
 import {kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 import {
@@ -82,7 +82,7 @@ export class VirtualDevice {
 function generateVirtualDeviceKeyBundle(): VirtualDeviceKeyBundle {
     const {privateKey: deviceKeyPriv, publicKey: deviceKeyPub} = pk_sig_keygen()
     const {privateKey: epochStorageKeyPriv, publicKey: epochStorageKeyPub} = pk_enc_keygen()
-    const epochStorageKeySig = pk_sign(deviceKeyPriv, Buffer.of(0x30), epochStorageKeyPub.getPublicKeyBytes())
+    const epochStorageKeySig = pk_sign(deviceKeyPriv, Uint8Array.of(0x30), epochStorageKeyPub.getPublicKeyBytes())
 
     const privateKeyBundle: VirtualDevicePrivateKeyBundle = {
         deviceKeyPriv,
@@ -248,7 +248,7 @@ async function decryptVirtualDeviceRecoverSecrets(virtualDeviceDecryptionKey: Ui
         epochStorageKeyPub.getPublicKeyBytes()
     )
 
-    if (Buffer.compare(virtualDeviceRecoverSecretsEncrypted.epochStorageKeySig, epochStorageKeySig) !== 0) {
+    if (!bytes_equal(virtualDeviceRecoverSecretsEncrypted.epochStorageKeySig, epochStorageKeySig)) {
         throw new InvalidEpochStorageKeySignature()
     }
 

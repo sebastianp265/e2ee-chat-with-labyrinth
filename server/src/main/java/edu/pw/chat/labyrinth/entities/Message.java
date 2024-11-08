@@ -4,11 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Getter
-@RequiredArgsConstructor
 @Builder
+@RequiredArgsConstructor
 @AllArgsConstructor
 @Table(indexes = {
         @Index(name = "inbox_thread_timestamp_index", columnList = "inbox_id, thread_id, timestamp")
@@ -25,7 +26,7 @@ public class Message {
 
     @Id
     @GeneratedValue
-    private Long messageID;
+    private UUID messageID;
 
     @Column(nullable = false)
     private Instant timestamp;

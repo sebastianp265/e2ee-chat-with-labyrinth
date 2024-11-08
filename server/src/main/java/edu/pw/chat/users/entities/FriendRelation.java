@@ -1,4 +1,4 @@
-package edu.pw.chat.entitities.user;
+package edu.pw.chat.users.entities;
 
 import jakarta.persistence.*;
 import lombok.*;

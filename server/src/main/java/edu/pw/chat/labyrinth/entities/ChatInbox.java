@@ -1,11 +1,14 @@
-package edu.pw.chat.entitities.chat;
+package edu.pw.chat.labyrinth.entities;
 
-import edu.pw.chat.entitities.user.ChatUser;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -16,9 +19,7 @@ public class ChatInbox {
 
     @Id
     @GeneratedValue
-    private Long id;
+    private UUID id;
 
-    @OneToOne
-    private ChatUser owner;
-
+    private UUID userID;
 }

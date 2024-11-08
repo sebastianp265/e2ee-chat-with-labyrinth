@@ -1,11 +1,11 @@
 package edu.pw.chat.data;
 
-import edu.pw.chat.entitities.chat.ChatInbox;
-import edu.pw.chat.entitities.user.ChatUser;
-import edu.pw.chat.entitities.user.FriendRelation;
-import edu.pw.chat.repository.chat.ChatInboxRepository;
-import edu.pw.chat.repository.user.ChatUserRepository;
-import edu.pw.chat.repository.user.FriendRelationRepository;
+import edu.pw.chat.labyrinth.entities.ChatInbox;
+import edu.pw.chat.users.entities.ChatUser;
+import edu.pw.chat.users.entities.FriendRelation;
+import edu.pw.chat.labyrinth.repository.chat.ChatInboxRepository;
+import edu.pw.chat.labyrinth.repository.user.ChatUserRepository;
+import edu.pw.chat.labyrinth.repository.user.FriendRelationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -52,17 +52,17 @@ public class DataSeeder implements ApplicationRunner {
 
         chatInboxRepository.save(
                 ChatInbox.builder()
-                        .owner(seba)
+                        .userID(seba.getId())
                         .build()
         );
         chatInboxRepository.save(
                 ChatInbox.builder()
-                        .owner(krzysio)
+                        .userID(krzysio.getId())
                         .build()
         );
         chatInboxRepository.save(
                 ChatInbox.builder()
-                        .owner(arek)
+                        .userID(arek.getId())
                         .build()
         );
 

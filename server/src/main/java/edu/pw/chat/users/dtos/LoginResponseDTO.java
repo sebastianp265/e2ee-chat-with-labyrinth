@@ -1,4 +1,4 @@
-package edu.pw.chat.dtos;
+package edu.pw.chat.users.dtos;
 
 import lombok.Builder;
 import lombok.Value;

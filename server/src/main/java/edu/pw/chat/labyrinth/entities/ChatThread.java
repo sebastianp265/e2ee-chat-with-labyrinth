@@ -1,34 +1,28 @@
-package edu.pw.chat.entitities.labyrinth;
+package edu.pw.chat.labyrinth.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
-import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class Epoch {
+public class ChatThread {
 
     @Id
     @GeneratedValue
-    private Long id;
+    private UUID id;
 
-    private Long sequenceID;
-
-    @ToString.Exclude
-    @OneToMany
-    private Set<Device> devicesInEpoch;
+    // if the conversation is not a group one (more than 2 members) then *name=null* ,
+    // else *name=receiver name*
+    private String name;
 
     @Override
     public final boolean equals(Object o) {
@@ -37,8 +31,8 @@ public class Epoch {
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        Epoch epoch = (Epoch) o;
-        return getId() != null && Objects.equals(getId(), epoch.getId());
+        ChatThread that = (ChatThread) o;
+        return getId() != null && Objects.equals(getId(), that.getId());
     }
 
     @Override

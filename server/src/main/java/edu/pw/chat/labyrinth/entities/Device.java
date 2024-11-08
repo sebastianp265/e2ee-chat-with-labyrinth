@@ -1,4 +1,4 @@
-package edu.pw.chat.entitities.labyrinth;
+package edu.pw.chat.labyrinth.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +10,7 @@ import lombok.ToString;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -20,7 +21,7 @@ public class Device {
 
     @Id
     @GeneratedValue
-    private Long id;
+    private UUID id;
 
     private byte[] deviceKeyPub;
 

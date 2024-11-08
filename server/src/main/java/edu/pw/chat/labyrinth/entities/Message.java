@@ -1,7 +1,5 @@
-package edu.pw.chat.entitities.labyrinth;
+package edu.pw.chat.labyrinth.entities;
 
-import edu.pw.chat.entitities.chat.ChatInbox;
-import edu.pw.chat.entitities.chat.ChatThread;
 import jakarta.persistence.*;
 import lombok.*;
 

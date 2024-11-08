@@ -1,11 +1,11 @@
-package edu.pw.chat.controllers;
+package edu.pw.chat.users.controllers;
 
-import edu.pw.chat.dtos.LoginRequestDTO;
-import edu.pw.chat.dtos.LoginResponseDTO;
-import edu.pw.chat.entitities.chat.ChatInbox;
-import edu.pw.chat.entitities.user.ChatUser;
-import edu.pw.chat.repository.chat.ChatInboxRepository;
-import edu.pw.chat.repository.user.ChatUserRepository;
+import edu.pw.chat.users.dtos.LoginRequestDTO;
+import edu.pw.chat.users.dtos.LoginResponseDTO;
+import edu.pw.chat.labyrinth.entities.ChatInbox;
+import edu.pw.chat.users.entities.ChatUser;
+import edu.pw.chat.labyrinth.repository.chat.ChatInboxRepository;
+import edu.pw.chat.labyrinth.repository.user.ChatUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -46,13 +47,13 @@ public class AuthenticationController {
         Authentication authenticationResponse = authenticationManager
                 .authenticate(authenticationRequest);
 
-        Long loggedUserId = chatUserRepository.findByUsername(loginRequestDTO.getUsername())
+        UUID loggedUserId = chatUserRepository.findByUsername(loginRequestDTO.getUsername())
                 .map(ChatUser::getId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         "User exists in SecurityContextRepository and not in ChatUserRepository")
                 );
-        Long inboxId = chatInboxRepository.findByOwner_Id(loggedUserId)
+        UUID inboxId = chatInboxRepository.findByUserID(loggedUserId)
                 .map(ChatInbox::getId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR,

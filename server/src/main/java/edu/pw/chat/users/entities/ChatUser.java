@@ -1,10 +1,12 @@
-package edu.pw.chat.entitities.user;
+package edu.pw.chat.users.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.*;
+
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -15,7 +17,7 @@ public class ChatUser {
 
     @Id
     @GeneratedValue
-    private Long id;
+    private UUID id;
 
     @Column(nullable = false)
     private String username;

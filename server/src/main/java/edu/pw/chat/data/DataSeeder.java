@@ -1,11 +1,11 @@
 package edu.pw.chat.data;
 
-import edu.pw.chat.labyrinth.entities.ChatInbox;
-import edu.pw.chat.users.entities.ChatUser;
-import edu.pw.chat.users.entities.FriendRelation;
-import edu.pw.chat.labyrinth.repositories.ChatInboxRepository;
-import edu.pw.chat.users.repositories.ChatUserRepository;
-import edu.pw.chat.users.repositories.FriendRelationRepository;
+import edu.pw.chat.labyrinth.common.entities.ChatInbox;
+import edu.pw.chat.user.entities.ChatUser;
+import edu.pw.chat.user.entities.FriendRelation;
+import edu.pw.chat.labyrinth.common.repositories.ChatInboxRepository;
+import edu.pw.chat.user.repositories.ChatUserRepository;
+import edu.pw.chat.user.repositories.FriendRelationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

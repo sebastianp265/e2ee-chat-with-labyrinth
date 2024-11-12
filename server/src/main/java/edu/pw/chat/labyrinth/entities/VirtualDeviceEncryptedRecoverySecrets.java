@@ -9,20 +9,22 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Entity
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Epoch {
-
+public class VirtualDeviceEncryptedRecoverySecrets {
     @Id
     @GeneratedValue
-    private UUID id;
+    private Long id;
 
     @Column(nullable = false)
-    private String sequenceID;
-
+    private byte[] encryptedEpochSequenceID;
+    @Column(nullable = false)
+    private byte[] encryptedEpochRootKey;
+    @Column(nullable = false)
+    private byte[] encryptedDeviceKeyPriv;
+    @Column(nullable = false)
+    private byte[] encryptedEpochStorageKeyPriv;
 }

@@ -1,27 +1,26 @@
 package edu.pw.chat.labyrinth.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
-@Builder
-@RequiredArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class VirtualDeviceEpochMembershipProof {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @ManyToOne
-    private VirtualDevice device;
+    @OneToOne
+    private Epoch epoch;
 
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private VirtualDevice virtualDevice;
+
+    @Column(nullable = false)
     private byte[] epochDeviceMac;
 }

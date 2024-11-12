@@ -8,13 +8,13 @@ import java.util.UUID;
 
 @Entity
 @Getter
-@Builder
-@RequiredArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Table(indexes = {
         @Index(name = "inbox_thread_timestamp_index", columnList = "inbox_id, thread_id, timestamp")
 })
-public class Message {
+public class ChatMessage {
 
     @ManyToOne
     @JoinColumn(name = "inbox_id", nullable = false)
@@ -28,15 +28,17 @@ public class Message {
     @GeneratedValue
     private UUID messageID;
 
-    @Column(nullable = false)
+    @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
 
     @Column(nullable = false)
     private byte[] encryptedMessageData;
 
     @ManyToOne
+    @JoinColumn(nullable = false)
     private Epoch epoch;
 
+    @Column(nullable = false)
     private Long version;
 
 }

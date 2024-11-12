@@ -1,29 +1,31 @@
 package edu.pw.chat.labyrinth.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-import java.util.UUID;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Builder
-@RequiredArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class VirtualDevice {
 
     @Id
-    @GeneratedValue
-    private UUID id;
+    private String id;
 
+    @Column(nullable = false)
     private byte[] deviceKeyPub;
 
+    @Column(nullable = false)
     private byte[] epochStorageKeyPub;
+    @Column(nullable = false)
     private byte[] epochStorageKeySig;
+
+    @OneToOne
+    @JoinColumn(nullable = false)
+    private VirtualDeviceEncryptedRecoverySecrets virtualDeviceEncryptedRecoverySecrets;
 
 }

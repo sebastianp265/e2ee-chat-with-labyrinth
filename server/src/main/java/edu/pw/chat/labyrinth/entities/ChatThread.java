@@ -9,9 +9,9 @@ import java.util.UUID;
 
 @Entity
 @Getter
-@Builder
-@RequiredArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class ChatThread {
 
     @Id

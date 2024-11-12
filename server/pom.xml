@@ -16,7 +16,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
-        <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+        <org.mapstruct.version>1.6.0</org.mapstruct.version>
         <org.projectlombok.version>1.18.32</org.projectlombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     </properties>
@@ -79,7 +79,8 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <version>${org.projectlombok.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -109,10 +110,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.13.0</version>
                 <configuration>
-                    <source>1.8</source> <!-- depending on your project -->
-                    <target>1.8</target> <!-- depending on your project -->
+                    <source>21</source> <!-- depending on your project -->
+                    <target>21</target> <!-- depending on your project -->
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.mapstruct</groupId>
@@ -132,9 +133,9 @@
                         </path>
                     </annotationProcessorPaths>
                     <compilerArgs>
-                        <compilerArg>
+                        <arg>
                             -Amapstruct.defaultComponentModel=spring
-                        </compilerArg>
+                        </arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

@@ -1,8 +1,5 @@
-package edu.pw.chat.labyrinth.epoch.openfirst.controller;
+package edu.pw.chat.labyrinth.epoch.openfirst;
 
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochBodyDTO;
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochResponseDTO;
-import edu.pw.chat.labyrinth.epoch.openfirst.service.OpenFirstEpochService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

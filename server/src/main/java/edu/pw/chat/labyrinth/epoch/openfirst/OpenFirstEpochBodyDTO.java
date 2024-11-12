@@ -1,4 +1,4 @@
-package edu.pw.chat.labyrinth.epoch.openfirst.dtos;
+package edu.pw.chat.labyrinth.epoch.openfirst;
 
 import edu.pw.chat.labyrinth.common.dtos.DevicePublicKeyBundleDTO;
 import edu.pw.chat.labyrinth.common.dtos.VirtualDeviceEncryptedRecoverySecretsDTO;

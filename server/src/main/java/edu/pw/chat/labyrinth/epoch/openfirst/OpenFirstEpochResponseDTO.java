@@ -1,4 +1,4 @@
-package edu.pw.chat.labyrinth.epoch.openfirst.dtos;
+package edu.pw.chat.labyrinth.epoch.openfirst;
 
 import java.util.UUID;
 

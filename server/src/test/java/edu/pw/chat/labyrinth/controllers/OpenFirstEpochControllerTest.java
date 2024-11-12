@@ -7,9 +7,9 @@ import edu.pw.chat.labyrinth.common.dtos.VirtualDeviceEncryptedRecoverySecretsDT
 import edu.pw.chat.labyrinth.common.dtos.VirtualDevicePublicKeyBundleDTO;
 import edu.pw.chat.labyrinth.common.entities.*;
 import edu.pw.chat.labyrinth.common.repositories.*;
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochBodyDTO;
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochBodyDTO.FirstEpochMembershipProof;
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochResponseDTO;
+import edu.pw.chat.labyrinth.epoch.openfirst.OpenFirstEpochBodyDTO;
+import edu.pw.chat.labyrinth.epoch.openfirst.OpenFirstEpochBodyDTO.FirstEpochMembershipProof;
+import edu.pw.chat.labyrinth.epoch.openfirst.OpenFirstEpochResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,7 +23,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 

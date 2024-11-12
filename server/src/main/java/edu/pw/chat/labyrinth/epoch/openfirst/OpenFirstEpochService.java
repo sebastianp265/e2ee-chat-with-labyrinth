@@ -1,10 +1,7 @@
-package edu.pw.chat.labyrinth.epoch.openfirst.service;
+package edu.pw.chat.labyrinth.epoch.openfirst;
 
 import edu.pw.chat.labyrinth.common.mappers.*;
 import edu.pw.chat.labyrinth.common.repositories.*;
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochBodyDTO;
-import edu.pw.chat.labyrinth.epoch.openfirst.dtos.OpenFirstEpochResponseDTO;
-import edu.pw.chat.labyrinth.epoch.openfirst.exceptions.AlreadyRegisteredToLabyrinth;
 import edu.pw.chat.labyrinth.common.services.ChatInboxService;
 import edu.pw.chat.user.services.ChatUserService;
 import jakarta.transaction.Transactional;
@@ -40,7 +37,7 @@ public class OpenFirstEpochService {
     public OpenFirstEpochResponseDTO openFirstEpoch(OpenFirstEpochBodyDTO openFirstEpochBodyDTO, String username) {
         UUID userID = chatUserService.getUserIDByUsername(username);
         if (chatInboxService.existsByUserID(userID)) {
-            throw new AlreadyRegisteredToLabyrinth();
+            throw new AlreadyRegisteredToLabyrinthException();
         }
         var savedEpoch = epochRepository.save(
                 epochMapper.toEntity(

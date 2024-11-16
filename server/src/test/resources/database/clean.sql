@@ -1,2 +1,5 @@
-DELETE FROM friend_relation;
-DELETE FROM chat_user;
+DELETE
+FROM friend_relation;
+
+DELETE
+FROM chat_user;

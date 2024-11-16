@@ -24,7 +24,10 @@ public class VirtualDevice {
     @Column(nullable = false)
     private byte[] epochStorageKeySig;
 
-    @OneToOne
+    @OneToOne(
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     @JoinColumn(nullable = false)
     private VirtualDeviceEncryptedRecoverySecrets virtualDeviceEncryptedRecoverySecrets;
 

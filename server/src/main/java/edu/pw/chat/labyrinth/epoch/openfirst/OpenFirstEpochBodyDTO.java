@@ -13,7 +13,7 @@ public record OpenFirstEpochBodyDTO(
 ) {
 
     public record FirstEpochMembershipProof(
-            byte[] epochThisDeviceMac,
+            byte[] epochDeviceMac,
             byte[] epochVirtualDeviceMac
     ) {
     }

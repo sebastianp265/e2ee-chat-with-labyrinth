@@ -1,7 +1,10 @@
 package edu.pw.chat.labyrinth.common.entities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
@@ -13,9 +16,6 @@ public class DeviceEpochMembershipProof {
     @Id
     @GeneratedValue
     private Long id;
-
-    @ManyToOne
-    private Epoch epoch;
 
     @ManyToOne
     @JoinColumn(nullable = false)

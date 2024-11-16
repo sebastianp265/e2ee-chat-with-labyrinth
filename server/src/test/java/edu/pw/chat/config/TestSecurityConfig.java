@@ -14,9 +14,8 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public UserDetailsService testUserDetailsService() {
-        UserDetails testUser = User.withDefaultPasswordEncoder()
-                .username("user123")
-                .password("test123")
+        UserDetails testUser = User.withUsername("testUser")
+                .password("{bcrypt}$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy. fqvM/ BG")
                 .build();
         return new InMemoryUserDetailsManager(testUser);
     }

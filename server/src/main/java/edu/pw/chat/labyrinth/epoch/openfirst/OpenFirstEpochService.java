@@ -1,13 +1,17 @@
 package edu.pw.chat.labyrinth.epoch.openfirst;
 
+import edu.pw.chat.labyrinth.common.entities.ChatInbox;
 import edu.pw.chat.labyrinth.common.mappers.*;
-import edu.pw.chat.labyrinth.common.repositories.*;
-import edu.pw.chat.labyrinth.common.services.ChatInboxService;
+import edu.pw.chat.labyrinth.common.repositories.ChatInboxRepository;
+import edu.pw.chat.labyrinth.common.repositories.DeviceRepository;
+import edu.pw.chat.labyrinth.common.repositories.EpochRepository;
+import edu.pw.chat.labyrinth.common.repositories.VirtualDeviceRepository;
 import edu.pw.chat.user.services.ChatUserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -17,11 +21,8 @@ public class OpenFirstEpochService {
     private final EpochRepository epochRepository;
     private final DeviceRepository deviceRepository;
     private final VirtualDeviceRepository virtualDeviceRepository;
-    private final DeviceEpochMembershipProofRepository deviceEpochMembershipProofRepository;
-    private final VirtualDeviceEpochMembershipProofRepository virtualDeviceEpochMembershipProofRepository;
-    private final VirtualDeviceEncryptedRecoverySecretsRepository virtualDeviceEncryptedRecoverySecretsRepository;
+    private final ChatInboxRepository chatInboxRepository;
 
-    private final ChatInboxService chatInboxService;
     private final ChatUserService chatUserService;
 
     private final EpochMapper epochMapper;
@@ -29,48 +30,47 @@ public class OpenFirstEpochService {
     private final VirtualDeviceMapper virtualDeviceMapper;
     private final DeviceEpochMembershipProofMapper deviceEpochMembershipProofMapper;
     private final VirtualDeviceEpochMembershipProofMapper virtualDeviceEpochMembershipProofMapper;
-    private final VirtualDeviceEncryptedRecoverySecretsMapper virtualDeviceEncryptedRecoverySecretsMapper;
 
     private static final String FIRST_SEQUENCE_ID = "0";
 
     @Transactional
     public OpenFirstEpochResponseDTO openFirstEpoch(OpenFirstEpochBodyDTO openFirstEpochBodyDTO, String username) {
         UUID userID = chatUserService.getUserIDByUsername(username);
-        if (chatInboxService.existsByUserID(userID)) {
+        if (chatInboxRepository.existsByUserID(userID)) {
             throw new AlreadyRegisteredToLabyrinthException();
         }
-        var savedEpoch = epochRepository.save(
-                epochMapper.toEntity(
-                        FIRST_SEQUENCE_ID
+        var savedChatInbox = chatInboxRepository.save(
+                ChatInbox.builder()
+                        .userID(userID)
+                        .build()
+        );
+
+        var savedDevice = deviceRepository.save(
+                deviceMapper.toEntity(
+                        openFirstEpochBodyDTO.devicePublicKeyBundleDTO()
                 )
         );
 
-        var savedDevice = deviceRepository.save(deviceMapper.toEntity(
-                openFirstEpochBodyDTO.devicePublicKeyBundleDTO()
-        ));
-        deviceEpochMembershipProofRepository.save(
-                deviceEpochMembershipProofMapper.toEntity(
-                        savedEpoch,
-                        savedDevice,
-                        openFirstEpochBodyDTO.firstEpochMembershipProof().epochThisDeviceMac()
-                )
-        );
-
-        var savedVirtualDeviceEncryptedRecoverySecrets = virtualDeviceEncryptedRecoverySecretsRepository.save(
-                virtualDeviceEncryptedRecoverySecretsMapper.toEntity(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecretsDTO())
-        );
         var savedVirtualDevice = virtualDeviceRepository.save(
                 virtualDeviceMapper.toEntity(
                         openFirstEpochBodyDTO.virtualDeviceID(),
-                        savedVirtualDeviceEncryptedRecoverySecrets,
+                        openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecretsDTO(),
                         openFirstEpochBodyDTO.virtualDevicePublicKeyBundleDTO()
                 )
         );
-        virtualDeviceEpochMembershipProofRepository.save(
-                virtualDeviceEpochMembershipProofMapper.toEntity(
-                        savedEpoch,
-                        savedVirtualDevice,
-                        openFirstEpochBodyDTO.firstEpochMembershipProof().epochVirtualDeviceMac()
+
+        var savedEpoch = epochRepository.save(
+                epochMapper.toEntity(
+                        savedChatInbox,
+                        List.of(deviceEpochMembershipProofMapper.toEntity(
+                                savedDevice,
+                                openFirstEpochBodyDTO.firstEpochMembershipProof().epochDeviceMac()
+                        )),
+                        virtualDeviceEpochMembershipProofMapper.toEntity(
+                                savedVirtualDevice,
+                                openFirstEpochBodyDTO.firstEpochMembershipProof().epochVirtualDeviceMac()
+                        ),
+                        FIRST_SEQUENCE_ID
                 )
         );
 

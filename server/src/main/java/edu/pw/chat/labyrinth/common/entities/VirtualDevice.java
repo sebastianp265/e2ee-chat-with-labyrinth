@@ -16,6 +16,10 @@ public class VirtualDevice {
     @Id
     private String id;
 
+    @OneToOne
+    @JoinColumn(nullable = false)
+    private ChatInbox chatInbox;
+
     @Column(nullable = false)
     private byte[] deviceKeyPub;
 
@@ -23,12 +27,5 @@ public class VirtualDevice {
     private byte[] epochStorageKeyPub;
     @Column(nullable = false)
     private byte[] epochStorageKeySig;
-
-    @OneToOne(
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    @JoinColumn(nullable = false)
-    private VirtualDeviceEncryptedRecoverySecrets virtualDeviceEncryptedRecoverySecrets;
 
 }

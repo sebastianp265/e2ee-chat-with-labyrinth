@@ -59,6 +59,8 @@ class OpenFirstEpochControllerTest {
 
     private OpenFirstEpochBodyDTO openFirstEpochBodyDTO;
     private MockHttpServletResponse actualResponse;
+    @Autowired
+    private VirtualDeviceEncryptedRecoverySecretsRepository virtualDeviceEncryptedRecoverySecretsRepository;
 
     @Test
     @WithUserDetails("testUser")
@@ -119,65 +121,83 @@ class OpenFirstEpochControllerTest {
     }
 
     private void thenDataFromRequestAreSavedInDB() throws UnsupportedEncodingException, JsonProcessingException {
-        OpenFirstEpochResponseDTO actualResponseContent = objectMapper.readValue(
-                actualResponse.getContentAsString(),
-                OpenFirstEpochResponseDTO.class
-        );
-
-        var expectedEpochInDB = Epoch.builder()
-                .id(actualResponseContent.epochID())
-                .chatInbox(
-                        ChatInbox.builder()
-                                .userID(UUID.fromString("56beecb9-68d0-43f1-9b42-179fde863bc6"))
-                                .build()
-                )
-                .deviceEpochMembershipProofs(List.of(DeviceEpochMembershipProof.builder()
-                        .device(Device.builder()
-                                .id(actualResponseContent.deviceID())
-                                .deviceKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundleDTO().deviceKeyPub())
-                                .epochStorageAuthKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundleDTO().epochStorageAuthKeyPub())
-                                .epochStorageAuthKeySig(openFirstEpochBodyDTO.devicePublicKeyBundleDTO().epochStorageAuthKeySig())
-                                .epochStorageKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundleDTO().epochStorageKeyPub())
-                                .epochStorageKeySig(openFirstEpochBodyDTO.devicePublicKeyBundleDTO().epochStorageKeySig())
-                                .build())
-                        .epochDeviceMac(openFirstEpochBodyDTO.firstEpochMembershipProof().epochDeviceMac())
-                        .build())
-                )
-                .virtualDeviceEpochMembershipProof(VirtualDeviceEpochMembershipProof.builder()
-                        .virtualDevice(VirtualDevice.builder()
-                                .id(openFirstEpochBodyDTO.virtualDeviceID())
-                                .deviceKeyPub(openFirstEpochBodyDTO.virtualDevicePublicKeyBundleDTO().deviceKeyPub())
-                                .epochStorageKeyPub(openFirstEpochBodyDTO.virtualDevicePublicKeyBundleDTO().epochStorageKeyPub())
-                                .epochStorageKeySig(openFirstEpochBodyDTO.virtualDevicePublicKeyBundleDTO().epochStorageKeySig())
-                                .virtualDeviceEncryptedRecoverySecrets(VirtualDeviceEncryptedRecoverySecrets.builder()
-                                        .encryptedEpochSequenceID(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecretsDTO().encryptedEpochSequenceID())
-                                        .encryptedEpochStorageKeyPriv(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecretsDTO().encryptedEpochStorageKeyPriv())
-                                        .encryptedEpochRootKey(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecretsDTO().encryptedEpochRootKey())
-                                        .encryptedDeviceKeyPriv(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecretsDTO().encryptedDeviceKeyPriv())
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .epochDeviceMac(openFirstEpochBodyDTO.firstEpochMembershipProof().epochVirtualDeviceMac())
-                        .build()
-                )
-                .sequenceID("0")
-                .build();
-
         assertEquals(1, epochRepository.count());
         assertEquals(1, deviceRepository.count());
         assertEquals(1, deviceEpochMembershipProofRepository.count());
         assertEquals(1, virtualDeviceRepository.count());
         assertEquals(1, virtualDeviceEpochMembershipProofRepository.count());
 
-        assertThat(epochRepository.findById(actualResponseContent.epochID()).orElseThrow())
+        OpenFirstEpochResponseDTO actualResponseContent = objectMapper.readValue(
+                actualResponse.getContentAsString(),
+                OpenFirstEpochResponseDTO.class
+        );
+
+        UUID userID = UUID.fromString("56beecb9-68d0-43f1-9b42-179fde863bc6");
+
+        var expectedChatInbox = ChatInbox.builder()
+                .userID(userID)
+                .build();
+
+        var expectedVirtualDevice = VirtualDevice.builder()
+                .id(openFirstEpochBodyDTO.virtualDeviceID())
+                .chatInbox(expectedChatInbox)
+                .deviceKeyPub(openFirstEpochBodyDTO.virtualDevicePublicKeyBundle().deviceKeyPub())
+                .epochStorageKeyPub(openFirstEpochBodyDTO.virtualDevicePublicKeyBundle().epochStorageKeyPub())
+                .epochStorageKeySig(openFirstEpochBodyDTO.virtualDevicePublicKeyBundle().epochStorageKeySig())
+                .build();
+
+        var expectedEpochInDB = Epoch.builder()
+                .id(actualResponseContent.epochID())
+                .chatInbox(
+                        expectedChatInbox
+                )
+                .deviceEpochMembershipProofs(List.of(DeviceEpochMembershipProof.builder()
+                        .device(Device.builder()
+                                .id(actualResponseContent.deviceID())
+                                .deviceKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundle().deviceKeyPub())
+                                .epochStorageAuthKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundle().epochStorageAuthKeyPub())
+                                .epochStorageAuthKeySig(openFirstEpochBodyDTO.devicePublicKeyBundle().epochStorageAuthKeySig())
+                                .epochStorageKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundle().epochStorageKeyPub())
+                                .epochStorageKeySig(openFirstEpochBodyDTO.devicePublicKeyBundle().epochStorageKeySig())
+                                .build())
+                        .epochDeviceMac(openFirstEpochBodyDTO.firstEpochMembershipProof().epochDeviceMac())
+                        .build())
+                )
+                .virtualDeviceEpochMembershipProof(VirtualDeviceEpochMembershipProof.builder()
+                        .virtualDevice(expectedVirtualDevice)
+                        .epochDeviceMac(openFirstEpochBodyDTO.firstEpochMembershipProof().epochVirtualDeviceMac())
+                        .build()
+                )
+                .sequenceID("0")
+                .build();
+
+        assertThat(epochRepository.findAll().getFirst())
                 .usingRecursiveComparison()
                 .ignoringFields(
                         "chatInbox.id",
                         "deviceEpochMembershipProofs.id",
                         "virtualDeviceEpochMembershipProof.id",
-                        "virtualDeviceEpochMembershipProof.virtualDevice.virtualDeviceEncryptedRecoverySecrets.id"
+                        "virtualDeviceEpochMembershipProof.virtualDevice.chatInbox.id"
                 )
                 .isEqualTo(expectedEpochInDB);
+
+        var expectedVirtualDeviceEncryptedRecoverySecrets = VirtualDeviceEncryptedRecoverySecrets.builder()
+                .virtualDevice(expectedVirtualDevice)
+                .epoch(expectedEpochInDB)
+                .encryptedEpochSequenceID(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecrets().encryptedEpochSequenceID())
+                .encryptedEpochStorageKeyPriv(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecrets().encryptedEpochStorageKeyPriv())
+                .encryptedEpochRootKey(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecrets().encryptedEpochRootKey())
+                .encryptedDeviceKeyPriv(openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecrets().encryptedDeviceKeyPriv())
+                .build();
+
+        assertThat(virtualDeviceEncryptedRecoverySecretsRepository.findAll().getFirst())
+                .usingRecursiveComparison()
+                .ignoringFields(
+                        "epoch.virtualDeviceEpochMembershipProof.id",
+                        "epoch.deviceEpochMembershipProofs.id",
+                        "id",
+                        "virtualDevice.chatInbox.id"
+                )
+                .isEqualTo(expectedVirtualDeviceEncryptedRecoverySecrets);
     }
 }

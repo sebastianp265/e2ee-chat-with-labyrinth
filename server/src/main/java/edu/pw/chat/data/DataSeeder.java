@@ -1,9 +1,7 @@
 package edu.pw.chat.data;
 
-import edu.pw.chat.labyrinth.common.entities.ChatInbox;
 import edu.pw.chat.user.entities.ChatUser;
 import edu.pw.chat.user.entities.FriendRelation;
-import edu.pw.chat.labyrinth.common.repositories.ChatInboxRepository;
 import edu.pw.chat.user.repositories.ChatUserRepository;
 import edu.pw.chat.user.repositories.FriendRelationRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +19,6 @@ public class DataSeeder implements ApplicationRunner {
 
     private final ChatUserRepository chatUserRepository;
     private final FriendRelationRepository friendRelationRepository;
-    private final ChatInboxRepository chatInboxRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -47,22 +44,6 @@ public class DataSeeder implements ApplicationRunner {
                 ChatUser.builder()
                         .username("arek")
                         .visibleName("Arkadiusz")
-                        .build()
-        );
-
-        chatInboxRepository.save(
-                ChatInbox.builder()
-                        .userID(seba.getId())
-                        .build()
-        );
-        chatInboxRepository.save(
-                ChatInbox.builder()
-                        .userID(krzysio.getId())
-                        .build()
-        );
-        chatInboxRepository.save(
-                ChatInbox.builder()
-                        .userID(arek.getId())
                         .build()
         );
 

@@ -1,7 +1,7 @@
 package edu.pw.chat.labyrinth.common.mappers;
 
-import edu.pw.chat.labyrinth.common.dtos.VirtualDeviceEncryptedRecoverySecretsDTO;
 import edu.pw.chat.labyrinth.common.dtos.VirtualDevicePublicKeyBundleDTO;
+import edu.pw.chat.labyrinth.common.entities.ChatInbox;
 import edu.pw.chat.labyrinth.common.entities.VirtualDevice;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -10,10 +10,10 @@ import org.mapstruct.Mapping;
 public interface VirtualDeviceMapper {
 
     @Mapping(target = "id", source = "id")
-    @Mapping(target = "virtualDeviceEncryptedRecoverySecrets", source = "virtualDeviceEncryptedRecoverySecretsDTO")
+    @Mapping(target = "chatInbox", source = "chatInbox")
     VirtualDevice toEntity(
             String id,
-            VirtualDeviceEncryptedRecoverySecretsDTO virtualDeviceEncryptedRecoverySecretsDTO,
+            ChatInbox chatInbox,
             VirtualDevicePublicKeyBundleDTO virtualDevicePublicKeyBundleDTO
     );
 }

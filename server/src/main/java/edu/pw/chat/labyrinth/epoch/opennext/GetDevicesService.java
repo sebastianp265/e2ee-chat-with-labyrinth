@@ -19,12 +19,8 @@ public class GetDevicesService {
     public GetDevicesInEpochResponseDTO getDevicesInEpoch(UUID epochID, String username) {
         UUID userID = chatUserService.getUserIDByUsername(username);
 
-        Epoch epoch = epochRepository.findById(epochID)
-                .orElseThrow(() -> new EpochDoesNotExistException(epochID));
-
-        if (!epoch.getChatInbox().getId().equals(userID)) {
-            throw new EpochAccessDeniedException();
-        }
+        Epoch epoch = epochRepository.findByIdAndChatInbox_UserID(epochID, userID)
+                .orElseThrow(EpochAccessDeniedException::new);
 
         return getDevicesInEpochResponseMapper.toDTO(
                 epoch.getDeviceEpochMembershipProofs(),

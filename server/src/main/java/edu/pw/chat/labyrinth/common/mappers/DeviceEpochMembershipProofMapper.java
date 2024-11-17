@@ -9,6 +9,8 @@ import org.mapstruct.Mapping;
 public interface DeviceEpochMembershipProofMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "device", source = "device")
+    @Mapping(target = "epochDeviceMac", source = "epochDeviceMac")
     DeviceEpochMembershipProof toEntity(
             Device device,
             byte[] epochDeviceMac

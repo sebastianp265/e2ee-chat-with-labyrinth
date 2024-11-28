@@ -1,5 +1,5 @@
 import {pk_auth_keygen, pk_decrypt, pk_enc_keygen, pk_encrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
-import {encode, random} from "@/lib/labyrinth/crypto/utils.ts";
+import {encodeText, random} from "@/lib/labyrinth/crypto/utils.ts";
 import {KEY_LENGTH_BYTES} from "@/lib/labyrinth/crypto/keys.ts";
 
 describe("labyrinth public key encryption", () => {
@@ -16,7 +16,7 @@ describe("labyrinth public key encryption", () => {
         const aad = random(8)
 
         // sender prepares the message
-        const plaintext = encode("Hello Alice!")
+        const plaintext = encodeText("Hello Alice!")
 
         const ciphertext = await pk_encrypt(recipient_enc_pub, sender_auth_pub, sender_auth_priv, psk, aad, plaintext)
         // ciphertext is sent to recipient

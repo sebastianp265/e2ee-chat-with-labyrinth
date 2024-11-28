@@ -1,5 +1,6 @@
-import {cryptoAssert} from "@/lib/labyrinth/crypto/utils.ts";
+import {bytes_equal, concat, cryptoAssert} from "@/lib/labyrinth/crypto/utils.ts";
 import {ed25519, edwardsToMontgomeryPriv, edwardsToMontgomeryPub, x25519} from "@noble/curves/ed25519";
+import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
 
 export function generate_key_pair() {
     const privateKey = PrivateKey.generate()
@@ -13,7 +14,7 @@ export class PrivateKey {
     // ed25519 private key
     private readonly ed25519PrivateKey: Uint8Array
 
-    public constructor(ed25519PrivateKey: Uint8Array) {
+    private constructor(ed25519PrivateKey: Uint8Array) {
         cryptoAssert(ed25519PrivateKey.length === KEY_LENGTH_BYTES)
         this.ed25519PrivateKey = ed25519PrivateKey
     }
@@ -27,29 +28,30 @@ export class PrivateKey {
     }
 
     // used for persistence only
-    public serialize(): Uint8Array {
-        return this.ed25519PrivateKey
+    public serialize(): string {
+        return BytesSerializer.serialize(this.ed25519PrivateKey)
     }
 
     // used for persistence only
-    public static deserialize(serialized: Uint8Array): PrivateKey {
-        return new PrivateKey(serialized)
+    public static deserialize(serialized: string): PrivateKey {
+        return new PrivateKey(BytesSerializer.deserialize(serialized))
     }
 
-    public sign(message: Uint8Array): Uint8Array {
-        return ed25519.sign(message, this.ed25519PrivateKey)
+    public sign(useCaseByte: Uint8Array, data: Uint8Array): Uint8Array {
+        cryptoAssert(useCaseByte.length === 1)
+
+        return ed25519.sign(concat(useCaseByte, data), this.ed25519PrivateKey)
     }
 
     public agree(otherKey: PublicKey): Uint8Array {
         const x25519PrivateKey = edwardsToMontgomeryPriv(this.ed25519PrivateKey)
-        const x25519OtherPublicKey = otherKey.getPublicKeyBytes()
+        const x25519OtherPublicKey = otherKey.getX25519PublicKeyBytes()
         return x25519.getSharedSecret(x25519PrivateKey, x25519OtherPublicKey)
     }
 
 }
 
 export class PublicKey {
-    // ed25519 public key
     private readonly ed25519PublicKey: Uint8Array
 
     public constructor(ed25519PublicKey: Uint8Array) {
@@ -57,26 +59,31 @@ export class PublicKey {
         this.ed25519PublicKey = ed25519PublicKey
     }
 
-    // used for persistence only
-    public serialize(): Uint8Array {
+    public serialize(): string {
+        return BytesSerializer.serialize(this.ed25519PublicKey)
+    }
+
+    public static deserialize(serialized: string): PublicKey {
+        return new PublicKey(BytesSerializer.deserialize(serialized))
+    }
+
+    public getEd25519PublicKeyBytes(): Uint8Array {
         return this.ed25519PublicKey
     }
 
-    // used for persistence only
-    public static deserialize(serialized: Uint8Array): PublicKey {
-        return new PublicKey(serialized)
-    }
-
-    // returns x25519 public key bytes
-    public getPublicKeyBytes(): Uint8Array {
+    public getX25519PublicKeyBytes(): Uint8Array {
         const x25519PublicKey = edwardsToMontgomeryPub(this.ed25519PublicKey)
         cryptoAssert(x25519PublicKey.length === KEY_LENGTH_BYTES)
 
         return x25519PublicKey
     }
 
-    public verify(message: Uint8Array, signature: Uint8Array): boolean {
-        return ed25519.verify(signature, message, this.ed25519PublicKey)
+    public verify(signature: Uint8Array, useCaseByte: Uint8Array, data: Uint8Array): boolean {
+        return ed25519.verify(signature, concat(useCaseByte, data), this.ed25519PublicKey)
+    }
+
+    public equals(otherKey: PublicKey): boolean {
+        return bytes_equal(this.getX25519PublicKeyBytes(), otherKey.getX25519PublicKeyBytes())
     }
 
 }

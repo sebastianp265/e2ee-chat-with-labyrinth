@@ -11,6 +11,5 @@ import java.util.UUID;
 @Jacksonized
 public class LoginResponseDTO {
 
-    UUID userId;
-    UUID inboxId;
+    UUID userID;
 }

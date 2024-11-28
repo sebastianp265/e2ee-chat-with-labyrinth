@@ -1,5 +1,5 @@
 import RecoveryCodeForm from "@/components/app/welcome-to-labyrinth/RecoveryCodeForm.tsx";
-import {useState} from "react";
+import React, {useState} from "react";
 import LoadingSpinnerDialogContentChildren
     from "@/components/app/welcome-to-labyrinth/LoadingSpinnerDialogContentChildren.tsx";
 import {
@@ -9,15 +9,20 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from "@/components/ui/alert-dialog.tsx";
+import {AxiosError} from "axios";
 
 export type HandleSubmitRecoveryCodeResponse = {
     isSuccess: boolean;
 }
 export type FirstLoginDialogContentProps = {
     handleSubmitRecoveryCode: (recoveryCode: string) => Promise<HandleSubmitRecoveryCodeResponse>;
+    setError: React.Dispatch<React.SetStateAction<AxiosError | null>>
 }
 
-export default function RecoverSecretsDialogContentChildren({handleSubmitRecoveryCode}: Readonly<FirstLoginDialogContentProps>) {
+export default function RecoverSecretsDialogContentChildren({
+                                                                handleSubmitRecoveryCode,
+                                                                setError
+                                                            }: Readonly<FirstLoginDialogContentProps>) {
     const [loading, setLoading] = useState<boolean>(false)
     const [success, setSuccess] = useState<boolean>(false)
 
@@ -39,11 +44,18 @@ export default function RecoverSecretsDialogContentChildren({handleSubmitRecover
         </>
     )
 
-    const onRecoveryCodeSubmit = async (recoveryCode: string) => {
+    const onRecoveryCodeSubmit = (recoveryCode: string) => {
         setLoading(true)
-        const {isSuccess} = await handleSubmitRecoveryCode(recoveryCode)
-        setSuccess(isSuccess)
-        setLoading(false)
+        handleSubmitRecoveryCode(recoveryCode)
+            .then(result => {
+                setSuccess(result.isSuccess)
+                setLoading(false)
+            })
+            .catch((e: AxiosError) => {
+                setSuccess(false)
+                setLoading(false)
+                setError(e)
+            })
     }
 
     return (

@@ -1,8 +1,9 @@
 import {OpenFirstEpochWebClient, OpenNewEpochBasedOnCurrentWebClient} from "@/lib/labyrinth/epoch/open-new-epoch.ts";
 import {JoinEpochWebClient} from "@/lib/labyrinth/epoch/join-epoch.ts";
-import {GetVirtualDeviceRecoverySecretsWebClient} from "@/lib/labyrinth/device/virtual-device.ts";
 import {AuthenticateDeviceToEpochWebClient} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
 import {UploadDevicePublicKeyBundleWebClient} from "@/lib/labyrinth/device/device.ts";
+import {CheckIfLabyrinthIsInitializedWebClient} from "@/lib/labyrinth/Labyrinth.ts";
+import {GetVirtualDeviceRecoverySecretsWebClient} from "@/lib/labyrinth/device/virtual-device/VirtualDevice.ts";
 
 
 export type LabyrinthWebClient =
@@ -12,3 +13,4 @@ export type LabyrinthWebClient =
     & GetVirtualDeviceRecoverySecretsWebClient
     & AuthenticateDeviceToEpochWebClient
     & UploadDevicePublicKeyBundleWebClient
+    & CheckIfLabyrinthIsInitializedWebClient

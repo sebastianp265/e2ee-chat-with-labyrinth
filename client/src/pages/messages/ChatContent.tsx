@@ -9,16 +9,14 @@ import useFriendsData from "@/pages/messages/hooks/useFriendsData.ts";
 import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
 
 type ChatContentProps = {
-    inboxID: string,
     loggedUserID: string,
     labyrinth: Labyrinth | null,
 }
 
 export default function ChatContent({
-                                        inboxID,
                                         loggedUserID,
                                         labyrinth,
-                                    }: ChatContentProps) {
+                                    }: Readonly<ChatContentProps>) {
     const {
         threadsData,
         chosenThreadID,
@@ -27,14 +25,12 @@ export default function ChatContent({
         addThreads,
         addMessages
     } = useThreadsData(
-        inboxID,
         labyrinth,
     )
 
     const {friends, error: friendsDataError, addFriends} = useFriendsData()
 
     const {handleSendMessage, error: chatWebSocketError, handleCreateThread} = useChatWebSocket(
-        inboxID,
         labyrinth,
         addMessages,
         addThreads,

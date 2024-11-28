@@ -12,7 +12,7 @@ public interface VirtualDeviceMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "chatInbox", source = "chatInbox")
     VirtualDevice toEntity(
-            String id,
+            byte[] id,
             ChatInbox chatInbox,
             VirtualDevicePublicKeyBundleDTO virtualDevicePublicKeyBundleDTO
     );

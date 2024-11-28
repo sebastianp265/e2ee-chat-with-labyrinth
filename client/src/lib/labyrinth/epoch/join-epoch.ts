@@ -1,13 +1,16 @@
 import {kdf_one_key, kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
-import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_decrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
 import {decrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
 import {Epoch, EpochStorage} from "@/lib/labyrinth/epoch/EpochStorage.ts";
-import {DeviceKeyBundleWithoutEpochStorageAuthKeyPair, DevicePublicKeyBundle} from "@/lib/labyrinth/device/device.ts";
-import {PublicKey} from "@/lib/labyrinth/crypto/keys.ts";
-import {decode, encode, encodeToBase64} from "@/lib/labyrinth/crypto/utils.ts";
+import {
+    DeviceKeyBundle,
+    DevicePublicKeyBundle,
+    DevicePublicKeyBundleSerialized
+} from "@/lib/labyrinth/device/key-bundle/DeviceKeyBundle.ts";
+import {VirtualDeviceKeyBundle} from "@/lib/labyrinth/device/key-bundle/VirtualDeviceKeyBundle.ts";
+import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
+import {asciiStringToBytes, bytesToAsciiString} from "@/lib/labyrinth/crypto/utils.ts";
 
-// TODO: Extend some unexpected labyrinth error
 class InvalidEpochStorageAuthKey extends Error {
     constructor() {
         super("Sender epoch storage auth key is corrupted");
@@ -16,24 +19,16 @@ class InvalidEpochStorageAuthKey extends Error {
     }
 }
 
-export type GetNewerEpochJoinData = {
+export type GetNewerEpochJoinDataResponse = {
     epochID: string,
-    encryptedEpochEntropy: Uint8Array,
-    senderDevicePublicKeyBundleSerialized: {
-        deviceKeyPub: Uint8Array,
-
-        epochStorageKeyPub: Uint8Array,
-        epochStorageKeySig: Uint8Array,
-
-        epochStorageAuthKeyPub: Uint8Array,
-        epochStorageAuthKeySig: Uint8Array,
-    }
+    encryptedEpochEntropy: string,
+    senderDevicePublicKeyBundle: DevicePublicKeyBundleSerialized
 }
 
-export type GetOlderEpochJoinData = {
+export type GetOlderEpochJoinDataResponse = {
     epochID: string,
-    encryptedEpochSequenceID: Uint8Array,
-    encryptedEpochRootKey: Uint8Array,
+    encryptedEpochSequenceID: string,
+    encryptedEpochRootKey: string,
 }
 
 export type GetNewestEpochSequenceIDResponse = {
@@ -41,8 +36,8 @@ export type GetNewestEpochSequenceIDResponse = {
 }
 
 export type JoinEpochWebClient = {
-    getNewerEpochJoinData: (newerEpochSequenceID: string) => Promise<GetNewerEpochJoinData>
-    getOlderEpochJoinData: (olderEpochSequenceID: string) => Promise<GetOlderEpochJoinData>
+    getNewerEpochJoinData: (newerEpochSequenceID: string) => Promise<GetNewerEpochJoinDataResponse>
+    getOlderEpochJoinData: (olderEpochSequenceID: string) => Promise<GetOlderEpochJoinDataResponse>
     getNewestEpochSequenceID: () => Promise<GetNewestEpochSequenceIDResponse>
 }
 
@@ -51,7 +46,7 @@ export type JoinEpochWebClient = {
 // TODO: Refactor to do lazy loading and fasten application startup
 // NOT EXPLICITLY TOLD IN PROTOCOL
 // Performs joining to epoch with desiredEpochSequenceID, function mutates passed epochStorage
-export async function joinAllEpochs(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorageAuthKeyPair,
+export async function joinAllEpochs(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyBundle,
                                     epochStorage: EpochStorage,
                                     joinEpochWebClient: JoinEpochWebClient): Promise<void> {
     const chainForwardPromise = chainForward(deviceKeyBundle, epochStorage, joinEpochWebClient)
@@ -61,7 +56,7 @@ export async function joinAllEpochs(deviceKeyBundle: DeviceKeyBundleWithoutEpoch
     await chainBackwardsPromise
 }
 
-async function chainForward(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorageAuthKeyPair,
+async function chainForward(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyBundle,
                             epochStorage: EpochStorage,
                             joinEpochWebClient: JoinEpochWebClient): Promise<void> {
     const {newestEpochSequenceID} = await joinEpochWebClient.getNewestEpochSequenceID()
@@ -77,56 +72,47 @@ async function chainForward(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorageA
     }
 }
 
-async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundleWithoutEpochStorageAuthKeyPair,
+async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyBundle,
                               newestKnownEpoch: Epoch,
                               joinEpochWebClient: JoinEpochWebClient): Promise<Epoch> {
     const newerEpochSequenceID = (BigInt(newestKnownEpoch.sequenceID) + 1n).toString()
 
     const [newerEpochChainingKey, newerEpochDistributionPreSharedKey] = await kdf_two_keys(
         newestKnownEpoch.rootKey,
-        Uint8Array.of(),
-        encode(`epoch_chaining_${newestKnownEpoch.sequenceID}_${newestKnownEpoch.id}`)
+        null,
+        asciiStringToBytes(`epoch_chaining_${newestKnownEpoch.sequenceID}_${newestKnownEpoch.id}`)
     )
 
     const {
         epochID: newerEpochID,
         encryptedEpochEntropy: encryptedNewerEpochEntropy,
-        senderDevicePublicKeyBundleSerialized
+        senderDevicePublicKeyBundle
     } = await joinEpochWebClient.getNewerEpochJoinData(newerEpochSequenceID)
 
-    const senderDevice: DevicePublicKeyBundle = {
-        deviceKeyPub: PublicKey.deserialize(senderDevicePublicKeyBundleSerialized.deviceKeyPub),
+    const senderDevice = DevicePublicKeyBundle.deserialize(senderDevicePublicKeyBundle)
 
-        epochStorageKeyPub: PublicKey.deserialize(senderDevicePublicKeyBundleSerialized.epochStorageKeyPub),
-        epochStorageKeySig: senderDevicePublicKeyBundleSerialized.epochStorageKeySig,
-
-        epochStorageAuthKeyPub: PublicKey.deserialize(senderDevicePublicKeyBundleSerialized.epochStorageAuthKeyPub),
-        epochStorageAuthKeySig: senderDevicePublicKeyBundleSerialized.epochStorageAuthKeySig,
-    }
-
-    const isValidEpochStorageAuthKey = pk_verify(
-        senderDevice.deviceKeyPub,
+    const isValidEpochStorageAuthKey = senderDevice.deviceKeyPub.verify(
         senderDevice.epochStorageAuthKeySig,
         Uint8Array.of(0x31),
-        senderDevice.epochStorageAuthKeyPub.getPublicKeyBytes()
+        senderDevice.epochStorageAuthKeyPub.getX25519PublicKeyBytes()
     )
     if (!isValidEpochStorageAuthKey) {
         throw new InvalidEpochStorageAuthKey()
     }
 
     const newerEpochEntropy = await pk_decrypt(
-        deviceKeyBundle.public.epochStorageKeyPub,
-        deviceKeyBundle.private.epochStorageKeyPriv,
+        deviceKeyBundle.pub.epochStorageKeyPub,
+        deviceKeyBundle.priv.epochStorageKeyPriv,
         senderDevice.epochStorageAuthKeyPub,
         newerEpochDistributionPreSharedKey,
-        encode(`epoch_${newerEpochSequenceID}`),
-        encryptedNewerEpochEntropy
+        asciiStringToBytes(`epoch_${newerEpochSequenceID}`),
+        BytesSerializer.deserialize(encryptedNewerEpochEntropy)
     )
 
     const newerEpochRootKey = await kdf_one_key(
         newerEpochEntropy,
         newerEpochChainingKey,
-        encode("epoch_root_key")
+        asciiStringToBytes("epoch_root_key")
     )
 
     return {
@@ -160,15 +146,15 @@ async function joinOlderEpoch(oldestKnownEpoch: Epoch,
 
     const olderEpochDataStorageKey = await kdf_one_key(
         oldestKnownEpoch.rootKey,
-        Uint8Array.of(),
-        encode(`epoch_data_storage_${encodeToBase64(oldestKnownEpoch.sequenceID)}`)
+        null,
+        asciiStringToBytes(`epoch_data_storage_${oldestKnownEpoch.sequenceID}`)
     )
 
-    const expectedOlderEpochSequenceID = decode(
+    const expectedOlderEpochSequenceID = bytesToAsciiString(
         await decrypt(
             olderEpochDataStorageKey,
-            encode("epoch_data_metadata"),
-            encryptedOlderEpochSequenceID
+            asciiStringToBytes("epoch_data_metadata"),
+            BytesSerializer.deserialize(encryptedOlderEpochSequenceID)
         )
     )
     if (olderEpochSequenceID !== expectedOlderEpochSequenceID) {
@@ -177,8 +163,8 @@ async function joinOlderEpoch(oldestKnownEpoch: Epoch,
 
     const olderEpochRootKey = await decrypt(
         olderEpochDataStorageKey,
-        encode("epoch_data_metadata"),
-        encryptedOlderEpochRootKey
+        asciiStringToBytes("epoch_data_metadata"),
+        BytesSerializer.deserialize(encryptedOlderEpochRootKey)
     )
 
     return {

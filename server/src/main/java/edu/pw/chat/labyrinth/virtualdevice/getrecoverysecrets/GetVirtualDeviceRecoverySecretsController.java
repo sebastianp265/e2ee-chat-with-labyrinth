@@ -3,8 +3,8 @@ package edu.pw.chat.labyrinth.virtualdevice.getrecoverysecrets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,16 +15,15 @@ public class GetVirtualDeviceRecoverySecretsController {
 
     private final GetVirtualDeviceRecoverySecretsService getVirtualDeviceRecoverySecretsService;
 
-    // TODO: Remove virtualDeviceID from path
-    @GetMapping("/{virtualDeviceID}/recovery-secrets")
+    @PostMapping("/recovery-secrets")
     public ResponseEntity<GetVirtualDeviceRecoverySecretsResponseDTO> getRecoverySecrets(
-            @PathVariable String virtualDeviceID,
+            @RequestBody GetVirtualDeviceRecoverySecretsBodyDTO getRecoverySecretsBodyDTO,
             Authentication authentication
     ) {
 
         return ResponseEntity.ok(
                 getVirtualDeviceRecoverySecretsService.getRecoverySecrets(
-                        virtualDeviceID,
+                        getRecoverySecretsBodyDTO.virtualDeviceID(),
                         authentication.getName()
                 )
         );

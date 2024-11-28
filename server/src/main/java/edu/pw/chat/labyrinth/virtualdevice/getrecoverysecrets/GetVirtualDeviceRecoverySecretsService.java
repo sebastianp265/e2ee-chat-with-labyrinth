@@ -17,7 +17,7 @@ public class GetVirtualDeviceRecoverySecretsService {
     private final VirtualDeviceEncryptedRecoverySecretsRepository virtualDeviceEncryptedRecoverySecretsRepository;
 
     public GetVirtualDeviceRecoverySecretsResponseDTO getRecoverySecrets(
-            String virtualDeviceID,
+            byte[] virtualDeviceID,
             String username
     ) {
         UUID userID = chatUserService.getUserIDByUsername(username);

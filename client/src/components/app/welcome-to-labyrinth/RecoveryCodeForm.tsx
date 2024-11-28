@@ -1,11 +1,11 @@
 import {z} from "zod";
-import {Form, useForm} from "react-hook-form";
+import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {FormControl, FormField, FormItem, FormLabel} from "@/components/ui/form.tsx";
-import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
+import {Input} from "@/components/ui/input.tsx";
 
-const formSchema = z.object({
+const FormSchema = z.object({
     recoveryCode: z.string()
         .length(40, {
             message: "Recovery code consists of 40 characters"
@@ -18,14 +18,14 @@ interface RecoveryCodeFormProps {
 
 
 export default function RecoveryCodeForm({onRecoveryCodeSubmit}: Readonly<RecoveryCodeFormProps>) {
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<z.infer<typeof FormSchema>>({
+        resolver: zodResolver(FormSchema),
         defaultValues: {
             recoveryCode: ""
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    function onSubmit(values: z.infer<typeof FormSchema>) {
         onRecoveryCodeSubmit(values.recoveryCode)
     }
 
@@ -34,13 +34,14 @@ export default function RecoveryCodeForm({onRecoveryCodeSubmit}: Readonly<Recove
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <FormField
                     control={form.control}
-                    name = "recoveryCode"
+                    name="recoveryCode"
                     render={({field}) => (
                         <FormItem>
                             <FormLabel>Recovery code</FormLabel>
                             <FormControl>
                                 <Input placeholder="Insert recovery code" {...field}/>
                             </FormControl>
+                            <FormMessage/>
                         </FormItem>
                     )}
                 />

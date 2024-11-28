@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface VirtualDeviceEncryptedRecoverySecretsRepository extends JpaRepository<VirtualDeviceEncryptedRecoverySecrets, Long> {
 
     Optional<VirtualDeviceEncryptedRecoverySecrets> findByVirtualDevice_IdAndVirtualDevice_ChatInbox_UserID(
-            String virtualDeviceID,
+            byte[] virtualDeviceID,
             UUID userID
     );
 }

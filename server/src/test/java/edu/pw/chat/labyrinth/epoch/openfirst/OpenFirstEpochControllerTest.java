@@ -8,7 +8,6 @@ import edu.pw.chat.labyrinth.common.dtos.VirtualDeviceEncryptedRecoverySecretsDT
 import edu.pw.chat.labyrinth.common.dtos.VirtualDevicePublicKeyBundleDTO;
 import edu.pw.chat.labyrinth.common.entities.*;
 import edu.pw.chat.labyrinth.common.repositories.*;
-import edu.pw.chat.utils.TestUtils;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +74,7 @@ class OpenFirstEpochControllerTest {
     }
 
     private void givenValidOpenFirstEpochBodyDTO() {
-        var validVirtualDeviceID = TestUtils.get40RandomCharactersString();
+        var validVirtualDeviceID = get32RandomBytes();
         var validVirtualDeviceEncryptedRecoverySecretsDTO = new VirtualDeviceEncryptedRecoverySecretsDTO(
                 get32RandomBytes(),
                 get32RandomBytes(),

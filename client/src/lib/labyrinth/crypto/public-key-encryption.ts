@@ -25,9 +25,9 @@ export async function pk_encrypt(
     const fresh_secret = concat(id_id, id_ephem)
     const inner_aad = concat(
         Uint8Array.of(0x01),
-        sender_auth_pub.getPublicKeyBytes(),
-        recipient_enc_pub.getPublicKeyBytes(),
-        pub_ephem.getPublicKeyBytes(),
+        sender_auth_pub.getX25519PublicKeyBytes(),
+        recipient_enc_pub.getX25519PublicKeyBytes(),
+        pub_ephem.getX25519PublicKeyBytes(),
         aad,
     )
 
@@ -36,7 +36,7 @@ export async function pk_encrypt(
     const ciphertext = await aes_gcm_256_encrypt(subkey, nonce, aad, plaintext)
     return concat(
         Uint8Array.of(0x01),
-        pub_ephem.serialize(),
+        pub_ephem.getEd25519PublicKeyBytes(),
         ciphertext,
     )
 }
@@ -57,7 +57,7 @@ export async function pk_decrypt(
         throw Error("Invalid use case byte")
     }
 
-    const pub_ephem = PublicKey.deserialize(ciphertext.subarray(1, 1 + KEY_LENGTH_BYTES))
+    const pub_ephem = new PublicKey(ciphertext.subarray(1, 1 + KEY_LENGTH_BYTES))
     ciphertext = ciphertext.subarray(1 + KEY_LENGTH_BYTES)
 
     const id_id = recipient_enc_priv.agree(sender_auth_pub)
@@ -66,20 +66,12 @@ export async function pk_decrypt(
     const fresh_secret = concat(id_id, id_ephem)
     const inner_aad = concat(
         Uint8Array.of(0x01),
-        sender_auth_pub.getPublicKeyBytes(),
-        recipient_enc_pub.getPublicKeyBytes(),
-        pub_ephem.getPublicKeyBytes(),
+        sender_auth_pub.getX25519PublicKeyBytes(),
+        recipient_enc_pub.getX25519PublicKeyBytes(),
+        pub_ephem.getX25519PublicKeyBytes(),
         aad
     )
     const subkey = await kdf_one_key(fresh_secret, psk, inner_aad)
 
     return aes_gcm_256_decrypt(subkey, aad, ciphertext)
-}
-
-export function pk_enc_keygen() {
-    return generate_key_pair()
-}
-
-export function pk_auth_keygen() {
-    return generate_key_pair()
 }

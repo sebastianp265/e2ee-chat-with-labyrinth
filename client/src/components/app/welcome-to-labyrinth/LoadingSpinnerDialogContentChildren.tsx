@@ -9,16 +9,14 @@ export type LoadingSpinnerDialogContentProps = {
 export default function LoadingSpinnerDialogContentChildren({title}: Readonly<LoadingSpinnerDialogContentProps>) {
 
     return (
-        <>
-            <AlertDialogHeader>
-                <AlertDialogTitle>
-                    {title}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                    Loading...
-                    <LoadingSpinner/>
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-        </>
+        <AlertDialogHeader>
+            <AlertDialogTitle>
+                {title}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+                Loading...
+                <LoadingSpinner/>
+            </AlertDialogDescription>
+        </AlertDialogHeader>
     )
 }

@@ -58,7 +58,7 @@ class EpochMapperTest {
         );
 
         VirtualDevice virtualDevice = VirtualDevice.builder()
-                .id(get40RandomCharactersString())
+                .id(get32RandomBytes())
 
                 .deviceKeyPub(get32RandomBytes())
 
@@ -91,7 +91,7 @@ class EpochMapperTest {
                 .virtualDeviceEpochMembershipProof(virtualDeviceEpochMembershipProof)
                 .sequenceID(sequenceID)
                 .build();
-        
+
         assertThat(actualEpoch)
                 .usingRecursiveComparison()
                 .isEqualTo(expectedEpoch);

@@ -5,7 +5,7 @@ import edu.pw.chat.labyrinth.common.dtos.VirtualDeviceEncryptedRecoverySecretsDT
 import edu.pw.chat.labyrinth.common.dtos.VirtualDevicePublicKeyBundleDTO;
 
 public record OpenFirstEpochBodyDTO(
-        String virtualDeviceID,
+        byte[] virtualDeviceID,
         VirtualDeviceEncryptedRecoverySecretsDTO virtualDeviceEncryptedRecoverySecrets,
         VirtualDevicePublicKeyBundleDTO virtualDevicePublicKeyBundle,
         DevicePublicKeyBundleDTO devicePublicKeyBundle,

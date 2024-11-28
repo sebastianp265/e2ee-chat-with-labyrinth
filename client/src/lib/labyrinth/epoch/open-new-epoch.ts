@@ -1,31 +1,43 @@
 import {kdf_one_key, kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
-import {encode, encodeToBase64, random} from "@/lib/labyrinth/crypto/utils.ts";
+import {asciiStringToBytes, random} from "@/lib/labyrinth/crypto/utils.ts";
 import {encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts";
-import {pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
 import {pk_encrypt} from "@/lib/labyrinth/crypto/public-key-encryption.ts";
-import {
-    encryptVirtualDeviceRecoverSecrets,
-    VirtualDevice,
-    VirtualDeviceEncryptedRecoverSecrets
-} from "@/lib/labyrinth/device/virtual-device.ts";
-import {
-    DevicePublicKeyBundle,
-    DevicePublicKeyBundleWithoutEpochStorageAuthKeyPair,
-    ThisDevice,
-} from "@/lib/labyrinth/device/device.ts";
 import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
 import {Epoch, EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
+import {
+    DevicePublicKeyBundle,
+    DevicePublicKeyBundleSerialized,
+} from "@/lib/labyrinth/device/key-bundle/DeviceKeyBundle.ts";
+import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device/VirtualDevice.ts";
+import {
+    encryptVirtualDeviceRecoverySecrets,
+    VirtualDeviceEncryptedRecoverySecretsSerialized,
+} from "@/lib/labyrinth/device/virtual-device/VirtualDeviceEncryptedRecoverySecrets.ts";
+import {
+    VirtualDevicePublicKeyBundle,
+    VirtualDevicePublicKeyBundleSerialized,
+} from "@/lib/labyrinth/device/key-bundle/VirtualDeviceKeyBundle.ts";
+import {ThisDevice} from "@/lib/labyrinth/device/device.ts";
+import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
+import {PublicKey} from "@/lib/labyrinth/crypto/keys.ts";
+import {
+    CommonPublicKeyBundle,
+    CommonPublicKeyBundleSerialized
+} from "@/lib/labyrinth/device/key-bundle/DeviceAndVirtualDeviceCommonKeyBundle.ts";
 
 export type OpenFirstEpochBody = {
     virtualDeviceID: string,
-    virtualDeviceEncryptedRecoverySecrets: VirtualDeviceEncryptedRecoverSecrets,
+    virtualDeviceEncryptedRecoverySecrets: VirtualDeviceEncryptedRecoverySecretsSerialized,
+    virtualDevicePublicKeyBundle: VirtualDevicePublicKeyBundleSerialized,
+    devicePublicKeyBundle: DevicePublicKeyBundleSerialized,
     firstEpochMembershipProof: {
-        epochThisDeviceMac: Uint8Array,
-        epochVirtualDeviceMac: Uint8Array
+        epochDeviceMac: string,
+        epochVirtualDeviceMac: string,
     }
 }
 
 export type OpenFirstEpochResponse = {
+    inboxID: string,
     deviceID: string,
     epochID: string
 }
@@ -46,7 +58,7 @@ export async function openFirstEpoch(devicePublicKeyBundle: DevicePublicKeyBundl
 
     const epochVirtualDeviceMac = await generateEpochDeviceMac(
         firstEpochWithoutID,
-        virtualDevice.keyBundle.public.deviceKeyPub
+        virtualDevice.keyBundle.pub.deviceKeyPub
     )
 
     const epochThisDeviceMac = await generateEpochDeviceMac(
@@ -54,19 +66,21 @@ export async function openFirstEpoch(devicePublicKeyBundle: DevicePublicKeyBundl
         devicePublicKeyBundle.deviceKeyPub
     )
 
-    const virtualDeviceEncryptedRecoverySecrets = await encryptVirtualDeviceRecoverSecrets(
+    const virtualDeviceEncryptedRecoverySecrets = await encryptVirtualDeviceRecoverySecrets(
         virtualDeviceDecryptionKey,
         firstEpochWithoutID,
-        virtualDevice.keyBundle
+        virtualDevice.keyBundle.priv
     )
 
     const openFirstEpochResponse = await webClient.openFirstEpoch({
-        virtualDeviceID: virtualDevice.id,
+        virtualDeviceID: BytesSerializer.serialize(virtualDevice.id),
         firstEpochMembershipProof: {
-            epochThisDeviceMac,
-            epochVirtualDeviceMac
+            epochDeviceMac: BytesSerializer.serialize(epochThisDeviceMac),
+            epochVirtualDeviceMac: BytesSerializer.serialize(epochVirtualDeviceMac),
         },
-        virtualDeviceEncryptedRecoverySecrets
+        devicePublicKeyBundle: devicePublicKeyBundle.serialize(),
+        virtualDevicePublicKeyBundle: virtualDevice.keyBundle.pub.serialize(),
+        virtualDeviceEncryptedRecoverySecrets: virtualDeviceEncryptedRecoverySecrets.serialize(),
     })
 
     const firstEpoch = {
@@ -76,8 +90,18 @@ export async function openFirstEpoch(devicePublicKeyBundle: DevicePublicKeyBundl
 
     return {
         deviceID: openFirstEpochResponse.deviceID,
-        firstEpoch
+        firstEpoch,
+        inboxID: openFirstEpochResponse.inboxID
     }
+}
+
+type DeviceInEpochSerialized = {
+    id: string
+} & VirtualDeviceInEpochSerialized
+
+type VirtualDeviceInEpochSerialized = {
+    mac: string,
+    publicKeyBundle: CommonPublicKeyBundleSerialized
 }
 
 type DeviceInEpoch = {
@@ -86,14 +110,20 @@ type DeviceInEpoch = {
 
 type VirtualDeviceInEpoch = {
     mac: Uint8Array,
-    keyBundle: DevicePublicKeyBundleWithoutEpochStorageAuthKeyPair
+    publicKeyBundle: VirtualDevicePublicKeyBundle
 }
 
 export type GetDevicesInEpochResponse = {
-    devices: DeviceInEpoch[]
-    virtualDevice: VirtualDeviceInEpoch
+    devices: DeviceInEpochSerialized[]
+    virtualDevice: VirtualDeviceInEpochSerialized
 }
 
+type EncryptedNewEpochEntropyForEveryDeviceInEpochSerialized = {
+    deviceIDToEncryptedNewEpochEntropyMap: {
+        [deviceID: string]: string,
+    },
+    virtualDeviceEncryptedNewEpochEntropy: string,
+}
 
 type EncryptedNewEpochEntropyForEveryDeviceInEpoch = {
     deviceIDToEncryptedNewEpochEntropyMap: {
@@ -103,15 +133,15 @@ type EncryptedNewEpochEntropyForEveryDeviceInEpoch = {
 }
 
 type EncryptedCurrentEpochJoinData = {
-    encryptedEpochSequenceID: Uint8Array,
-    encryptedEpochRootKey: Uint8Array,
+    encryptedEpochSequenceID: string,
+    encryptedEpochRootKey: string,
 }
 
 export type OpenNewEpochBasedOnCurrentBody = {
-    encryptedNewEpochEntropyForEveryDeviceInEpoch: EncryptedNewEpochEntropyForEveryDeviceInEpoch
+    encryptedNewEpochEntropyForEveryDeviceInEpoch: EncryptedNewEpochEntropyForEveryDeviceInEpochSerialized
     newEpochMembershipProof: {
-        epochThisDeviceMac: Uint8Array,
-        epochVirtualDeviceMac: Uint8Array,
+        epochThisDeviceMac: string,
+        epochVirtualDeviceMac: string,
     },
     encryptedCurrentEpochJoinData: EncryptedCurrentEpochJoinData
 }
@@ -131,8 +161,8 @@ export async function openNewEpochBasedOnCurrent(currentEpoch: Epoch,
     const devicesInEpochPromise = webClient.getDevicesInEpoch(currentEpoch.id)
     const [epochChainingKey, epochDistributionPreSharedKey] = await kdf_two_keys(
         currentEpoch.rootKey,
-        Uint8Array.of(),
-        encode(`epoch_chaining_${currentEpoch.sequenceID}_${currentEpoch.id}`)
+        null,
+        asciiStringToBytes(`epoch_chaining_${currentEpoch.sequenceID}_${currentEpoch.id}`)
     )
 
     const newEpochEntropy = random(32)
@@ -140,31 +170,50 @@ export async function openNewEpochBasedOnCurrent(currentEpoch: Epoch,
         rootKey: await kdf_one_key(
             newEpochEntropy,
             epochChainingKey,
-            encode("epoch_root_key")
+            asciiStringToBytes("epoch_root_key")
         ),
         sequenceID: (BigInt(currentEpoch.sequenceID) + 1n).toString()
     }
 
     const devicesInEpoch = await devicesInEpochPromise
 
+    const encryptedNewEpochEntropyForEveryDeviceInEpoch = await encryptNewEpochEntropyForEveryDeviceInEpoch(
+        currentEpoch,
+        newEpochWithoutID,
+        thisDevice,
+        devicesInEpoch.devices.map(v => {
+            return {
+                id: v.id,
+                mac: BytesSerializer.deserialize(v.mac),
+                publicKeyBundle: CommonPublicKeyBundle.deserialize(v.publicKeyBundle)
+            } as DeviceInEpoch
+        }),
+        {
+            mac: BytesSerializer.deserialize(devicesInEpoch.virtualDevice.mac),
+            publicKeyBundle: CommonPublicKeyBundle.deserialize(devicesInEpoch.virtualDevice.publicKeyBundle)
+        } as VirtualDeviceInEpoch,
+        epochDistributionPreSharedKey,
+        newEpochEntropy
+    )
+
     const {openedEpochID} = await webClient.openNewEpochBasedOnCurrent(currentEpoch.id, {
-            encryptedNewEpochEntropyForEveryDeviceInEpoch: await encryptNewEpochEntropyForEveryDeviceInEpoch(
-                currentEpoch,
-                newEpochWithoutID,
-                thisDevice,
-                devicesInEpoch,
-                epochDistributionPreSharedKey,
-                newEpochEntropy
-            ),
+            encryptedNewEpochEntropyForEveryDeviceInEpoch: {
+                deviceIDToEncryptedNewEpochEntropyMap: Object.fromEntries(Object.entries(encryptedNewEpochEntropyForEveryDeviceInEpoch.deviceIDToEncryptedNewEpochEntropyMap).map(e => {
+                        const [k, v] = e
+                        return [k, BytesSerializer.serialize(v)]
+                    }
+                )),
+                virtualDeviceEncryptedNewEpochEntropy: BytesSerializer.serialize(encryptedNewEpochEntropyForEveryDeviceInEpoch.virtualDeviceEncryptedNewEpochEntropy),
+            },
             newEpochMembershipProof: {
-                epochThisDeviceMac: await generateEpochDeviceMac(
+                epochThisDeviceMac: BytesSerializer.serialize(await generateEpochDeviceMac(
                     newEpochWithoutID,
-                    thisDevice.keyBundle.public.deviceKeyPub,
-                ),
-                epochVirtualDeviceMac: await generateEpochDeviceMac(
+                    thisDevice.keyBundle.pub.deviceKeyPub,
+                )),
+                epochVirtualDeviceMac: BytesSerializer.serialize(await generateEpochDeviceMac(
                     newEpochWithoutID,
-                    devicesInEpoch.virtualDevice.keyBundle.deviceKeyPub,
-                )
+                    PublicKey.deserialize(devicesInEpoch.virtualDevice.publicKeyBundle.deviceKeyPub),
+                )),
             },
             encryptedCurrentEpochJoinData: await encryptCurrentEpochJoinData(
                 currentEpoch,
@@ -184,25 +233,25 @@ async function encryptCurrentEpochJoinData(currentEpoch: Epoch,
                                            newEpochWithoutID: EpochWithoutID): Promise<EncryptedCurrentEpochJoinData> {
     const newEpochDataStorageKey = await kdf_one_key(
         newEpochWithoutID.rootKey,
-        Uint8Array.of(),
-        encode(`epoch_data_storage_${encodeToBase64(newEpochWithoutID.sequenceID)}`)
+        null,
+        asciiStringToBytes(`epoch_data_storage_${newEpochWithoutID.sequenceID}`)
     )
 
     const encryptedCurrentEpochSequenceID = await encrypt(
         newEpochDataStorageKey,
-        encode("epoch_data_metadata"),
-        encode(currentEpoch.sequenceID)
+        asciiStringToBytes("epoch_data_metadata"),
+        asciiStringToBytes(currentEpoch.sequenceID)
     )
 
     const encryptedCurrentEpochRootKey = await encrypt(
         newEpochDataStorageKey,
-        encode("epoch_data_metadata"),
+        asciiStringToBytes("epoch_data_metadata"),
         currentEpoch.rootKey
     )
 
     return {
-        encryptedEpochSequenceID: encryptedCurrentEpochSequenceID,
-        encryptedEpochRootKey: encryptedCurrentEpochRootKey,
+        encryptedEpochSequenceID: BytesSerializer.serialize(encryptedCurrentEpochSequenceID),
+        encryptedEpochRootKey: BytesSerializer.serialize(encryptedCurrentEpochRootKey),
     }
 }
 
@@ -218,42 +267,43 @@ export class InvalidVirtualDeviceServerRepresentationError extends Error {
 async function encryptNewEpochEntropyForEveryDeviceInEpoch(currentEpoch: Epoch,
                                                            newEpochWithoutID: EpochWithoutID,
                                                            thisDevice: ThisDevice,
-                                                           devicesInEpoch: GetDevicesInEpochResponse,
+                                                           devicesInEpoch: DeviceInEpoch[],
+                                                           virtualDeviceInEpoch: VirtualDeviceInEpoch,
                                                            epochDistributionPreSharedKey: Uint8Array,
                                                            newEpochEntropy: Uint8Array): Promise<EncryptedNewEpochEntropyForEveryDeviceInEpoch> {
 
     async function encryptNewEpochEntropyForDeviceInEpoch(deviceInEpoch: VirtualDeviceInEpoch | DeviceInEpoch) {
         const expectedEpochDeviceMac = await generateEpochDeviceMac(
             currentEpoch,
-            deviceInEpoch.keyBundle.deviceKeyPub
+            deviceInEpoch.publicKeyBundle.deviceKeyPub
         )
         if (deviceInEpoch.mac !== expectedEpochDeviceMac) {
             return null
         }
 
-        const isValidEpochStorageKey = pk_verify(
-            deviceInEpoch.keyBundle.deviceKeyPub,
-            deviceInEpoch.keyBundle.epochStorageKeySig,
-            Uint8Array.of(0x30),
-            deviceInEpoch.keyBundle.epochStorageKeyPub.serialize()
-        )
+        const isValidEpochStorageKey = deviceInEpoch.publicKeyBundle.deviceKeyPub
+            .verify(
+                deviceInEpoch.publicKeyBundle.epochStorageKeySig,
+                Uint8Array.of(0x30),
+                deviceInEpoch.publicKeyBundle.epochStorageKeyPub.getX25519PublicKeyBytes()
+            )
 
         if (!isValidEpochStorageKey) {
             return null
         }
 
         return pk_encrypt(
-            deviceInEpoch.keyBundle.epochStorageKeyPub,
-            thisDevice.keyBundle.public.epochStorageAuthKeyPub,
-            thisDevice.keyBundle.private.epochStorageAuthKeyPriv,
+            deviceInEpoch.publicKeyBundle.epochStorageKeyPub,
+            thisDevice.keyBundle.pub.epochStorageAuthKeyPub,
+            thisDevice.keyBundle.priv.epochStorageAuthKeyPriv,
             epochDistributionPreSharedKey,
-            encode(`epoch_${newEpochWithoutID.sequenceID}`),
+            asciiStringToBytes(`epoch_${newEpochWithoutID.sequenceID}`),
             newEpochEntropy
         )
     }
 
     const virtualDeviceEncryptedNewEpochEntropy = await encryptNewEpochEntropyForDeviceInEpoch(
-        devicesInEpoch.virtualDevice
+        virtualDeviceInEpoch
     )
     if (virtualDeviceEncryptedNewEpochEntropy === null) {
         throw new InvalidVirtualDeviceServerRepresentationError()
@@ -261,7 +311,7 @@ async function encryptNewEpochEntropyForEveryDeviceInEpoch(currentEpoch: Epoch,
 
     return {
         deviceIDToEncryptedNewEpochEntropyMap: Object.fromEntries(
-            devicesInEpoch.devices.map(device =>
+            devicesInEpoch.map(device =>
                 [device.id, encryptNewEpochEntropyForDeviceInEpoch(device)]
             ).filter(device => device !== null)
         ),

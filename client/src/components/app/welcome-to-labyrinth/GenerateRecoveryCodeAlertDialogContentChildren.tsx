@@ -1,25 +1,33 @@
-import {useState} from "react";
-import LoadingSpinnerDialogContentChildren from "@/components/app/welcome-to-labyrinth/LoadingSpinnerDialogContentChildren.tsx";
+import React, {useState} from "react";
+import LoadingSpinnerDialogContentChildren
+    from "@/components/app/welcome-to-labyrinth/LoadingSpinnerDialogContentChildren.tsx";
 import {
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle
 } from "@/components/ui/alert-dialog.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {AxiosError} from "axios";
 
 export type HandleGenerateRecoveryCodeResponse = {
     recoveryCode: string | null;
 }
 
 export type GenerateRecoveryCodeCardContent = {
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>,
     handleGenerateRecoveryCode: () => Promise<HandleGenerateRecoveryCodeResponse>;
+    setError: React.Dispatch<React.SetStateAction<AxiosError | null>>
 }
 
-export default function GenerateRecoveryCodeAlertDialogContentChildren({handleGenerateRecoveryCode}: Readonly<GenerateRecoveryCodeCardContent>) {
+export default function GenerateRecoveryCodeAlertDialogContentChildren({
+                                                                           setOpen,
+                                                                           handleGenerateRecoveryCode,
+                                                                           setError
+                                                                       }: Readonly<GenerateRecoveryCodeCardContent>) {
     const [loading, setLoading] = useState(false);
-    const [recoveryCode, setRecoveryCode] = useState<string | null>()
+    const [recoveryCode, setRecoveryCode] = useState<string | null>(null)
 
     if (loading) return (
         <LoadingSpinnerDialogContentChildren
@@ -41,10 +49,18 @@ export default function GenerateRecoveryCodeAlertDialogContentChildren({handleGe
         </>
     )
 
-    const onGenerateRecoveryCodeClick = async () => {
+    const onGenerateRecoveryCodeClick = () => {
         setLoading(true)
-        setRecoveryCode((await handleGenerateRecoveryCode()).recoveryCode)
-        setLoading(false)
+
+        handleGenerateRecoveryCode()
+            .then(result => {
+                setRecoveryCode(result.recoveryCode)
+                setLoading(false)
+            })
+            .catch((e: AxiosError) => {
+                setError(e)
+                setLoading(false)
+            })
     }
 
     return (
@@ -59,9 +75,9 @@ export default function GenerateRecoveryCodeAlertDialogContentChildren({handleGe
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogAction onClick={onGenerateRecoveryCodeClick}>
+                <Button onClick={onGenerateRecoveryCodeClick}>
                     Generate Recovery Code
-                </AlertDialogAction>
+                </Button>
             </AlertDialogFooter>
         </>
     )

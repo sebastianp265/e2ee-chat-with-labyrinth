@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class VirtualDevice {
 
     @Id
-    private String id;
+    private byte[] id;
 
     @OneToOne
     @JoinColumn(nullable = false)

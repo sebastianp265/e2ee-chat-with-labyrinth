@@ -1,12 +1,11 @@
 import {pk_sig_keygen, pk_sign, pk_verify} from "@/lib/labyrinth/crypto/signing.ts";
-import {encode} from "@/lib/labyrinth/crypto/utils.ts";
 
 describe('signing data with montgomery curve keypair', () => {
     test('should verify correctly after signing random message', () => {
         const {publicKey, privateKey} = pk_sig_keygen()
 
         const use_case_byte = Uint8Array.of(0xff)
-        const data = encode("Some data")
+        const data = encodeText("Some data")
 
         const signature = pk_sign(privateKey, use_case_byte, data)
         const is_valid = pk_verify(publicKey, signature, use_case_byte, data)
@@ -17,7 +16,7 @@ describe('signing data with montgomery curve keypair', () => {
         const {publicKey, privateKey} = pk_sig_keygen()
 
         const use_case_byte = Uint8Array.of(0xff)
-        const data = encode("Some data")
+        const data = encodeText("Some data")
 
         const signature = pk_sign(privateKey, use_case_byte, data)
         // modifying signature

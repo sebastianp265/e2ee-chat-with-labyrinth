@@ -5,7 +5,7 @@ export function random(numberOfBytes: number) {
 }
 
 export function cryptoAssert(expression: boolean) {
-    if(!expression) throw new CryptoAssertionError();
+    if (!expression) throw new CryptoAssertionError();
 }
 
 export class CryptoAssertionError extends Error {
@@ -18,11 +18,11 @@ export class CryptoAssertionError extends Error {
 }
 
 export function bytes_equal(a: Uint8Array, b: Uint8Array) {
-    if(a.length !== b.length) {
+    if (a.length !== b.length) {
         return false
     }
     for (let i = 0; i < a.length; i++) {
-        if(a[i] !== b[i]) {
+        if (a[i] !== b[i]) {
             return false;
         }
     }
@@ -44,22 +44,37 @@ export function concat(...arrays: Uint8Array[]): Uint8Array {
     return result;
 }
 
-const textEncoder = new TextEncoder()
+// TODO: replace with more efficient approach after writing tests
+export function asciiStringToBytes(ascii: string) {
+    const bytes = new Uint8Array(ascii.length)
+    for (let i = 0; i < bytes.length; i++) {
+        const charCode = ascii.charCodeAt(i)
+        if (charCode > 255) {
+            throw new Error("Only ascii characters are allowed")
+        }
+        bytes[i] = charCode
+    }
 
-export function encode(decoded: string) {
-    return textEncoder.encode(decoded)
+    return bytes
 }
 
-const textDecoder = new TextDecoder()
+export function bytesToAsciiString(bytes: Uint8Array) {
+    let ascii = ""
+    for (const charCode of bytes) {
+        if (charCode > 255) {
+            throw new Error("Only ascii characters are allowed")
+        }
 
-export function decode(encoded: Uint8Array) {
-    return textDecoder.decode(encoded)
+        ascii += String.fromCharCode(charCode)
+    }
+
+    return ascii
 }
 
-export function encodeToBase64(str: string) {
-    return btoa(str)
+export function bytesToBase64String(bytes: Uint8Array): string {
+    return btoa(bytesToAsciiString(bytes))
 }
 
-export function decodeFromBase64(base64: string) {
-    return atob(base64)
+export function base64StringToBytes(base64String: string): Uint8Array {
+    return asciiStringToBytes(atob(base64String))
 }

@@ -6,11 +6,10 @@ import LoginPage from "@/pages/login/LoginPage.tsx";
 import SessionCheckWrapper from "@/SessionCheckWrapper.tsx";
 import Hello from "@/pages/hello/Hello.tsx";
 import MessagesPage from "@/pages/messages/MessagesPage.tsx";
-import {INBOX_ID_KEY, LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY} from "@/constants.ts";
+import {LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY} from "@/constants.ts";
 
 type PrivateRouteContext = {
     loggedUserID: string,
-    inboxID: string
 }
 
 export function PrivateRoutes() {
@@ -23,16 +22,14 @@ export function PrivateRoutes() {
     const currentTimestamp = Date.now()
 
     const loggedUserID = localStorage.getItem(LOGGED_USER_ID_KEY)
-    const inboxID = localStorage.getItem(INBOX_ID_KEY)
 
-    if (sessionExpirationTimestamp <= currentTimestamp || loggedUserID === null || inboxID === null) {
+    if (sessionExpirationTimestamp <= currentTimestamp || loggedUserID === null) {
         localStorage.removeItem(SESSION_EXPIRES_AT_KEY)
         localStorage.removeItem(LOGGED_USER_ID_KEY)
-        localStorage.removeItem(INBOX_ID_KEY)
         return <Navigate to="login"/>
     }
 
-    return <Outlet context={{loggedUserID, inboxID}}></Outlet>
+    return <Outlet context={{loggedUserID}}></Outlet>
 }
 
 export function usePrivateRouteContext() {

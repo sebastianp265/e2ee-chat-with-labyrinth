@@ -1,7 +1,6 @@
 import {useEffect, useReducer, useState} from "react";
 import axiosInstance from "@/api/axios/axiosInstance.ts";
 import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
-import {isLabyrinthLoadState} from "@/pages/messages/hooks/useLabyrinth.ts";
 import {ThreadData} from "@/components/app/messages/Thread.tsx";
 import {ThreadPreviewData} from "@/components/app/messages/ThreadPreview.tsx";
 import {Message} from "@/components/app/messages/Messages.tsx";
@@ -49,8 +48,9 @@ function threadsDataReducer(state: ThreadsDataStore, action: Action): ThreadsDat
         case 'ADD_MESSAGES': {
             const {threadID, messages} = action.payload;
 
-            if (Object.hasOwn(state.map, threadID)) {
-                console.error("Unexpected behaviour, message should be added to existing thread")
+            if (!Object.hasOwn(state.map, threadID)) {
+                // TODO: Investigate
+                throw new Error("Unexpected behaviour, message should be added to existing thread")
             }
 
             return {
@@ -94,7 +94,6 @@ function threadsDataReducer(state: ThreadsDataStore, action: Action): ThreadsDat
 }
 
 export default function useThreadsData(
-    inboxID: string | null,
     labyrinth: Labyrinth | null,
 ) {
     const [chosenThreadID, setChosenThreadID] = useState<string | null>(null)
@@ -113,9 +112,9 @@ export default function useThreadsData(
     }
 
     useEffect(() => {
-        if (inboxID === null || isLabyrinthLoadState(labyrinth)) return
+        if (labyrinth === null) return
 
-        axiosInstance.get<AddThreadsActionPayload>(`api/labyrinth/inbox/${inboxID}/threads/previews`)
+        axiosInstance.get<AddThreadsActionPayload>(`/api/labyrinth/inbox/${labyrinth.inboxID}/threads/previews`)
             .then(response => {
                 addThreads(response.data)
 
@@ -123,12 +122,13 @@ export default function useThreadsData(
                     setChosenThreadID(response.data[0].threadID)
                 }
             })
-    }, [inboxID, labyrinth]);
+            .catch(setError)
+    }, [labyrinth]);
 
     useEffect(() => {
-        if (inboxID === null || chosenThreadID === null || labyrinth === null) return
+        if (chosenThreadID === null || labyrinth === null) return
 
-        axiosInstance.get<LabyrinthEncryptedMessageGetDTO[]>(`/api/inbox/${inboxID}/thread/${chosenThreadID}/messages`)
+        axiosInstance.get<LabyrinthEncryptedMessageGetDTO[]>(`/api/labyrinth/inbox/${labyrinth.inboxID}/thread/${chosenThreadID}/messages`)
             .then(async (response) => {
                 const encryptedMessages = response.data
                 const decryptedMessages = await Promise.all(encryptedMessages.map(async encryptedMessage => {
@@ -150,7 +150,7 @@ export default function useThreadsData(
                 })
             })
             .catch(setError)
-    }, [inboxID, chosenThreadID, labyrinth, setError]);
+    }, [chosenThreadID, labyrinth, setError]);
 
     return {threadsData, chosenThreadID, error, setChosenThreadID, addMessages, addThreads} as const;
 }

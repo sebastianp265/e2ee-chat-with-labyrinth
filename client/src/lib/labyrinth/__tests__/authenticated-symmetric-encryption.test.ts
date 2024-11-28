@@ -1,10 +1,10 @@
 import {describe, expect, test} from "@jest/globals"
 import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts"
-import {encode} from "@/lib/labyrinth/crypto/utils.ts";
+import {encodeText} from "@/lib/labyrinth/crypto/utils.ts";
 
 describe('authenticated symmetric encryption', () => {
     test('should get the same message after encryption and decryption with same keys and aad', async () => {
-        const plaintext = encode("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+        const plaintext = encodeText("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
             " Pellentesque a odio id mauris condimentum lacinia. Sed nibh nunc, pharetra in vestibulum vel," +
             " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus.")
         const key = new Uint8Array(256 / 8)
@@ -19,7 +19,7 @@ describe('authenticated symmetric encryption', () => {
     })
 
     test('should throw error when different key is used', async () => {
-        const plaintext = encode("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+        const plaintext = encodeText("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
             " Pellentesque a odio id mauris condimentum lacinia. Sed nibh nunc, pharetra in vestibulum vel," +
             " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus.");
         const key = new Uint8Array(256 / 8);
@@ -37,7 +37,7 @@ describe('authenticated symmetric encryption', () => {
     });
 
     test('should throw error when different aad is used', async () => {
-        const plaintext = encode("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+        const plaintext = encodeText("Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
             " Pellentesque a odio id mauris condimentum lacinia. Sed nibh nunc, pharetra in vestibulum vel," +
             " iaculis quis nulla. Vivamus maximus lorem dictum, blandit urna vitae, iaculis risus.");
         const key = new Uint8Array(256 / 8);

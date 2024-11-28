@@ -12,7 +12,6 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-import {useMemo} from "react";
 
 const Form = FormProvider
 
@@ -33,9 +32,8 @@ const FormField = <
 >({
   ...props
 }: ControllerProps<TFieldValues, TName>) => {
-  const obj = useMemo(() => ({name: props.name}), [props.name]); // value is cached by useMemo
   return (
-    <FormFieldContext.Provider value={obj}>
+    <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   )
@@ -77,9 +75,9 @@ const FormItem = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   const id = React.useId()
-  const obj = useMemo(() => ({id: id}), [id]); // value is cached by useMemo
+
   return (
-    <FormItemContext.Provider value={obj}>
+    <FormItemContext.Provider value={{ id }}>
       <div ref={ref} className={cn("space-y-2", className)} {...props} />
     </FormItemContext.Provider>
   )

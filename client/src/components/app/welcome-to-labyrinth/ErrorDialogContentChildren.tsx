@@ -8,7 +8,7 @@ import {Button} from "@/components/ui/button.tsx";
 
 type ErrorDialogContentProps = {
     message: string,
-    onTryAgainClicked: () => Promise<void>,
+    onTryAgainClicked: () => void,
 }
 
 export default function ErrorDialogContentChildren({

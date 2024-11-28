@@ -4,18 +4,37 @@ import {decrypt, encrypt} from "@/lib/labyrinth/crypto/authenticated-symmetric-e
 import {LabyrinthWebClient} from "@/lib/labyrinth/labyrinth-web-client.ts";
 import {kdf_one_key} from "@/lib/labyrinth/crypto/key-derivation.ts";
 import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
-import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device.ts";
 import {ThisDevice, ThisDeviceSerialized} from "@/lib/labyrinth/device/device.ts";
-import {decode, encode} from "@/lib/labyrinth/crypto/utils.ts";
+import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
+import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device/VirtualDevice.ts";
+import {asciiStringToBytes} from "@/lib/labyrinth/crypto/utils.ts";
 
 export type LabyrinthSerialized = {
-    thisDeviceSerialized: ThisDeviceSerialized,
-    epochStorageSerialized: EpochStorageSerialized
+    inboxID: string,
+    thisDevice: ThisDeviceSerialized,
+    epochStorage: EpochStorageSerialized
 }
 
+export type CheckIfLabyrinthIsInitializedResponse = {
+    isInitialized: boolean
+}
+
+export type CheckIfLabyrinthIsInitializedWebClient = {
+    checkIfLabyrinthIsInitialized: () => Promise<CheckIfLabyrinthIsInitializedResponse>
+}
+
+const textEncoder = new TextEncoder()
+
+const textDecoder = new TextDecoder()
+
 export class Labyrinth {
-    private readonly thisDevice: ThisDevice;
-    private readonly epochStorage: EpochStorage;
+    public readonly inboxID: string
+    private readonly thisDevice: ThisDevice
+    private readonly epochStorage: EpochStorage
+
+    public static async checkIfLabyrinthIsInitialized(labyrinthWebClient: LabyrinthWebClient) {
+        return await labyrinthWebClient.checkIfLabyrinthIsInitialized()
+    }
 
     public static async fromFirstEpoch(userID: string, labyrinthWebClient: LabyrinthWebClient) {
         const {
@@ -26,13 +45,14 @@ export class Labyrinth {
 
         const {
             firstEpoch,
-            thisDevice
+            thisDevice,
+            inboxID,
         } = await ThisDevice.fromFirstEpoch(virtualDevice, virtualDeviceDecryptionKey, labyrinthWebClient)
 
         const epochStorage = EpochStorage.createEmpty()
         epochStorage.add(firstEpoch)
 
-        const labyrinthInstance = new Labyrinth(thisDevice, epochStorage)
+        const labyrinthInstance = new Labyrinth(inboxID, thisDevice, epochStorage)
 
         return {
             labyrinthInstance,
@@ -43,7 +63,8 @@ export class Labyrinth {
     public static async fromRecoveryCode(userID: string, recoveryCode: string, labyrinthWebClient: LabyrinthWebClient): Promise<Labyrinth> {
         const {
             virtualDevice,
-            epoch
+            epoch,
+            inboxID,
         } = await VirtualDevice.fromRecoveryCode(userID, recoveryCode, labyrinthWebClient)
 
         const epochStorage = EpochStorage.createEmpty()
@@ -57,17 +78,20 @@ export class Labyrinth {
         await labyrinthWebClient.authenticateDeviceToEpoch(
             newestRecoveredEpoch.id,
             {
-                epochDeviceMac: await generateEpochDeviceMac(newestRecoveredEpoch, thisDevice.keyBundle.public.deviceKeyPub)
+                epochDeviceMac: BytesSerializer.serialize(
+                    await generateEpochDeviceMac(newestRecoveredEpoch, thisDevice.keyBundle.pub.deviceKeyPub)
+                )
             }
         )
 
-        return new Labyrinth(thisDevice, epochStorage)
+        return new Labyrinth(inboxID, thisDevice, epochStorage)
     }
 
     public static async deserialize(labyrinthSerialized: LabyrinthSerialized, labyrinthWebClient: LabyrinthWebClient): Promise<Labyrinth> {
         const {
-            thisDeviceSerialized,
-            epochStorageSerialized
+            inboxID,
+            thisDevice: thisDeviceSerialized,
+            epochStorage: epochStorageSerialized,
         } = labyrinthSerialized
         const thisDevice = ThisDevice.deserialize(thisDeviceSerialized)
         const epochStorage = EpochStorage.deserialize(epochStorageSerialized)
@@ -82,26 +106,31 @@ export class Labyrinth {
             await labyrinthWebClient.authenticateDeviceToEpoch(
                 newestEpochAfter.id,
                 {
-                    epochDeviceMac: await generateEpochDeviceMac(
+                    epochDeviceMac: BytesSerializer.serialize(await generateEpochDeviceMac(
                         newestEpochAfter,
-                        thisDevice.keyBundle.public.deviceKeyPub
-                    )
+                        thisDevice.keyBundle.pub.deviceKeyPub
+                    ))
                 }
             )
         }
 
-        return new Labyrinth(thisDevice, epochStorage)
+        return new Labyrinth(inboxID, thisDevice, epochStorage)
     }
 
     public serialize(): LabyrinthSerialized {
         return {
-            thisDeviceSerialized: this.thisDevice.serialize(),
-            epochStorageSerialized: this.epochStorage.serialize()
+            inboxID: this.inboxID,
+            thisDevice: this.thisDevice.serialize(),
+            epochStorage: this.epochStorage.serialize()
         }
     }
 
-    //Labyrinth instance is created based on LabyrinthData stored on the device, if it is null then recoverLabyrinthData() or createFirstVirtualDevice() should be called before using
-    private constructor(thisDevice: ThisDevice, epochStorage: EpochStorage) {
+    private constructor(
+        inboxID: string,
+        thisDevice: ThisDevice,
+        epochStorage: EpochStorage,
+    ) {
+        this.inboxID = inboxID
         this.thisDevice = thisDevice
         this.epochStorage = epochStorage
     }
@@ -109,16 +138,16 @@ export class Labyrinth {
     public async encrypt(threadID: string, epochSequenceID: string, plaintext: string): Promise<Uint8Array> {
         return await encrypt(
             await this.getEncryptionKey(threadID, epochSequenceID),
-            encode(`message_thread_${threadID}`),
-            encode(plaintext),
+            asciiStringToBytes(`message_thread_${threadID}`),
+            textEncoder.encode(plaintext),
         )
     }
 
     public async decrypt(threadID: string, epochSequenceID: string, ciphertext: Uint8Array): Promise<string> {
-        return decode(
+        return textDecoder.decode(
             await decrypt(
                 await this.getEncryptionKey(threadID, epochSequenceID),
-                encode(`message_thread_${threadID}`),
+                asciiStringToBytes(`message_thread_${threadID}`),
                 ciphertext,
             )
         )
@@ -145,7 +174,7 @@ const CIPHER_VERSION = 1
 function deriveMessageKey(threadID: string, epoch: Epoch) {
     return kdf_one_key(
         epoch.rootKey,
-        Uint8Array.of(),
-        encode(`message_key_in_epoch_${epoch.sequenceID}_cipher_version_${CIPHER_VERSION}_${threadID}`)
+        null,
+        asciiStringToBytes(`message_key_in_epoch_${epoch.sequenceID}_cipher_version_${CIPHER_VERSION}_${threadID}`)
     )
 }

@@ -12,7 +12,6 @@ import {Friend} from "@/components/app/messages/CreateThread.tsx";
 import {AxiosError} from "axios";
 
 export default function useChatWebSocket(
-    inboxID: string,
     labyrinth: Labyrinth | null,
     addMessages: (addMessagesActionPayload: AddMessagesActionPayload) => void,
     addThreads: (addThreadsActionPayload: AddThreadsActionPayload) => void,
@@ -23,7 +22,7 @@ export default function useChatWebSocket(
         onClose: () => console.log('WebSocket connection closed!'),
         onMessage: (event) => console.log('Received message:', event.data),
         onError: (event) => console.error('WebSocket error:', event),
-        shouldReconnect: () => true
+        shouldReconnect: () => false
     });
     const [error, setError] = useState<AxiosError | null>()
 
@@ -52,7 +51,7 @@ export default function useChatWebSocket(
                 )
                 encryptedMessagesPromise.then(encryptedMessages =>
                     axiosInstance.post<void>(
-                        `api/labyrinth/epochs/${labyrinth.getNewestEpochID()}/inbox/${inboxID}/threads/${socketMessage.payload.threadID}/messages`,
+                        `api/labyrinth/epochs/${labyrinth.getNewestEpochID()}/inbox/${labyrinth.inboxID}/threads/${socketMessage.payload.threadID}/messages`,
                         encryptedMessages,
                     ).then(() =>
                         addMessages(socketMessage.payload)
@@ -72,7 +71,7 @@ export default function useChatWebSocket(
                 break
             }
         }
-    }, [addFriends, addMessages, addThreads, inboxID, labyrinth, lastMessage]);
+    }, [addFriends, addMessages, addThreads, labyrinth, lastMessage]);
 
     const handleSendMessage = (newMessage: NewMessageToSend) => {
         if (readyState === ReadyState.OPEN) {

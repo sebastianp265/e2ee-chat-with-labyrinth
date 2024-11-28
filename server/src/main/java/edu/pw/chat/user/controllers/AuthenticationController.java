@@ -1,16 +1,15 @@
 package edu.pw.chat.user.controllers;
 
-import edu.pw.chat.labyrinth.common.entities.ChatInbox;
 import edu.pw.chat.labyrinth.common.repositories.ChatInboxRepository;
 import edu.pw.chat.user.dtos.LoginRequestDTO;
 import edu.pw.chat.user.dtos.LoginResponseDTO;
 import edu.pw.chat.user.entities.ChatUser;
+import edu.pw.chat.user.exceptions.ChatUserNotFoundException;
 import edu.pw.chat.user.repositories.ChatUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,7 +19,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,16 +48,7 @@ public class AuthenticationController {
 
         UUID loggedUserId = chatUserRepository.findByUsername(loginRequestDTO.getUsername())
                 .map(ChatUser::getId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "User exists in SecurityContextRepository and not in ChatUserRepository")
-                );
-        UUID inboxId = chatInboxRepository.findByUserID(loggedUserId)
-                .map(ChatInbox::getId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "User doesn't have it's inbox")
-                );
+                .orElseThrow(() -> new ChatUserNotFoundException(loginRequestDTO.getUsername()));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authenticationResponse);
@@ -67,8 +56,7 @@ public class AuthenticationController {
         securityContextHolderStrategy.setContext(context);
         securityContextRepository.saveContext(context, request, response);
         return LoginResponseDTO.builder()
-                .userId(loggedUserId)
-                .inboxId(inboxId)
+                .userID(loggedUserId)
                 .build();
     }
 

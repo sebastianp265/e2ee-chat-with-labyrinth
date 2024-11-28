@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface VirtualDeviceRepository extends JpaRepository<VirtualDevice, UUID> {
+public interface VirtualDeviceRepository extends JpaRepository<VirtualDevice, byte[]> {
 
-    Optional<VirtualDevice> findByIdAndChatInbox_UserID(String id, UUID userID);
+    Optional<VirtualDevice> findByIdAndChatInbox_UserID(byte[] id, UUID userID);
 }

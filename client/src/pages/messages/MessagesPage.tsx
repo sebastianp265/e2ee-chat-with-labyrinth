@@ -2,22 +2,42 @@ import {ISessionProps} from "@/SessionCheckWrapper.tsx";
 import {useEffect, useState} from "react";
 import {usePrivateRouteContext} from "@/main.tsx";
 import WelcomeToLabyrinthAlertDialog from "@/pages/messages/WelcomeToLabyrinthAlertDialog.tsx";
-import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
 import ChatContent from "@/pages/messages/ChatContent.tsx";
+import useLabyrinth, {LabyrinthLoadState} from "@/pages/messages/hooks/useLabyrinth.ts";
 
 export default function MessagesPage({sessionExpired, inactivateSession}: Readonly<ISessionProps>) {
-    const {loggedUserID, inboxID} = usePrivateRouteContext()
-    const [labyrinth, setLabyrinth] = useState<Labyrinth | null>(null)
+    const {loggedUserID} = usePrivateRouteContext()
+    const {
+        labyrinth,
+        initialLoadState,
+        retryInitialization,
+        error,
+        setLabyrinthFromRecoveryCode,
+        setLabyrinthFromFirstEpoch
+    } = useLabyrinth(loggedUserID)
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if (initialLoadState !== LabyrinthLoadState.LOADING) {
+            setOpen(true)
+        }
+    }, [initialLoadState]);
 
     return (
         <div className="flex h-full">
-            <WelcomeToLabyrinthAlertDialog
-                forceClosed={sessionExpired!}
-                loggedUserID={loggedUserID}
-                setLabyrinth={setLabyrinth}
-            />
+            {
+                initialLoadState !== LabyrinthLoadState.LOADING &&
+                <WelcomeToLabyrinthAlertDialog
+                    open={!sessionExpired && open}
+                    setOpen={setOpen}
+                    labyrinthLoadState={initialLoadState}
+                    setLabyrinthFromRecoveryCode={setLabyrinthFromRecoveryCode}
+                    setLabyrinthFromFirstEpoch={setLabyrinthFromFirstEpoch}
+                    retryInitialization={retryInitialization}
+                />
+            }
+
             <ChatContent
-                inboxID={inboxID}
                 loggedUserID={loggedUserID}
                 labyrinth={labyrinth}
             />

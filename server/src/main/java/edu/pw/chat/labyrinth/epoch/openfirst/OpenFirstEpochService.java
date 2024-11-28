@@ -84,7 +84,7 @@ public class OpenFirstEpochService {
                 )
         );
 
-        return new OpenFirstEpochResponseDTO(savedDevice.getId(), savedEpoch.getId());
+        return new OpenFirstEpochResponseDTO(savedChatInbox.getId(), savedDevice.getId(), savedEpoch.getId());
     }
 
 }

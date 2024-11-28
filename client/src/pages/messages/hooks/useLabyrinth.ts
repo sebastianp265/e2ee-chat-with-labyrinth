@@ -1,60 +1,75 @@
 import {LABYRINTH_INSTANCE_KEY} from "@/constants.ts";
 import {Labyrinth, LabyrinthSerialized} from "@/lib/labyrinth/Labyrinth.ts";
 import labyrinthWebClientImpl from "@/api/labyrinthWebClientImpl.ts";
-import {useEffect, useState} from "react";
-import axiosInstance from "@/api/axios/axiosInstance.ts";
-import {HandleSubmitRecoveryCodeResponse} from "@/components/app/welcome-to-labyrinth/RecoverSecretsDialogContentChildren.tsx";
+import {useEffect, useMemo, useState} from "react";
+import {
+    HandleSubmitRecoveryCodeResponse
+} from "@/components/app/welcome-to-labyrinth/RecoverSecretsDialogContentChildren.tsx";
 import {
     HandleGenerateRecoveryCodeResponse
 } from "@/components/app/welcome-to-labyrinth/GenerateRecoveryCodeAlertDialogContentChildren.tsx";
 import {AxiosError} from "axios";
 
 export enum LabyrinthLoadState {
+    LOADING,
     NOT_INITIALIZED,
     NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED,
     NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE,
 }
 
-export function isLabyrinthLoadState(value: unknown): value is LabyrinthLoadState {
-    return Object.values(LabyrinthLoadState).includes(value as LabyrinthLoadState);
-}
+// export function isLabyrinthLoadState(value: unknown): value is LabyrinthLoadState {
+//     return Object.values(LabyrinthLoadState).includes(value as LabyrinthLoadState);
+// }
 
-async function loadLabyrinthFromLocalStorage() {
+function loadLabyrinthFromLocalStorage(): LabyrinthSerialized | null {
     const labyrinthJSONString = localStorage.getItem(LABYRINTH_INSTANCE_KEY)
     if (labyrinthJSONString === null) {
         return null
     }
 
-    const labyrinthSerialized: LabyrinthSerialized = JSON.parse(labyrinthJSONString)
+    return JSON.parse(labyrinthJSONString)
+}
 
-    return await Labyrinth.deserialize(labyrinthSerialized, labyrinthWebClientImpl)
+function saveLabyrinthToLocalStorage(labyrinth: Labyrinth) {
+    localStorage.setItem(LABYRINTH_INSTANCE_KEY, JSON.stringify(labyrinth.serialize()))
 }
 
 export default function useLabyrinth(loggedUserID: string) {
-    const [labyrinthOrLoadState, setLabyrinthOrLoadState] = useState<Labyrinth | LabyrinthLoadState>(LabyrinthLoadState.NOT_INITIALIZED);
+    const labyrinthSerialized = useMemo(() => loadLabyrinthFromLocalStorage(), []);
+    const [initialLoadState, setInitialLoadState] = useState(
+        labyrinthSerialized === null ?
+            LabyrinthLoadState.NOT_INITIALIZED :
+            LabyrinthLoadState.LOADING
+    )
+
+    const [labyrinth, setLabyrinth] = useState<Labyrinth | null>(null);
     const [error, setError] = useState<AxiosError | null>(null)
 
-    async function initializeLabyrinth() {
-        const labyrinthInstance = await loadLabyrinthFromLocalStorage()
-        if (labyrinthInstance === null) {
-            const hasRecoveryCode = (await axiosInstance.get<boolean>(`api/labyrinth/has-recovery-code`)).data
-            if (hasRecoveryCode) {
-                return LabyrinthLoadState.NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE
-            } else {
-                return LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED
-            }
+    useEffect(() => {
+        if (initialLoadState === LabyrinthLoadState.NOT_INITIALIZED) {
+            Labyrinth.checkIfLabyrinthIsInitialized(labyrinthWebClientImpl)
+                .then(response => {
+                    const loadState = response.isInitialized ?
+                        LabyrinthLoadState.NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE :
+                        LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED
+                    setInitialLoadState(loadState)
+                })
+        } else if (initialLoadState === LabyrinthLoadState.LOADING) {
+            Labyrinth.deserialize(labyrinthSerialized!, labyrinthWebClientImpl)
+                .then(setLabyrinth)
+                .catch(setError)
         }
-        return labyrinthInstance
-    }
+    }, [initialLoadState, labyrinthSerialized]);
 
     useEffect(() => {
-        initializeLabyrinth()
-            .then(setLabyrinthOrLoadState)
-            .catch(setError)
-    }, [setError]);
+        if (labyrinth !== null) {
+            saveLabyrinthToLocalStorage(labyrinth)
+        }
+    }, [labyrinth]);
+
 
     async function setLabyrinthFromRecoveryCode(recoveryCode: string): Promise<HandleSubmitRecoveryCodeResponse> {
-        setLabyrinthOrLoadState(await Labyrinth.fromRecoveryCode(loggedUserID, recoveryCode, labyrinthWebClientImpl))
+        setLabyrinth(await Labyrinth.fromRecoveryCode(loggedUserID, recoveryCode, labyrinthWebClientImpl))
         return {
             isSuccess: true,
         }
@@ -62,7 +77,7 @@ export default function useLabyrinth(loggedUserID: string) {
 
     async function setLabyrinthFromFirstEpoch(): Promise<HandleGenerateRecoveryCodeResponse> {
         const fromFirstEpoch = await Labyrinth.fromFirstEpoch(loggedUserID, labyrinthWebClientImpl)
-        setLabyrinthOrLoadState(fromFirstEpoch.labyrinthInstance)
+        setLabyrinth(fromFirstEpoch.labyrinthInstance)
 
         return {
             recoveryCode: fromFirstEpoch.recoveryCode,
@@ -70,11 +85,15 @@ export default function useLabyrinth(loggedUserID: string) {
     }
 
     async function retryInitialization() {
-        setError(null)
-        initializeLabyrinth()
-            .then(setLabyrinthOrLoadState)
-            .catch(setError)
+        setInitialLoadState(LabyrinthLoadState.NOT_INITIALIZED)
     }
 
-    return {labyrinthOrLoadState, error, retryInitialization, setLabyrinthFromRecoveryCode, setLabyrinthFromFirstEpoch} as const;
+    return {
+        labyrinth,
+        initialLoadState,
+        error,
+        retryInitialization,
+        setLabyrinthFromRecoveryCode,
+        setLabyrinthFromFirstEpoch
+    } as const;
 }

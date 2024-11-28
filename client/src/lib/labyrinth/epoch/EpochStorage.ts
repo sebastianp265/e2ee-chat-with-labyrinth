@@ -1,3 +1,5 @@
+import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
+
 export class EpochStorageError extends Error {
     constructor(message: string) {
         super(message);
@@ -46,6 +48,12 @@ export class NegativeEpochSequenceIDError extends EpochStorageError {
     }
 }
 
+export type EpochSerialized = {
+    id: string,
+    sequenceID: string,
+    rootKey: string,
+}
+
 export type Epoch = {
     id: string,
     sequenceID: string,
@@ -60,7 +68,7 @@ export type EpochWithoutID = {
 export type EpochStorageSerialized = {
     newestEpochSequenceID: string | null
     oldestEpochSequenceID: string | null
-    sequenceIDToEpoch: { [sequenceID: string]: Epoch }
+    sequenceIDToEpoch: { [sequenceID: string]: EpochSerialized }
 }
 
 export class EpochStorage {
@@ -68,32 +76,48 @@ export class EpochStorage {
     private oldestEpochSequenceID: string | null
     private readonly sequenceIDToEpoch: { [sequenceID: string]: Epoch }
 
-    private constructor(epochStorageSerialized?: EpochStorageSerialized) {
-        if (epochStorageSerialized) {
-            this.newestEpochSequenceID = epochStorageSerialized.newestEpochSequenceID
-            this.oldestEpochSequenceID = epochStorageSerialized.oldestEpochSequenceID
-            this.sequenceIDToEpoch = structuredClone(epochStorageSerialized.sequenceIDToEpoch)
-        } else {
-            this.newestEpochSequenceID = null
-            this.oldestEpochSequenceID = null
-            this.sequenceIDToEpoch = {}
-        }
+    private constructor(
+        newestEpochSequenceID: string | null,
+        oldestEpochSequenceID: string | null,
+        sequenceIDToEpoch: { [sequenceID: string]: Epoch }
+    ) {
+        this.newestEpochSequenceID = newestEpochSequenceID
+        this.oldestEpochSequenceID = oldestEpochSequenceID
+        this.sequenceIDToEpoch = sequenceIDToEpoch
     }
 
-    public static deserialize(epochStorageObject: EpochStorageSerialized): EpochStorage {
-        return new EpochStorage(epochStorageObject)
+    public static deserialize(epochStorageSerialized: EpochStorageSerialized): EpochStorage {
+        return new EpochStorage(
+            epochStorageSerialized.oldestEpochSequenceID,
+            epochStorageSerialized.newestEpochSequenceID,
+            Object.fromEntries(Object.entries(epochStorageSerialized.sequenceIDToEpoch).map(e => {
+                const [k, v] = e
+                return [k, {
+                    id: v.id,
+                    rootKey: BytesSerializer.deserialize(v.rootKey),
+                    sequenceID: v.sequenceID,
+                } as Epoch]
+            }))
+        )
     }
 
     public serialize(): EpochStorageSerialized {
         return {
             newestEpochSequenceID: this.newestEpochSequenceID,
             oldestEpochSequenceID: this.oldestEpochSequenceID,
-            sequenceIDToEpoch: structuredClone(this.sequenceIDToEpoch)
+            sequenceIDToEpoch: Object.fromEntries(Object.entries(this.sequenceIDToEpoch).map(e => {
+                const [k, v] = e
+                return [k, {
+                    id: v.id,
+                    rootKey: BytesSerializer.serialize(v.rootKey),
+                    sequenceID: v.sequenceID,
+                } as EpochSerialized]
+            }))
         }
     }
 
     public static createEmpty() {
-        return new EpochStorage()
+        return new EpochStorage(null, null, {})
     }
 
     public getEpoch(sequenceID: string): Epoch {

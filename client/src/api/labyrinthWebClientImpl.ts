@@ -8,17 +8,22 @@ import {
     OpenNewEpochBasedOnCurrentWebClient
 } from "@/lib/labyrinth/epoch/open-new-epoch.ts";
 import {
-    GetNewerEpochJoinData,
+    GetNewerEpochJoinDataResponse,
     GetNewestEpochSequenceIDResponse,
-    GetOlderEpochJoinData,
+    GetOlderEpochJoinDataResponse,
     JoinEpochWebClient
 } from "@/lib/labyrinth/epoch/join-epoch.ts";
+
+import {AuthenticateDeviceToEpochWebClient} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
+import {UploadDevicePublicKeyBundleWebClient} from "@/lib/labyrinth/device/device.ts";
+import {
+    CheckIfLabyrinthIsInitializedResponse,
+    CheckIfLabyrinthIsInitializedWebClient
+} from "@/lib/labyrinth/Labyrinth.ts";
 import {
     GetVirtualDeviceRecoverySecretsResponse,
     GetVirtualDeviceRecoverySecretsWebClient
-} from "@/lib/labyrinth/device/virtual-device.ts";
-import {AuthenticateDeviceToEpochWebClient} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
-import {UploadDevicePublicKeyBundleWebClient} from "@/lib/labyrinth/device/device.ts";
+} from "@/lib/labyrinth/device/virtual-device/VirtualDevice.ts";
 
 const openFirstEpochWebClient: OpenFirstEpochWebClient = {
     openFirstEpoch: async (requestBody) =>
@@ -35,18 +40,21 @@ const openNewEpochBasedOnCurrentWebClient: OpenNewEpochBasedOnCurrentWebClient =
 
 const joinEpochWebClient: JoinEpochWebClient = {
     getNewerEpochJoinData: async (newerEpochSequenceID) =>
-        (await axiosInstance.get<GetNewerEpochJoinData>(`api/labyrinth/epochs/by-sequence-id/${newerEpochSequenceID}/newer-epoch-join-data`)).data,
+        (await axiosInstance.get<GetNewerEpochJoinDataResponse>(`api/labyrinth/epochs/by-sequence-id/${newerEpochSequenceID}/newer-epoch-join-data`)).data,
 
     getOlderEpochJoinData: async (olderEpochSequenceID) =>
-        (await axiosInstance.get<GetOlderEpochJoinData>(`api/labyrinth/epochs/by-sequence-id/${olderEpochSequenceID}/older-epoch-join-data`)).data,
+        (await axiosInstance.get<GetOlderEpochJoinDataResponse>(`api/labyrinth/epochs/by-sequence-id/${olderEpochSequenceID}/older-epoch-join-data`)).data,
 
     getNewestEpochSequenceID: async () =>
         (await axiosInstance.get<GetNewestEpochSequenceIDResponse>(`api/labyrinth/epochs/newest-sequence-id`)).data,
 }
 
 const getVirtualDeviceRecoverySecretsWebClient: GetVirtualDeviceRecoverySecretsWebClient = {
-    getVirtualDeviceRecoverySecrets: async (virtualDeviceID) =>
-        (await axiosInstance.get<GetVirtualDeviceRecoverySecretsResponse>(`api/labyrinth/virtual-device/${virtualDeviceID}/recovery-secrets`)).data,
+    getVirtualDeviceRecoverySecrets: async (getVirtualDeviceRecoverySecretsBody) =>
+        (await axiosInstance.post<GetVirtualDeviceRecoverySecretsResponse>(
+                `api/labyrinth/virtual-device/recovery-secrets`,
+                getVirtualDeviceRecoverySecretsBody)
+        ).data,
 }
 
 const authenticateDeviceToEpochWebClient: AuthenticateDeviceToEpochWebClient = {
@@ -59,6 +67,11 @@ const uploadDevicePublicKeyBundleWebClient: UploadDevicePublicKeyBundleWebClient
         (await axiosInstance.post(`api/labyrinth/device/key-bundle`, devicePublicKeyBundle)).data,
 }
 
+const checkIfLabyrinthIsInitializedWebClient: CheckIfLabyrinthIsInitializedWebClient = {
+    checkIfLabyrinthIsInitialized: async () =>
+        (await axiosInstance.get<CheckIfLabyrinthIsInitializedResponse>("api/labyrinth/is-initialized")).data
+}
+
 const labyrinthWebClientImpl = {
     ...openFirstEpochWebClient,
     ...openNewEpochBasedOnCurrentWebClient,
@@ -66,6 +79,7 @@ const labyrinthWebClientImpl = {
     ...getVirtualDeviceRecoverySecretsWebClient,
     ...authenticateDeviceToEpochWebClient,
     ...uploadDevicePublicKeyBundleWebClient,
+    ...checkIfLabyrinthIsInitializedWebClient
 } as LabyrinthWebClient
 
 export default labyrinthWebClientImpl

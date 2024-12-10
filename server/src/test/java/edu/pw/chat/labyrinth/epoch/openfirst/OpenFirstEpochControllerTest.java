@@ -3,11 +3,14 @@ package edu.pw.chat.labyrinth.epoch.openfirst;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.pw.chat.config.TestSecurityConfig;
-import edu.pw.chat.labyrinth.common.dtos.DevicePublicKeyBundleDTO;
-import edu.pw.chat.labyrinth.common.dtos.VirtualDeviceEncryptedRecoverySecretsDTO;
-import edu.pw.chat.labyrinth.common.dtos.VirtualDevicePublicKeyBundleDTO;
-import edu.pw.chat.labyrinth.common.entities.*;
-import edu.pw.chat.labyrinth.common.repositories.*;
+import edu.pw.safechat.chat.internal.entities.ChatInbox;
+import edu.pw.safechat.labyrinth.dtos.OpenFirstEpochBodyDTO;
+import edu.pw.safechat.labyrinth.dtos.OpenFirstEpochResponseDTO;
+import edu.pw.safechat.labyrinth.dtos.common.DevicePublicKeyBundleDTO;
+import edu.pw.safechat.labyrinth.dtos.common.VirtualDeviceEncryptedRecoverySecretsDTO;
+import edu.pw.safechat.labyrinth.dtos.common.VirtualDevicePublicKeyBundleDTO;
+import edu.pw.safechat.labyrinth.internal.entities.*;
+import edu.pw.safechat.labyrinth.internal.repositories.*;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,7 +141,7 @@ class OpenFirstEpochControllerTest {
                 .build();
 
         var expectedVirtualDevice = VirtualDevice.builder()
-                .id(openFirstEpochBodyDTO.virtualDeviceID())
+                .id(openFirstEpochBodyDTO.virtualDeviceId())
                 .chatInbox(expectedChatInbox)
                 .deviceKeyPub(openFirstEpochBodyDTO.virtualDevicePublicKeyBundle().deviceKeyPub())
                 .epochStorageKeyPub(openFirstEpochBodyDTO.virtualDevicePublicKeyBundle().epochStorageKeyPub())
@@ -146,13 +149,13 @@ class OpenFirstEpochControllerTest {
                 .build();
 
         var expectedEpochInDB = Epoch.builder()
-                .id(actualResponseContent.epochID())
+                .id(actualResponseContent.epochId())
                 .chatInbox(
                         expectedChatInbox
                 )
                 .deviceEpochMembershipProofs(List.of(DeviceEpochMembershipProof.builder()
                         .device(Device.builder()
-                                .id(actualResponseContent.deviceID())
+                                .id(actualResponseContent.deviceId())
                                 .deviceKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundle().deviceKeyPub())
                                 .epochStorageAuthKeyPub(openFirstEpochBodyDTO.devicePublicKeyBundle().epochStorageAuthKeyPub())
                                 .epochStorageAuthKeySig(openFirstEpochBodyDTO.devicePublicKeyBundle().epochStorageAuthKeySig())

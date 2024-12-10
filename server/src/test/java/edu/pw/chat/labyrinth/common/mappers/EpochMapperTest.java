@@ -1,6 +1,7 @@
 package edu.pw.chat.labyrinth.common.mappers;
 
-import edu.pw.chat.labyrinth.common.entities.*;
+import edu.pw.safechat.chat.internal.entities.ChatInbox;
+import edu.pw.safechat.labyrinth.internal.entities.*;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

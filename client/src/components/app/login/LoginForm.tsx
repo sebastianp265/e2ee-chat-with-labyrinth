@@ -5,7 +5,7 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/
 
 import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
-import {LoginRequestDTO} from "@/api/types.ts";
+import {LoginRequestDTO} from "@/pages/login/LoginPage.tsx";
 
 const formSchema = z.object({
     username: z.string()

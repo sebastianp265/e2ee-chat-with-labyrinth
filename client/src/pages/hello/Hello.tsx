@@ -1,15 +1,23 @@
 import {useEffect, useState} from "react";
-import axiosAPI from "@/api/axiosAPI.ts";
-import {HelloGetDTO} from "@/api/types.ts";
+import httpClient from "@/api/httpClient.ts";
 import {Button} from "@/components/ui/button.tsx";
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
+
+export type HelloGetDTO = {
+    name: string,
+    principal: string,
+    details: string,
+    credentials: string,
+    authorities: string[],
+    sessionId: string
+}
 
 export default function Hello({inactivateSession}: Readonly<ISessionProps>) {
     const [hello, setHello] = useState({} as HelloGetDTO)
     const [resend, setResend] = useState(false)
 
     useEffect(() => {
-        axiosAPI.get<HelloGetDTO>("/api/auth/hello")
+        httpClient.get<HelloGetDTO>("/api/auth/hello")
             .then(response => {
                 setHello(response.data)
             })

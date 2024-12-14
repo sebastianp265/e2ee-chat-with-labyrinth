@@ -41,7 +41,7 @@ public class ChatService {
                     return new ChatThreadPreviewDTO(
                             threadId,
                             thread.getName(),
-                            List.of(message),
+                            message,
                             thread.getMembers()
                                     .stream()
                                     .collect(Collectors.toMap(

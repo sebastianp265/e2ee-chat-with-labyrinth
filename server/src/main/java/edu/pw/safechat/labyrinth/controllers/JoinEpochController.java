@@ -18,7 +18,7 @@ import java.math.BigInteger;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/labyrinth/epochs")
+@RequestMapping("/api/labyrinth-service/epochs")
 @RequiredArgsConstructor
 public class JoinEpochController {
 

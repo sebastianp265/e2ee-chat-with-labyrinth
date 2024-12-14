@@ -40,11 +40,16 @@ public class AuthenticationManagerConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         List<String> usernames = Arrays.asList(
+                // DATA FOR AUTOMATED TESTS
                 "user_for_logging_in",
                 "user_not_in_labyrinth",
                 "user_in_labyrinth_alice",
                 "user_in_labyrinth_bob",
-                "user_in_labyrinth_carol"
+                "user_in_labyrinth_carol",
+                // DATA FOR MANUAL TESTS
+                "alice",
+                "bob",
+                "carol"
         );
         // TODO: REMOVE AFTER BUILDING PROFILE FOR TESTING
         List<UserDetails> users = usernames.stream().map(u ->

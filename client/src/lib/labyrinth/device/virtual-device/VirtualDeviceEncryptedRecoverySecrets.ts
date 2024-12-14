@@ -1,5 +1,5 @@
 import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
-import {EpochWithoutID} from "@/lib/labyrinth/epoch/EpochStorage.ts";
+import {EpochWithoutId} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 import {
     VirtualDeviceKeyBundle,
     VirtualDevicePrivateKeyBundle,
@@ -10,25 +10,25 @@ import {asciiStringToBytes, bytes_equal, bytesToAsciiString,} from "@/lib/labyri
 import {PrivateKey} from "@/lib/labyrinth/crypto/keys.ts";
 
 export type VirtualDeviceEncryptedRecoverySecretsSerialized = {
-    encryptedEpochSequenceID: string,
+    encryptedEpochSequenceId: string,
     encryptedEpochRootKey: string,
     encryptedEpochStorageKeyPriv: string,
     encryptedDeviceKeyPriv: string,
 }
 
 export class VirtualDeviceEncryptedRecoverySecrets {
-    public readonly encryptedEpochSequenceID: Uint8Array
+    public readonly encryptedEpochSequenceId: Uint8Array
     public readonly encryptedEpochRootKey: Uint8Array
     public readonly encryptedDeviceKeyPriv: Uint8Array
     public readonly encryptedEpochStorageKeyPriv: Uint8Array
 
     public constructor(
-        encryptedEpochSequenceID: Uint8Array,
+        encryptedEpochSequenceId: Uint8Array,
         encryptedEpochRootKey: Uint8Array,
         encryptedEpochStorageKeyPriv: Uint8Array,
         encryptedDeviceKeyPriv: Uint8Array,
     ) {
-        this.encryptedEpochSequenceID = encryptedEpochSequenceID
+        this.encryptedEpochSequenceId = encryptedEpochSequenceId
         this.encryptedEpochRootKey = encryptedEpochRootKey
         this.encryptedEpochStorageKeyPriv = encryptedEpochStorageKeyPriv
         this.encryptedDeviceKeyPriv = encryptedDeviceKeyPriv
@@ -36,14 +36,14 @@ export class VirtualDeviceEncryptedRecoverySecrets {
 
     public static deserialize(virtualDeviceEncryptedRecoverSecretsSerialized: VirtualDeviceEncryptedRecoverySecretsSerialized): VirtualDeviceEncryptedRecoverySecrets {
         const {
-            encryptedEpochSequenceID,
+            encryptedEpochSequenceId,
             encryptedEpochRootKey,
             encryptedEpochStorageKeyPriv,
             encryptedDeviceKeyPriv,
         } = virtualDeviceEncryptedRecoverSecretsSerialized
 
         return new VirtualDeviceEncryptedRecoverySecrets(
-            BytesSerializer.deserialize(encryptedEpochSequenceID),
+            BytesSerializer.deserialize(encryptedEpochSequenceId),
             BytesSerializer.deserialize(encryptedEpochRootKey),
             BytesSerializer.deserialize(encryptedEpochStorageKeyPriv),
             BytesSerializer.deserialize(encryptedDeviceKeyPriv),
@@ -52,7 +52,7 @@ export class VirtualDeviceEncryptedRecoverySecrets {
 
     public serialize(): VirtualDeviceEncryptedRecoverySecretsSerialized {
         return {
-            encryptedEpochSequenceID: BytesSerializer.serialize(this.encryptedEpochSequenceID),
+            encryptedEpochSequenceId: BytesSerializer.serialize(this.encryptedEpochSequenceId),
             encryptedEpochRootKey: BytesSerializer.serialize(this.encryptedEpochRootKey),
             encryptedEpochStorageKeyPriv: BytesSerializer.serialize(this.encryptedEpochStorageKeyPriv),
             encryptedDeviceKeyPriv: BytesSerializer.serialize(this.encryptedDeviceKeyPriv),
@@ -63,19 +63,19 @@ export class VirtualDeviceEncryptedRecoverySecrets {
 
 export async function encryptVirtualDeviceRecoverySecrets(
     virtualDeviceDecryptionKey: Uint8Array,
-    epochWithoutID: EpochWithoutID,
+    epochWithoutId: EpochWithoutId,
     virtualDevicePrivateKeyBundle: VirtualDevicePrivateKeyBundle,
 ): Promise<VirtualDeviceEncryptedRecoverySecrets> {
-    const encryptedEpochSequenceID = await encrypt(
+    const encryptedEpochSequenceId = await encrypt(
         virtualDeviceDecryptionKey,
         asciiStringToBytes("virtual_device:epoch_anon_id"),
-        asciiStringToBytes(epochWithoutID.sequenceID),
+        asciiStringToBytes(epochWithoutId.sequenceId),
     )
 
     const encryptedEpochRootKey = await encrypt(
         virtualDeviceDecryptionKey,
         asciiStringToBytes("virtual_device:epoch_root_key"),
-        epochWithoutID.rootKey,
+        epochWithoutId.rootKey,
     )
 
     const encryptedDeviceKeyPriv = await encrypt(
@@ -91,7 +91,7 @@ export async function encryptVirtualDeviceRecoverySecrets(
     )
 
     return new VirtualDeviceEncryptedRecoverySecrets(
-        encryptedEpochSequenceID,
+        encryptedEpochSequenceId,
         encryptedEpochRootKey,
         encryptedEpochStorageKeyPriv,
         encryptedDeviceKeyPriv,
@@ -112,14 +112,14 @@ export async function decryptVirtualDeviceRecoverySecrets(
     virtualDeviceEncryptedRecoverySecrets: VirtualDeviceEncryptedRecoverySecrets,
     expectedVirtualDevicePublicKeyBundle: VirtualDevicePublicKeyBundle
 ): Promise<{
-    epochWithoutID: EpochWithoutID;
+    epochWithoutId: EpochWithoutId;
     virtualDeviceKeyBundle: VirtualDeviceKeyBundle;
 }> {
-    const epochSequenceID = bytesToAsciiString(
+    const epochSequenceId = bytesToAsciiString(
         await decrypt(
             virtualDeviceDecryptionKey,
             asciiStringToBytes("virtual_device:epoch_anon_id"),
-            virtualDeviceEncryptedRecoverySecrets.encryptedEpochSequenceID,
+            virtualDeviceEncryptedRecoverySecrets.encryptedEpochSequenceId,
         )
     )
 
@@ -160,9 +160,9 @@ export async function decryptVirtualDeviceRecoverySecrets(
 
     return {
         virtualDeviceKeyBundle,
-        epochWithoutID: {
+        epochWithoutId: {
             rootKey: epochRootKey,
-            sequenceID: epochSequenceID
+            sequenceId: epochSequenceId
         }
     }
 }

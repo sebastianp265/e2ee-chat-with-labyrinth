@@ -1,4 +1,3 @@
-import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 import {BrowserRouter, Navigate, Outlet, Route, Routes, useOutletContext} from "react-router-dom";
@@ -9,7 +8,7 @@ import MessagesPage from "@/pages/messages/MessagesPage.tsx";
 import {LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY} from "@/constants.ts";
 
 type PrivateRouteContext = {
-    loggedUserID: string,
+    loggedUserId: string,
 }
 
 export function PrivateRoutes() {
@@ -21,15 +20,15 @@ export function PrivateRoutes() {
     const sessionExpirationTimestamp = parseInt(sessionExpires)
     const currentTimestamp = Date.now()
 
-    const loggedUserID = localStorage.getItem(LOGGED_USER_ID_KEY)
+    const loggedUserId = localStorage.getItem(LOGGED_USER_ID_KEY)
 
-    if (sessionExpirationTimestamp <= currentTimestamp || loggedUserID === null) {
+    if (sessionExpirationTimestamp <= currentTimestamp || loggedUserId === null) {
         localStorage.removeItem(SESSION_EXPIRES_AT_KEY)
         localStorage.removeItem(LOGGED_USER_ID_KEY)
         return <Navigate to="login"/>
     }
 
-    return <Outlet context={{loggedUserID}}></Outlet>
+    return <Outlet context={{loggedUserId}}></Outlet>
 }
 
 export function usePrivateRouteContext() {
@@ -37,24 +36,24 @@ export function usePrivateRouteContext() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-        <BrowserRouter>
-            <Routes>
-                <Route element={<PrivateRoutes/>}>
-                    <Route index={true} path='/' element={<Navigate to="/messages"/>}/>
-                    <Route path="/messages" element={
-                        <SessionCheckWrapper>
-                            <MessagesPage/>
-                        </SessionCheckWrapper>
-                    }/>
-                    <Route path="/hello" element={
-                        <SessionCheckWrapper>
-                            <Hello/>
-                        </SessionCheckWrapper>
-                    }/>
-                </Route>
-                <Route path="/login" element={<LoginPage/>}/>
-            </Routes>
-        </BrowserRouter>
-    </React.StrictMode>,
+    // <React.StrictMode>
+    <BrowserRouter>
+        <Routes>
+            <Route element={<PrivateRoutes/>}>
+                <Route index={true} path='/' element={<Navigate to="/messages"/>}/>
+                <Route path="/messages" element={
+                    <SessionCheckWrapper>
+                        <MessagesPage/>
+                    </SessionCheckWrapper>
+                }/>
+                <Route path="/hello" element={
+                    <SessionCheckWrapper>
+                        <Hello/>
+                    </SessionCheckWrapper>
+                }/>
+            </Route>
+            <Route path="/login" element={<LoginPage/>}/>
+        </Routes>
+    </BrowserRouter>
+    // </React.StrictMode>,
 )

@@ -6,10 +6,10 @@ import edu.pw.safechat.chat.internal.services.ChatThreadService;
 import edu.pw.safechat.chat.payloads.received.GenericMessageReceived;
 import edu.pw.safechat.chat.payloads.received.NewChatMessageReceivedPayload;
 import edu.pw.safechat.chat.payloads.received.NewChatThreadReceivedPayload;
-import edu.pw.safechat.chat.payloads.tosend.ChatMessageToSendPayload;
 import edu.pw.safechat.chat.payloads.tosend.GenericMessageToSend;
-import edu.pw.safechat.chat.payloads.tosend.NewMessagesToSendPayload;
-import edu.pw.safechat.chat.payloads.tosend.NewThreadsToSendPayload;
+import edu.pw.safechat.chat.payloads.tosend.NewChatMessageToSendPayload;
+import edu.pw.safechat.chat.payloads.tosend.NewChatThreadToSendPayload;
+import edu.pw.safechat.chat.payloads.tosend.WebSocketChatMessage;
 import edu.pw.safechat.user.internal.services.ChatUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,24 +61,22 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private void handleNewChatThread(GenericMessageReceived receivedMessage, UUID userId) throws Exception {
         NewChatThreadReceivedPayload payload = mapper.treeToValue(receivedMessage.payload(), NewChatThreadReceivedPayload.class);
 
-        ChatThread createdThread = chatThreadService.createNewThread(userId, payload.memberUserIds());
+        ChatThread createdThread = chatThreadService.createNewThread(userId, payload.otherMemberUserIds());
 
         var messageToSend = new GenericMessageToSend(
-                "NEW_THREADS",
-                List.of(new NewThreadsToSendPayload(
+                "NEW_CHAT_THREAD",
+                new NewChatThreadToSendPayload(
                         createdThread.getId(),
                         createdThread.getName(),
-                        List.of(
-                                new ChatMessageToSendPayload(
-                                        // TODO: consider almost impossible uuid collisions
-                                        UUID.randomUUID(),
-                                        userId,
-                                        payload.messageContent(),
-                                        Instant.now().toEpochMilli()
-                                )
+                        new WebSocketChatMessage(
+                                // TODO: consider almost impossible uuid collisions
+                                UUID.randomUUID(),
+                                userId,
+                                payload.initialMessageContent(),
+                                Instant.now().toEpochMilli()
                         ),
                         chatThreadService.getMembersVisibleNameByUserId(createdThread.getId())
-                ))
+                )
         );
         var usersToSendTo = chatThreadService.getMembersUUIDByThreadId(createdThread.getId());
 
@@ -88,16 +86,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private void handleNewChatMessage(UUID authorId, GenericMessageReceived receivedMessage) throws Exception {
         NewChatMessageReceivedPayload payload = mapper.treeToValue(receivedMessage.payload(), NewChatMessageReceivedPayload.class);
         var messageToSend = new GenericMessageToSend(
-                "NEW_CHAT_MESSAGES",
-                new NewMessagesToSendPayload(
+                "NEW_CHAT_MESSAGE",
+                new NewChatMessageToSendPayload(
                         payload.threadId(),
-                        List.of(new ChatMessageToSendPayload(
+                        new WebSocketChatMessage(
                                 // TODO: consider almost impossible uuid collisions
                                 UUID.randomUUID(),
                                 authorId,
                                 payload.content(),
                                 Instant.now().toEpochMilli()
-                        ))
+                        )
                 )
         );
         var usersToSendTo = chatThreadService.getMembersUUIDByThreadId(payload.threadId());
@@ -108,8 +106,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         var textMessageToSend = new TextMessage(mapper.writeValueAsString(messageToSend));
 
         for (UUID userIdToSendTo : usersToSendTo) {
+            log.error("SENDING TO '{}' MESSAGES: ", userIdToSendTo);
             for (WebSocketSession s : currentSessions.get(userIdToSendTo)) {
-                log.debug("SENDING");
+                log.error(textMessageToSend.getPayload());
                 s.sendMessage(textMessageToSend);
             }
         }

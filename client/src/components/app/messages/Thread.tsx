@@ -6,27 +6,27 @@ export type ThreadData = {
 } & MessagesWithMembersNames
 
 export type ThreadProps = {
-    loggedUserID: string,
+    loggedUserId: string,
     threadData: ThreadData,
     handleSendMessage: (messageContent: string) => void,
 }
 
 function Thread({
-                    loggedUserID,
+                    loggedUserId,
                     threadData,
                     handleSendMessage,
                 }: Readonly<ThreadProps>) {
     return (
-        <>
+        <div className="min-h-full flex p-2 flex-grow border border-l-0 flex-col w-full">
             <div className="border rounded-md w-full p-2 mb-2">
-                <span className="font-bold">{threadData.threadName}</span>
+                <span data-cy="thread-name" className="font-bold">{threadData.threadName}</span>
             </div>
             <Messages
                 messagesWithMemberNames={threadData}
-                loggedUserID={loggedUserID}
+                loggedUserId={loggedUserId}
             />
             <MessageInput handleSendMessage={handleSendMessage}/>
-        </>
+        </div>
     );
 }
 

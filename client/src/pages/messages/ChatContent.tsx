@@ -1,42 +1,61 @@
 import {Button} from "@/components/ui/button.tsx";
-import ThreadPreview from "@/components/app/messages/ThreadPreview.tsx";
-import useThreadsData, {threadPreviewDataFromThreadData} from "@/pages/messages/hooks/useThreadsData.ts";
+import ThreadPreview, {ThreadPreviewData} from "@/components/app/messages/ThreadPreview.tsx";
+import useThreadsData, {ThreadsDataStore} from "@/pages/messages/hooks/useThreadsData.ts";
 import CreateThread from "@/components/app/messages/CreateThread.tsx";
-import Thread from "@/components/app/messages/Thread.tsx";
+import Thread, {ThreadData} from "@/components/app/messages/Thread.tsx";
 import useChatWebSocket from "@/pages/messages/hooks/useChatWebSocket.ts";
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import useFriendsData from "@/pages/messages/hooks/useFriendsData.ts";
 import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
 
 type ChatContentProps = {
-    loggedUserID: string,
+    loggedUserId: string,
     labyrinth: Labyrinth | null,
 }
 
+function getThreadDataFromStore(threadsDataStore: ThreadsDataStore, threadId: string) {
+    const threadDataUnconverted = threadsDataStore.map[threadId]
+    return {
+        threadName: threadDataUnconverted.threadName ?? `Chat between: ${Object.values(threadDataUnconverted.membersVisibleNameByUserId).join(", ")}`,
+        messages: threadDataUnconverted.messages,
+        membersVisibleNameByUserId: threadDataUnconverted.membersVisibleNameByUserId
+    } as ThreadData
+}
+
+function threadPreviewDataFromThreadData(threadId: string, threadData: ThreadData): ThreadPreviewData {
+    const lastThreadMessage = threadData.messages[threadData.messages.length - 1]
+
+    return {
+        threadId: threadId,
+        threadName: threadData.threadName,
+        lastMessage: lastThreadMessage.content,
+        lastMessageAuthorVisibleName: threadData.membersVisibleNameByUserId[lastThreadMessage.authorId],
+    }
+}
+
 export default function ChatContent({
-                                        loggedUserID,
+                                        loggedUserId,
                                         labyrinth,
                                     }: Readonly<ChatContentProps>) {
     const {
-        threadsData,
-        chosenThreadID,
+        threadsDataStore,
+        chosenThreadId,
         error: threadsDataError,
-        setChosenThreadID,
-        addThreads,
-        addMessages
+        setChosenThreadId,
+        addMessage,
+        addThread,
     } = useThreadsData(
         labyrinth,
     )
 
     const {friends, error: friendsDataError, addFriends} = useFriendsData()
 
-    const {handleSendMessage, error: chatWebSocketError, handleCreateThread} = useChatWebSocket(
-        labyrinth,
-        addMessages,
-        addThreads,
-        addFriends,
+    const shouldConnect = useMemo(() => labyrinth !== null, [labyrinth])
+    const {sendChatMessage, createChatThread, error: chatWebSocketError} = useChatWebSocket(
+        shouldConnect,
+        addMessage,
+        addThread,
     )
-
 
     const [createThreadOpen, setCreateThreadOpen] = useState<boolean>(false)
 
@@ -46,19 +65,24 @@ export default function ChatContent({
                 <Button onClick={() => {
                     setCreateThreadOpen(true)
                 }}>Create new thread</Button>
-                {
-                    threadsData.keys.map(threadID =>
-                        <ThreadPreview
-                            key={threadID}
-                            threadPreviewData={threadPreviewDataFromThreadData(threadID, threadsData.map[threadID])}
-                            onClick={() => {
-                                setCreateThreadOpen(false)
-                                setChosenThreadID(threadID)
-                            }}
-                            chosenThreadID={chosenThreadID}
-                        />
-                    )
-                }
+                <div data-cy="thread-previews-container">
+                    {
+                        threadsDataStore.keys.map(threadId =>
+                            <ThreadPreview
+                                key={threadId}
+                                threadPreviewData={threadPreviewDataFromThreadData(
+                                    threadId,
+                                    getThreadDataFromStore(threadsDataStore, threadId)
+                                )}
+                                onClick={() => {
+                                    setCreateThreadOpen(false)
+                                    setChosenThreadId(threadId)
+                                }}
+                                chosenThreadId={chosenThreadId}
+                            />
+                        )
+                    }
+                </div>
             </div>
             <div className="flex p-2 flex-grow border border-l-0 flex-col w-full">
                 {
@@ -66,17 +90,17 @@ export default function ChatContent({
                         <CreateThread
                             friends={friends}
                             handleCreateThread={(newThread) => {
-                                handleCreateThread(newThread)
+                                createChatThread(newThread)
                                 setCreateThreadOpen(false)
                             }}
                         />
                         :
-                        chosenThreadID !== null &&
+                        chosenThreadId !== null &&
                         <Thread
-                            loggedUserID={loggedUserID}
-                            threadData={threadsData.map[chosenThreadID]}
-                            handleSendMessage={(messageContent: string) => handleSendMessage({
-                                threadID: chosenThreadID,
+                            loggedUserId={loggedUserId}
+                            threadData={getThreadDataFromStore(threadsDataStore, chosenThreadId)}
+                            handleSendMessage={(messageContent: string) => sendChatMessage({
+                                threadId: chosenThreadId,
                                 content: messageContent
                             })}
                         />

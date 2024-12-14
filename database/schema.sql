@@ -42,7 +42,7 @@ CREATE TABLE chat_thread_member
 CREATE TABLE labyrinth
 (
     id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    chat_inbox_id UUID NOT NULL REFERENCES chat_inbox
+    chat_inbox_id UUID NOT NULL
 );
 
 CREATE TABLE epoch

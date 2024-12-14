@@ -1,101 +1,109 @@
-import {useEffect, useState} from "react";
-import axiosInstance from "@/api/axios/axiosInstance.ts";
+import {useCallback, useEffect, useState} from "react";
 import useWebSocket, {ReadyState} from "react-use-websocket";
-import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
-import {NewMessageToSend, NewThreadToSend, ReceivedSocketMessage, SocketMessageToSend} from "@/api/socket-types.ts";
-import {
-    AddMessagesActionPayload,
-    AddThreadsActionPayload,
-    LabyrinthEncryptedMessageGetDTO
-} from "@/pages/messages/hooks/useThreadsData.ts";
-import {Friend} from "@/components/app/messages/CreateThread.tsx";
-import {AxiosError} from "axios";
+import {z} from "zod";
+
+const WebSocketChatMessageSchema = z.object({
+    id: z.string(),
+    authorId: z.string(),
+    content: z.string(),
+    timestamp: z.number(),
+});
+
+const ReceivedNewChatMessagePayloadSchema = z.object({
+    threadId: z.string(),
+    message: WebSocketChatMessageSchema,
+});
+
+const ReceivedNewThreadPayloadSchema = z.object({
+    threadId: z.string(),
+    threadName: z.nullable(z.string()),
+    initialMessage: WebSocketChatMessageSchema,
+    membersVisibleNameByUserId: z.record(z.string(), z.string()),
+});
+
+const ReceivedSocketMessageSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.literal("NEW_CHAT_MESSAGE"),
+        payload: ReceivedNewChatMessagePayloadSchema,
+    }),
+    z.object({
+        type: z.literal("NEW_CHAT_THREAD"),
+        payload: ReceivedNewThreadPayloadSchema,
+    }),
+]);
+
+export type ReceivedNewChatMessagePayload = z.infer<typeof ReceivedNewChatMessagePayloadSchema>;
+export type ReceivedNewChatThreadPayload = z.infer<typeof ReceivedNewThreadPayloadSchema>;
+
+type SocketMessageToSend =
+    | { type: "NEW_CHAT_MESSAGE", payload: NewChatMessageToSendPayload }
+    | { type: "NEW_CHAT_THREAD", payload: NewChatThreadToSendPayload }
+
+export type NewChatMessageToSendPayload = {
+    threadId: string,
+    content: string,
+}
+
+export type NewChatThreadToSendPayload = {
+    initialMessageContent: string,
+    otherMemberUserIds: string[],
+}
 
 export default function useChatWebSocket(
-    labyrinth: Labyrinth | null,
-    addMessages: (addMessagesActionPayload: AddMessagesActionPayload) => void,
-    addThreads: (addThreadsActionPayload: AddThreadsActionPayload) => void,
-    addFriends: (friends: Friend[]) => void,
+    shouldConnect: boolean,
+    onNewChatMessageReceivedCallback: (receivedNewChatMessagePayload: ReceivedNewChatMessagePayload) => void,
+    onNewChatThreadReceivedCallback: (receivedNewChatThreadPayload: ReceivedNewChatThreadPayload) => void,
 ) {
-    const {sendMessage, lastMessage, readyState} = useWebSocket<ReceivedSocketMessage>('ws://localhost:8080/ws', {
+    const {sendMessage, lastJsonMessage, readyState} = useWebSocket('ws://localhost:8080/api/ws', {
         onOpen: () => console.log('WebSocket connection opened!'),
         onClose: () => console.log('WebSocket connection closed!'),
         onMessage: (event) => console.log('Received message:', event.data),
         onError: (event) => console.error('WebSocket error:', event),
-        shouldReconnect: () => false
-    });
-    const [error, setError] = useState<AxiosError | null>()
+        shouldReconnect: () => true,
+    }, shouldConnect);
+    const [error, setError] = useState<null | unknown>()
 
     useEffect(() => {
-        if (lastMessage === null || labyrinth === null) return
+        if (lastJsonMessage === null) return
 
-        const socketMessage: ReceivedSocketMessage = JSON.parse(lastMessage.data)
+        const socketMessage = ReceivedSocketMessageSchema.parse(lastJsonMessage)
         switch (socketMessage.type) {
-            case "NEW_MESSAGES": {
-                const encryptedMessagesPromise = Promise.all(socketMessage.payload.messages.map(async m => {
-                            const newestEpochSequenceID = labyrinth.getNewestEpochSequenceID()
-                            return {
-                                id: m.id,
-                                authorID: m.authorID,
-                                encryptedContent: await labyrinth.encrypt(
-                                    socketMessage.payload.threadID,
-                                    newestEpochSequenceID,
-                                    m.content,
-                                ),
-                                epochSequenceID: newestEpochSequenceID,
-                                timestamp: m.timestamp,
-
-                            } as LabyrinthEncryptedMessageGetDTO
-                        }
-                    )
-                )
-                encryptedMessagesPromise.then(encryptedMessages =>
-                    axiosInstance.post<void>(
-                        `api/labyrinth/epochs/${labyrinth.getNewestEpochID()}/inbox/${labyrinth.inboxID}/threads/${socketMessage.payload.threadID}/messages`,
-                        encryptedMessages,
-                    ).then(() =>
-                        addMessages(socketMessage.payload)
-                    )
-                )
-                break;
-            }
-            case "NEW_THREADS": {
-                addThreads(socketMessage.payload)
+            case "NEW_CHAT_MESSAGE":
+                onNewChatMessageReceivedCallback(socketMessage.payload)
                 break
-            }
-            case "NEW_FRIEND": {
-                addFriends([{
-                    userID: socketMessage.payload.userID,
-                    visibleName: socketMessage.payload.visibleName,
-                }])
+            case "NEW_CHAT_THREAD":
+                onNewChatThreadReceivedCallback(socketMessage.payload)
                 break
-            }
         }
-    }, [addFriends, addMessages, addThreads, labyrinth, lastMessage]);
+    }, [lastJsonMessage, onNewChatMessageReceivedCallback, onNewChatThreadReceivedCallback]);
 
-    const handleSendMessage = (newMessage: NewMessageToSend) => {
+    const sendChatMessage = useCallback((message: NewChatMessageToSendPayload) => {
         if (readyState === ReadyState.OPEN) {
             const newChatMessage: SocketMessageToSend = {
-                type: "NEW_MESSAGE",
-                payload: newMessage,
+                type: "NEW_CHAT_MESSAGE",
+                payload: message,
             }
 
             sendMessage(JSON.stringify(newChatMessage))
+        } else {
+            // TODO: Proper error handling
+            console.error(`Couldn't send message, ready state = ${readyState}`)
         }
-        // TODO: HANDLE ELSE
-    }
+    }, [readyState, sendMessage])
 
-    const handleCreateThread = (newThread: NewThreadToSend) => {
+    const createChatThread = useCallback((thread: NewChatThreadToSendPayload) => {
         if (readyState === ReadyState.OPEN) {
             const newChatThread: SocketMessageToSend = {
-                type: 'NEW_THREAD',
-                payload: newThread,
+                type: 'NEW_CHAT_THREAD',
+                payload: thread,
             }
 
             sendMessage(JSON.stringify(newChatThread))
+        } else {
+            // TODO: Proper error handling
+            console.error(`Couldn't send message, ready state = ${readyState}`)
         }
-        // TODO: HANDLE ELSE
-    }
+    }, [readyState, sendMessage])
 
-    return {error, handleSendMessage, handleCreateThread}
+    return {error, sendChatMessage, createChatThread}
 }

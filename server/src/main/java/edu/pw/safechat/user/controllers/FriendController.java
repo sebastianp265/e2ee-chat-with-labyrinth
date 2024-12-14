@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users/friends")
+@RequestMapping("/api/user-service")
 @RequiredArgsConstructor
 public class FriendController {
 
     private final FriendService friendService;
 
-    @GetMapping
+    @GetMapping("/friends")
     public ResponseEntity<List<FriendDTO>> getFriends(Authentication authentication) {
 
         return ResponseEntity.ok(

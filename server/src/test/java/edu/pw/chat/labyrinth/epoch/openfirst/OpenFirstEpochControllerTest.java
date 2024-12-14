@@ -3,7 +3,6 @@ package edu.pw.chat.labyrinth.epoch.openfirst;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.pw.chat.config.TestSecurityConfig;
-import edu.pw.safechat.chat.internal.entities.ChatInbox;
 import edu.pw.safechat.labyrinth.dtos.OpenFirstEpochBodyDTO;
 import edu.pw.safechat.labyrinth.dtos.OpenFirstEpochResponseDTO;
 import edu.pw.safechat.labyrinth.dtos.common.DevicePublicKeyBundleDTO;
@@ -112,7 +111,7 @@ class OpenFirstEpochControllerTest {
 
     private void whenUserSendsDTO() throws Exception {
         actualResponse = mockMvc.perform(
-                        post("/api/labyrinth/epochs/open-first")
+                        post("/api/labyrinth-service/epochs/open-first")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(openFirstEpochBodyDTO)))
                 .andReturn().getResponse();
@@ -134,11 +133,7 @@ class OpenFirstEpochControllerTest {
                 OpenFirstEpochResponseDTO.class
         );
 
-        UUID userID = UUID.fromString("56beecb9-68d0-43f1-9b42-179fde863bc6");
-
-        var expectedChatInbox = ChatInbox.builder()
-                .userID(userID)
-                .build();
+        UUID userId = UUID.fromString("56beecb9-68d0-43f1-9b42-179fde863bc6");
 
         var expectedVirtualDevice = VirtualDevice.builder()
                 .id(openFirstEpochBodyDTO.virtualDeviceId())

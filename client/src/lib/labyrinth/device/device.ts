@@ -2,16 +2,25 @@ import {openFirstEpoch, OpenFirstEpochWebClient} from "@/lib/labyrinth/epoch/ope
 import {
     DeviceKeyBundle,
     DeviceKeyBundleSerialized,
-    DevicePublicKeyBundleSerialized
+    DevicePublicKeyBundleSerialized,
 } from "@/lib/labyrinth/device/key-bundle/DeviceKeyBundle.ts";
 import {VirtualDevice} from "@/lib/labyrinth/device/virtual-device/VirtualDevice.ts";
+import {BytesSerializer} from "@/lib/labyrinth/BytesSerializer.ts";
+import {generateEpochDeviceMac} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
+import {Epoch} from "@/lib/labyrinth/epoch/EpochStorage.ts";
 
-export type UploadDevicePublicKeyBundleResponse = {
-    assignedDeviceID: string,
+export type AuthenticateDeviceToEpochAndRegisterDeviceResponse = {
+    assignedDeviceId: string,
 }
 
-export type UploadDevicePublicKeyBundleWebClient = {
-    uploadDevicePublicKeyBundle: (devicePublicKeyBundle: DevicePublicKeyBundleSerialized) => Promise<UploadDevicePublicKeyBundleResponse>
+export type AuthenticateDeviceToEpochAndRegisterDeviceRequestBody = {
+    devicePublicKeyBundle: DevicePublicKeyBundleSerialized,
+    epochDeviceMac: string
+}
+
+export type AuthenticateDeviceToEpochAndRegisterDeviceWebClient = {
+    authenticateDeviceToEpochAndRegisterDevice: (epochId: string, requestBody: AuthenticateDeviceToEpochAndRegisterDeviceRequestBody)
+        => Promise<AuthenticateDeviceToEpochAndRegisterDeviceResponse>
 }
 
 export type ThisDeviceSerialized = {
@@ -48,9 +57,8 @@ export class ThisDevice {
         const deviceKeyBundle = DeviceKeyBundle.generate()
 
         const {
-            deviceID,
+            deviceId,
             firstEpoch,
-            inboxID,
         } = await openFirstEpoch(
             deviceKeyBundle.pub,
             virtualDeviceDecryptionKey,
@@ -58,20 +66,27 @@ export class ThisDevice {
             labyrinthWebClient
         )
 
-        const thisDevice = new ThisDevice(deviceID, deviceKeyBundle)
+        const thisDevice = new ThisDevice(deviceId, deviceKeyBundle)
 
         return {
             thisDevice,
             firstEpoch,
-            inboxID,
         }
     }
 
-    public static async fromRecoveryCode(webClient: UploadDevicePublicKeyBundleWebClient) {
+    public static async fromRecoveryCode(newestRecoveredEpoch: Epoch, webClient: AuthenticateDeviceToEpochAndRegisterDeviceWebClient) {
         const deviceKeyBundle = DeviceKeyBundle.generate()
 
-        const {assignedDeviceID} = await webClient.uploadDevicePublicKeyBundle(deviceKeyBundle.pub.serialize())
+        const {assignedDeviceId} = await webClient.authenticateDeviceToEpochAndRegisterDevice(
+            newestRecoveredEpoch.id,
+            {
+                devicePublicKeyBundle: deviceKeyBundle.pub.serialize(),
+                epochDeviceMac: BytesSerializer.serialize(
+                    await generateEpochDeviceMac(newestRecoveredEpoch, deviceKeyBundle.pub.deviceKeyPub)
+                )
+            }
+        )
 
-        return new ThisDevice(assignedDeviceID, deviceKeyBundle)
+        return new ThisDevice(assignedDeviceId, deviceKeyBundle)
     }
 }

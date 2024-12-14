@@ -2,44 +2,65 @@ import {Command, CommandInput, CommandItem, CommandList} from "@/components/ui/c
 import {useState} from "react";
 import {Button} from "@/components/ui/button.tsx";
 import MessageInput from "@/components/app/messages/MessageInput.tsx";
-import {NewThreadToSend} from "@/api/socket-types.ts";
+import {NewChatThreadToSendPayload} from "@/pages/messages/hooks/useChatWebSocket.ts";
 
 export type Friend = {
-    userID: string,
+    userId: string,
     visibleName: string,
 }
 
 export type CreateThreadProps = {
     friends: Friend[],
-    handleCreateThread: (newThread: NewThreadToSend) => void,
+    handleCreateThread: (newThread: NewChatThreadToSendPayload) => void,
 }
 
 export default function CreateThread({friends, handleCreateThread}: Readonly<CreateThreadProps>) {
-    const [isCommandListHidden, setIsCommandListHidden] = useState(false);
-
+    const [open, setOpen] = useState(false)
     const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
+    const [optionClicked, setOptionClicked] = useState(false)
 
+    const notSelectedFriends = friends.filter(f => !selectedFriends.includes(f))
     return (
         <>
             <div>
                 {
                     selectedFriends.map(selectedFriend =>
-                        <div key={selectedFriend.userID}>
-                            <span>{selectedFriend.visibleName}</span>
-                            <Button>x</Button>
+                        <div key={selectedFriend.userId} className="flex items-center gap-2">
+                            <span className="">{selectedFriend.visibleName}</span>
+                            <Button
+                                onClick={() => setSelectedFriends(prevFriends =>
+                                    prevFriends.filter(f => f != selectedFriend)
+                                )}
+                                size="sm"
+                                className="h-auto"
+                            >
+                                X
+                            </Button>
                         </div>
                     )
                 }
             </div>
             <Command>
-                <CommandInput onFocus={() => setIsCommandListHidden(true)}
-                              onBlur={() => setIsCommandListHidden(false)}/>
-                <CommandList hidden={isCommandListHidden}>
+                <CommandInput
+                    onFocus={() => setOpen(true)}
+                    onBlur={() => {
+                        if (optionClicked) {
+                            setOptionClicked(false)
+                        } else {
+                            setOpen(false)
+                        }
+                    }}
+                />
+                <CommandList hidden={!open}>
                     {
-                        friends.filter(f => !selectedFriends.includes(f)).map(friend =>
-                            <CommandItem key={friend.userID} onClick={() => {
-                                setSelectedFriends(prevFriends => [...prevFriends, friend])
-                            }}>
+                        notSelectedFriends.map(friend =>
+                            <CommandItem
+                                key={friend.userId}
+                                onMouseDown={() => setOptionClicked(true)}
+                                onSelect={() => {
+                                    setSelectedFriends(prevFriends => [...prevFriends, friend])
+                                }}
+                            >
                                 <span>{friend.visibleName}</span>
                             </CommandItem>
                         )
@@ -47,8 +68,8 @@ export default function CreateThread({friends, handleCreateThread}: Readonly<Cre
                 </CommandList>
             </Command>
             <MessageInput handleSendMessage={(messageContent: string) => handleCreateThread({
-                messageContent,
-                memberUserIDs: selectedFriends.map(f => f.userID)
+                initialMessageContent: messageContent,
+                otherMemberUserIds: selectedFriends.map(f => f.userId)
             })}/>
         </>
     );

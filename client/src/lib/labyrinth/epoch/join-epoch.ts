@@ -20,32 +20,32 @@ class InvalidEpochStorageAuthKey extends Error {
 }
 
 export type GetNewerEpochJoinDataResponse = {
-    epochID: string,
+    epochId: string,
     encryptedEpochEntropy: string,
     senderDevicePublicKeyBundle: DevicePublicKeyBundleSerialized
 }
 
 export type GetOlderEpochJoinDataResponse = {
-    epochID: string,
-    encryptedEpochSequenceID: string,
+    epochId: string,
+    encryptedEpochSequenceId: string,
     encryptedEpochRootKey: string,
 }
 
-export type GetNewestEpochSequenceIDResponse = {
-    newestEpochSequenceID: string
+export type GetNewestEpochSequenceIdResponse = {
+    newestEpochSequenceId: string
 }
 
 export type JoinEpochWebClient = {
-    getNewerEpochJoinData: (newerEpochSequenceID: string) => Promise<GetNewerEpochJoinDataResponse>
-    getOlderEpochJoinData: (olderEpochSequenceID: string) => Promise<GetOlderEpochJoinDataResponse>
-    getNewestEpochSequenceID: () => Promise<GetNewestEpochSequenceIDResponse>
+    getNewerEpochJoinData: (newerEpochSequenceId: string) => Promise<GetNewerEpochJoinDataResponse>
+    getOlderEpochJoinData: (olderEpochSequenceId: string) => Promise<GetOlderEpochJoinDataResponse>
+    getNewestEpochSequenceId: () => Promise<GetNewestEpochSequenceIdResponse>
 }
 
 // TODO: Virtual devices require only virtual device info to chain forward, however for backwards chaining,
 // it's info is not needed, could fasten initialize process when backward chaining is skipped,
 // TODO: Refactor to do lazy loading and fasten application startup
 // NOT EXPLICITLY TOLD IN PROTOCOL
-// Performs joining to epoch with desiredEpochSequenceID, function mutates passed epochStorage
+// Performs joining to epoch with desiredEpochSequenceId, function mutates passed epochStorage
 export async function joinAllEpochs(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyBundle,
                                     epochStorage: EpochStorage,
                                     joinEpochWebClient: JoinEpochWebClient): Promise<void> {
@@ -59,10 +59,10 @@ export async function joinAllEpochs(deviceKeyBundle: DeviceKeyBundle | VirtualDe
 async function chainForward(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyBundle,
                             epochStorage: EpochStorage,
                             joinEpochWebClient: JoinEpochWebClient): Promise<void> {
-    const {newestEpochSequenceID} = await joinEpochWebClient.getNewestEpochSequenceID()
+    const {newestEpochSequenceId} = await joinEpochWebClient.getNewestEpochSequenceId()
 
     let newestKnownEpoch = epochStorage.getNewestEpoch()
-    while (newestEpochSequenceID !== newestKnownEpoch.sequenceID) {
+    while (newestEpochSequenceId !== newestKnownEpoch.sequenceId) {
         newestKnownEpoch = await joinNewerEpoch(
             deviceKeyBundle,
             newestKnownEpoch,
@@ -75,19 +75,19 @@ async function chainForward(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyB
 async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKeyBundle,
                               newestKnownEpoch: Epoch,
                               joinEpochWebClient: JoinEpochWebClient): Promise<Epoch> {
-    const newerEpochSequenceID = (BigInt(newestKnownEpoch.sequenceID) + 1n).toString()
+    const newerEpochSequenceId = (BigInt(newestKnownEpoch.sequenceId) + 1n).toString()
 
     const [newerEpochChainingKey, newerEpochDistributionPreSharedKey] = await kdf_two_keys(
         newestKnownEpoch.rootKey,
         null,
-        asciiStringToBytes(`epoch_chaining_${newestKnownEpoch.sequenceID}_${newestKnownEpoch.id}`)
+        asciiStringToBytes(`epoch_chaining_${newestKnownEpoch.sequenceId}_${newestKnownEpoch.id}`)
     )
 
     const {
-        epochID: newerEpochID,
+        epochId: newerEpochId,
         encryptedEpochEntropy: encryptedNewerEpochEntropy,
         senderDevicePublicKeyBundle
-    } = await joinEpochWebClient.getNewerEpochJoinData(newerEpochSequenceID)
+    } = await joinEpochWebClient.getNewerEpochJoinData(newerEpochSequenceId)
 
     const senderDevice = DevicePublicKeyBundle.deserialize(senderDevicePublicKeyBundle)
 
@@ -105,7 +105,7 @@ async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKe
         deviceKeyBundle.priv.epochStorageKeyPriv,
         senderDevice.epochStorageAuthKeyPub,
         newerEpochDistributionPreSharedKey,
-        asciiStringToBytes(`epoch_${newerEpochSequenceID}`),
+        asciiStringToBytes(`epoch_${newerEpochSequenceId}`),
         BytesSerializer.deserialize(encryptedNewerEpochEntropy)
     )
 
@@ -116,8 +116,8 @@ async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKe
     )
 
     return {
-        id: newerEpochID,
-        sequenceID: newerEpochSequenceID,
+        id: newerEpochId,
+        sequenceId: newerEpochSequenceId,
         rootKey: newerEpochRootKey
     }
 }
@@ -125,7 +125,7 @@ async function joinNewerEpoch(deviceKeyBundle: DeviceKeyBundle | VirtualDeviceKe
 async function chainBackwards(epochStorage: EpochStorage,
                               joinEpochWebClient: JoinEpochWebClient): Promise<void> {
     let oldestKnownEpoch = epochStorage.getOldestEpoch()
-    while (oldestKnownEpoch.sequenceID !== "0") {
+    while (oldestKnownEpoch.sequenceId !== "0") {
         oldestKnownEpoch = await joinOlderEpoch(
             oldestKnownEpoch,
             joinEpochWebClient
@@ -136,28 +136,28 @@ async function chainBackwards(epochStorage: EpochStorage,
 
 async function joinOlderEpoch(oldestKnownEpoch: Epoch,
                               joinEpochWebClient: JoinEpochWebClient): Promise<Epoch> {
-    const olderEpochSequenceID = (BigInt(oldestKnownEpoch.sequenceID) - 1n).toString()
+    const olderEpochSequenceId = (BigInt(oldestKnownEpoch.sequenceId) - 1n).toString()
 
     const {
-        epochID: olderEpochID,
-        encryptedEpochSequenceID: encryptedOlderEpochSequenceID,
+        epochId: olderEpochId,
+        encryptedEpochSequenceId: encryptedOlderEpochSequenceId,
         encryptedEpochRootKey: encryptedOlderEpochRootKey
-    } = await joinEpochWebClient.getOlderEpochJoinData(olderEpochSequenceID)
+    } = await joinEpochWebClient.getOlderEpochJoinData(olderEpochSequenceId)
 
     const olderEpochDataStorageKey = await kdf_one_key(
         oldestKnownEpoch.rootKey,
         null,
-        asciiStringToBytes(`epoch_data_storage_${oldestKnownEpoch.sequenceID}`)
+        asciiStringToBytes(`epoch_data_storage_${oldestKnownEpoch.sequenceId}`)
     )
 
-    const expectedOlderEpochSequenceID = bytesToAsciiString(
+    const expectedOlderEpochSequenceId = bytesToAsciiString(
         await decrypt(
             olderEpochDataStorageKey,
             asciiStringToBytes("epoch_data_metadata"),
-            BytesSerializer.deserialize(encryptedOlderEpochSequenceID)
+            BytesSerializer.deserialize(encryptedOlderEpochSequenceId)
         )
     )
-    if (olderEpochSequenceID !== expectedOlderEpochSequenceID) {
+    if (olderEpochSequenceId !== expectedOlderEpochSequenceId) {
         throw new Error("Older epoch metadata has been corrupted")
     }
 
@@ -168,8 +168,8 @@ async function joinOlderEpoch(oldestKnownEpoch: Epoch,
     )
 
     return {
-        id: olderEpochID,
-        sequenceID: olderEpochSequenceID,
+        id: olderEpochId,
+        sequenceId: olderEpochSequenceId,
         rootKey: olderEpochRootKey,
     }
 }

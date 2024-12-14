@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/labyrinth")
+@RequestMapping("/api/labyrinth-service")
 @RequiredArgsConstructor
 public class CheckIfLabyrinthIsInitializedController {
 

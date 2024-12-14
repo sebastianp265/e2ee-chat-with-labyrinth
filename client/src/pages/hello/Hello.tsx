@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import axiosInstance from "@/api/axios/axiosInstance.ts";
+import httpClient from "@/api/httpClient.ts";
 import {Button} from "@/components/ui/button.tsx";
 import {ISessionProps} from "@/SessionCheckWrapper.tsx";
 
@@ -17,7 +17,7 @@ export default function Hello({inactivateSession}: Readonly<ISessionProps>) {
     const [resend, setResend] = useState(false)
 
     useEffect(() => {
-        axiosInstance.get<HelloGetDTO>("/api/auth/hello")
+        httpClient.get<HelloGetDTO>("/api/auth/hello")
             .then(response => {
                 setHello(response.data)
             })

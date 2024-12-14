@@ -15,9 +15,10 @@ export default function MessageInput({handleSendMessage}: Readonly<MessageInputP
 
     const onSendMessage = () => {
         handleSendMessage(messageToSend)
+        setMessageToSend("")
     }
     return (
-        <div className="flex space-x-2 mt-2">
+        <div data-cy="message-input" className="flex space-x-2 mt-2">
             <Textarea
                 value={messageToSend}
                 onChange={handleMessageToSendChange}

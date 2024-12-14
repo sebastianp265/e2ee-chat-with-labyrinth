@@ -17,16 +17,13 @@ export enum LabyrinthLoadState {
     NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE,
 }
 
-// export function isLabyrinthLoadState(value: unknown): value is LabyrinthLoadState {
-//     return Object.values(LabyrinthLoadState).includes(value as LabyrinthLoadState);
-// }
-
 function loadLabyrinthFromLocalStorage(): LabyrinthSerialized | null {
     const labyrinthJSONString = localStorage.getItem(LABYRINTH_INSTANCE_KEY)
     if (labyrinthJSONString === null) {
         return null
     }
 
+    // TODO: Validate with zod?
     return JSON.parse(labyrinthJSONString)
 }
 
@@ -34,7 +31,7 @@ function saveLabyrinthToLocalStorage(labyrinth: Labyrinth) {
     localStorage.setItem(LABYRINTH_INSTANCE_KEY, JSON.stringify(labyrinth.serialize()))
 }
 
-export default function useLabyrinth(loggedUserID: string) {
+export default function useLabyrinth(loggedUserId: string) {
     const labyrinthSerialized = useMemo(() => loadLabyrinthFromLocalStorage(), []);
     const [initialLoadState, setInitialLoadState] = useState(
         labyrinthSerialized === null ?
@@ -57,7 +54,6 @@ export default function useLabyrinth(loggedUserID: string) {
         } else if (initialLoadState === LabyrinthLoadState.LOADING) {
             Labyrinth.deserialize(labyrinthSerialized!, labyrinthWebClientImpl)
                 .then(setLabyrinth)
-                .catch(setError)
         }
     }, [initialLoadState, labyrinthSerialized]);
 
@@ -69,14 +65,14 @@ export default function useLabyrinth(loggedUserID: string) {
 
 
     async function setLabyrinthFromRecoveryCode(recoveryCode: string): Promise<HandleSubmitRecoveryCodeResponse> {
-        setLabyrinth(await Labyrinth.fromRecoveryCode(loggedUserID, recoveryCode, labyrinthWebClientImpl))
+        setLabyrinth(await Labyrinth.fromRecoveryCode(loggedUserId, recoveryCode, labyrinthWebClientImpl))
         return {
             isSuccess: true,
         }
     }
 
     async function setLabyrinthFromFirstEpoch(): Promise<HandleGenerateRecoveryCodeResponse> {
-        const fromFirstEpoch = await Labyrinth.fromFirstEpoch(loggedUserID, labyrinthWebClientImpl)
+        const fromFirstEpoch = await Labyrinth.fromFirstEpoch(loggedUserId, labyrinthWebClientImpl)
         setLabyrinth(fromFirstEpoch.labyrinthInstance)
 
         return {

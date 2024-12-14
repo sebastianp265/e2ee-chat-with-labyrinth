@@ -1,4 +1,4 @@
-import axiosInstance from "@/api/axios/axiosInstance.ts";
+import httpClient from "@/api/httpClient.ts";
 import {LabyrinthWebClient} from "@/lib/labyrinth/labyrinth-web-client.ts";
 import {
     GetDevicesInEpochResponse,
@@ -9,13 +9,17 @@ import {
 } from "@/lib/labyrinth/epoch/open-new-epoch.ts";
 import {
     GetNewerEpochJoinDataResponse,
-    GetNewestEpochSequenceIDResponse,
+    GetNewestEpochSequenceIdResponse,
     GetOlderEpochJoinDataResponse,
     JoinEpochWebClient
 } from "@/lib/labyrinth/epoch/join-epoch.ts";
 
 import {AuthenticateDeviceToEpochWebClient} from "@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts";
-import {UploadDevicePublicKeyBundleWebClient} from "@/lib/labyrinth/device/device.ts";
+import {
+    AuthenticateDeviceToEpochAndRegisterDeviceRequestBody,
+    AuthenticateDeviceToEpochAndRegisterDeviceResponse,
+    AuthenticateDeviceToEpochAndRegisterDeviceWebClient,
+} from "@/lib/labyrinth/device/device.ts";
 import {
     CheckIfLabyrinthIsInitializedResponse,
     CheckIfLabyrinthIsInitializedWebClient
@@ -25,51 +29,53 @@ import {
     GetVirtualDeviceRecoverySecretsWebClient
 } from "@/lib/labyrinth/device/virtual-device/VirtualDevice.ts";
 
+const labyrinthServicePrefix = "/api/labyrinth-service"
+
 const openFirstEpochWebClient: OpenFirstEpochWebClient = {
     openFirstEpoch: async (requestBody) =>
-        (await axiosInstance.post<OpenFirstEpochResponse>(`api/labyrinth/epochs/open-first`, requestBody)).data,
+        (await httpClient.post<OpenFirstEpochResponse>(`${labyrinthServicePrefix}/epochs/open-first`, requestBody)).data,
 }
 
 const openNewEpochBasedOnCurrentWebClient: OpenNewEpochBasedOnCurrentWebClient = {
-    getDevicesInEpoch: async (epochID) =>
-        (await axiosInstance.get<GetDevicesInEpochResponse>(`api/labyrinth/epochs/${epochID}/devices`)).data,
+    getDevicesInEpoch: async (epochId) =>
+        (await httpClient.get<GetDevicesInEpochResponse>(`${labyrinthServicePrefix}/epochs/${epochId}/devices`)).data,
 
-    openNewEpochBasedOnCurrent: async (currentEpochID, requestBody) =>
-        (await axiosInstance.post<OpenNewEpochBasedOnCurrentResponse>(`api/labyrinth/epochs/open-based-on-current/${currentEpochID}`, requestBody)).data,
+    openNewEpochBasedOnCurrent: async (currentEpochId, requestBody) =>
+        (await httpClient.post<OpenNewEpochBasedOnCurrentResponse>(`${labyrinthServicePrefix}/epochs/open-based-on-current/${currentEpochId}`, requestBody)).data,
 }
 
 const joinEpochWebClient: JoinEpochWebClient = {
-    getNewerEpochJoinData: async (newerEpochSequenceID) =>
-        (await axiosInstance.get<GetNewerEpochJoinDataResponse>(`api/labyrinth/epochs/by-sequence-id/${newerEpochSequenceID}/newer-epoch-join-data`)).data,
+    getNewerEpochJoinData: async (newerEpochSequenceId) =>
+        (await httpClient.get<GetNewerEpochJoinDataResponse>(`${labyrinthServicePrefix}/epochs/by-sequence-id/${newerEpochSequenceId}/newer-epoch-join-data`)).data,
 
-    getOlderEpochJoinData: async (olderEpochSequenceID) =>
-        (await axiosInstance.get<GetOlderEpochJoinDataResponse>(`api/labyrinth/epochs/by-sequence-id/${olderEpochSequenceID}/older-epoch-join-data`)).data,
+    getOlderEpochJoinData: async (olderEpochSequenceId) =>
+        (await httpClient.get<GetOlderEpochJoinDataResponse>(`${labyrinthServicePrefix}/epochs/by-sequence-id/${olderEpochSequenceId}/older-epoch-join-data`)).data,
 
-    getNewestEpochSequenceID: async () =>
-        (await axiosInstance.get<GetNewestEpochSequenceIDResponse>(`api/labyrinth/epochs/newest-sequence-id`)).data,
+    getNewestEpochSequenceId: async () =>
+        (await httpClient.get<GetNewestEpochSequenceIdResponse>(`${labyrinthServicePrefix}/epochs/newest-sequence-id`)).data,
 }
 
 const getVirtualDeviceRecoverySecretsWebClient: GetVirtualDeviceRecoverySecretsWebClient = {
     getVirtualDeviceRecoverySecrets: async (getVirtualDeviceRecoverySecretsBody) =>
-        (await axiosInstance.post<GetVirtualDeviceRecoverySecretsResponse>(
-                `api/labyrinth/virtual-device/recovery-secrets`,
+        (await httpClient.post<GetVirtualDeviceRecoverySecretsResponse>(
+                `${labyrinthServicePrefix}/virtual-device/recovery-secrets`,
                 getVirtualDeviceRecoverySecretsBody)
         ).data,
 }
 
 const authenticateDeviceToEpochWebClient: AuthenticateDeviceToEpochWebClient = {
-    authenticateDeviceToEpoch: async (epochID, authenticateDeviceToEpochRequestBody) =>
-        (await axiosInstance.post(`api/labyrinth/epochs/${epochID}/authenticate`, authenticateDeviceToEpochRequestBody)).data,
+    authenticateDeviceToEpoch: async (epochId, authenticateDeviceToEpochRequestBody) =>
+        (await httpClient.post<void>(`${labyrinthServicePrefix}/epochs/${epochId}/authenticate`, authenticateDeviceToEpochRequestBody)).data,
 }
 
-const uploadDevicePublicKeyBundleWebClient: UploadDevicePublicKeyBundleWebClient = {
-    uploadDevicePublicKeyBundle: async (devicePublicKeyBundle) =>
-        (await axiosInstance.post(`api/labyrinth/device/key-bundle`, devicePublicKeyBundle)).data,
+const authenticateDeviceToEpochAndRegisterDeviceWebClient: AuthenticateDeviceToEpochAndRegisterDeviceWebClient = {
+    authenticateDeviceToEpochAndRegisterDevice: async (epochId: string, requestBody: AuthenticateDeviceToEpochAndRegisterDeviceRequestBody) =>
+        (await httpClient.post<AuthenticateDeviceToEpochAndRegisterDeviceResponse>(`${labyrinthServicePrefix}/epochs/${epochId}/authenticate-and-register-device`, requestBody)).data
 }
 
 const checkIfLabyrinthIsInitializedWebClient: CheckIfLabyrinthIsInitializedWebClient = {
     checkIfLabyrinthIsInitialized: async () =>
-        (await axiosInstance.get<CheckIfLabyrinthIsInitializedResponse>("api/labyrinth/is-initialized")).data
+        (await httpClient.get<CheckIfLabyrinthIsInitializedResponse>(`${labyrinthServicePrefix}/is-initialized`)).data
 }
 
 const labyrinthWebClientImpl = {
@@ -78,7 +84,7 @@ const labyrinthWebClientImpl = {
     ...joinEpochWebClient,
     ...getVirtualDeviceRecoverySecretsWebClient,
     ...authenticateDeviceToEpochWebClient,
-    ...uploadDevicePublicKeyBundleWebClient,
+    ...authenticateDeviceToEpochAndRegisterDeviceWebClient,
     ...checkIfLabyrinthIsInitializedWebClient
 } as LabyrinthWebClient
 

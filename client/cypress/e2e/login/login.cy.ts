@@ -1,7 +1,7 @@
 describe('The Login Page', () => {
     it('sets auth cookie when logging in via form submission', () => {
-        const username = "seba"
-        const password = "seba123"
+        const username = "user_for_logging_in"
+        const password = "123456"
 
         cy.visit('/login')
 
@@ -12,6 +12,5 @@ describe('The Login Page', () => {
 
         cy.url().should('include', '/messages')
         cy.getCookie('SESSION').should('exist')
-
     })
 })

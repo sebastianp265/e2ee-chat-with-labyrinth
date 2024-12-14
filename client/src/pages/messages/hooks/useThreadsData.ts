@@ -1,91 +1,160 @@
-import {useEffect, useReducer, useState} from "react";
-import axiosInstance from "@/api/axios/axiosInstance.ts";
+import {useCallback, useEffect, useReducer, useState} from "react";
 import {Labyrinth} from "@/lib/labyrinth/Labyrinth.ts";
-import {ThreadData} from "@/components/app/messages/Thread.tsx";
-import {ThreadPreviewData} from "@/components/app/messages/ThreadPreview.tsx";
-import {Message} from "@/components/app/messages/Messages.tsx";
 import {AxiosError} from "axios";
-
-export function threadPreviewDataFromThreadData(threadID: string, threadData: ThreadData): ThreadPreviewData {
-    return {
-        threadID,
-        threadName: threadData.threadName,
-        lastMessage: threadData.messages.length > 0 ? threadData.messages[0].content : null,
-        lastMessageAuthorVisibleName: threadData.messages.length > 0 ? threadData.membersVisibleNameByUserID[threadData.messages[0].authorID] : null,
-    }
-}
+import {ChatMessageGetDTO, ChatMessagePostDTO, chatService} from "@/api/chatService.ts";
+import {z} from "zod";
 
 export type ThreadsDataStore = {
     map: {
-        [threadID: string]: ThreadData,
+        [threadId: string]: {
+            threadName: string | null,
+            messages: Message[],
+            membersVisibleNameByUserId: {
+                [userId: string]: string
+            }
+        },
     },
     keys: string[],
 }
 
-export type AddMessagesActionPayload = {
-    threadID: string,
-    messages: Message[],
+const MessageSchema = z.object({
+    id: z.string(),
+    authorId: z.string(),
+    content: z.string(),
+    timestamp: z.number(),
+});
+
+const AddMessageActionPayloadSchema = z.object({
+    threadId: z.string(),
+    message: MessageSchema,
+});
+
+const AddThreadActionPayloadSchema = z.object({
+    threadId: z.string(),
+    threadName: z.string().nullable(),
+    initialMessage: MessageSchema,
+    membersVisibleNameByUserId: z.record(z.string(), z.string()),
+});
+
+export type Message = z.infer<typeof MessageSchema>;
+export type AddMessageActionPayload = z.infer<typeof AddMessageActionPayloadSchema>;
+export type AddThreadActionPayload = z.infer<typeof AddThreadActionPayloadSchema>;
+
+const LabyrinthMessageDataSchema = z.object({
+    authorId: z.string(),
+    content: z.string(),
+})
+
+type LabyrinthMessageData = z.infer<typeof LabyrinthMessageDataSchema>
+
+async function decryptMessage(
+    labyrinth: Labyrinth,
+    chosenThreadId: string,
+    encryptedMessage: ChatMessageGetDTO
+): Promise<Message> {
+    const decryptedMessageData = await labyrinth.decrypt(
+        chosenThreadId,
+        encryptedMessage.epochSequenceId,
+        encryptedMessage.encryptedMessageData
+    )
+
+    const {content, authorId} = LabyrinthMessageDataSchema.parse(JSON.parse(decryptedMessageData))
+
+    return {
+        id: encryptedMessage.id,
+        content,
+        authorId: authorId,
+        timestamp: encryptedMessage.timestamp
+    } as Message
 }
 
-export type LabyrinthEncryptedMessageGetDTO = {
-    id: string,
-    epochSequenceID: string,
-    authorID: string,
-    encryptedContent: Uint8Array,
-    timestamp: number,
-}
+async function encryptMessageAndStoreInLabyrinth(
+    labyrinth: Labyrinth,
+    threadId: string,
+    message: Message
+) {
+    async function createMessagePostDTO(m: Message) {
+        const newestEpochId = labyrinth.getNewestEpochId()
+        const newestEpochSequenceId = labyrinth.getNewestEpochSequenceId()
 
-export type AddThreadsActionPayload = ({
-    threadID: string,
-} & ThreadData)[]
+        return {
+            id: m.id,
+            epochId: newestEpochId,
+            encryptedMessageData: await labyrinth.encrypt(
+                threadId,
+                newestEpochSequenceId,
+                JSON.stringify({
+                    content: m.content,
+                    authorId: m.authorId
+                } as LabyrinthMessageData),
+            ),
+            timestamp: m.timestamp,
+        } as ChatMessagePostDTO
+    }
+
+    return chatService.storeMessage(threadId, await createMessagePostDTO(message))
+}
 
 type Action =
-    | { type: 'ADD_MESSAGES', payload: AddMessagesActionPayload }
-    | { type: 'ADD_THREADS', payload: AddThreadsActionPayload }
+    | { type: 'ADD_MESSAGE', payload: AddMessageActionPayload }
+    | { type: 'ADD_THREAD', payload: AddThreadActionPayload }
+
+function combineMessages(prevMessages: Message[], messageToAdd: Message) {
+    const insertIndex = prevMessages.findIndex(m => m.timestamp >= messageToAdd.timestamp)
+    if (insertIndex === -1) {
+        return [...prevMessages, messageToAdd]
+    }
+    if (prevMessages[insertIndex].id === messageToAdd.id) {
+        return prevMessages
+    }
+
+    return [...prevMessages.slice(0, insertIndex), messageToAdd, ...prevMessages.slice(insertIndex)]
+}
 
 function threadsDataReducer(state: ThreadsDataStore, action: Action): ThreadsDataStore {
     switch (action.type) {
-        case 'ADD_MESSAGES': {
-            const {threadID, messages} = action.payload;
+        case 'ADD_MESSAGE': {
+            const {threadId, message} = action.payload;
 
-            if (!Object.hasOwn(state.map, threadID)) {
-                // TODO: Investigate
+            if (!Object.hasOwn(state.map, threadId)) {
                 throw new Error("Unexpected behaviour, message should be added to existing thread")
             }
 
             return {
                 map: {
                     ...state.map,
-                    [threadID]: {
-                        ...state.map[threadID],
-                        messages: [
-                            ...messages,
-                            ...state.map[threadID].messages,
-                        ],
+                    [threadId]: {
+                        ...state.map[threadId],
+                        messages: combineMessages(
+                            state.map[threadId].messages,
+                            message,
+                        )
                     }
                 },
                 keys: [
-                    threadID,
-                    ...state.keys.filter((key => key !== threadID)),
+                    threadId,
+                    ...state.keys.filter((key => key !== threadId)),
                 ],
             }
         }
-        case "ADD_THREADS": {
-            const threadsDataWithID = action.payload;
+        case "ADD_THREAD": {
+            const {threadId, threadName, initialMessage, membersVisibleNameByUserId} = action.payload;
+
+            if (Object.hasOwn(state.map, threadId)) {
+                throw new Error("Unexpected behaviour, thread already exists")
+            }
 
             return {
                 map: {
                     ...state.map,
-                    ...Object.fromEntries(
-                        threadsDataWithID.map(value => [value.threadID, {
-                            messages: value.messages,
-                            threadName: value.threadName,
-                            membersVisibleNameByUserID: value.membersVisibleNameByUserID,
-                        } as ThreadData])
-                    )
+                    [threadId]: {
+                        threadName,
+                        messages: [initialMessage],
+                        membersVisibleNameByUserId
+                    }
                 },
                 keys: [
-                    ...threadsDataWithID.map(value => value.threadID),
+                    threadId,
                     ...state.keys
                 ]
             }
@@ -96,61 +165,83 @@ function threadsDataReducer(state: ThreadsDataStore, action: Action): ThreadsDat
 export default function useThreadsData(
     labyrinth: Labyrinth | null,
 ) {
-    const [chosenThreadID, setChosenThreadID] = useState<string | null>(null)
-    const [threadsData, dispatch] = useReducer(threadsDataReducer, {
+    const [chosenThreadId, setChosenThreadId] = useState<string | null>(null)
+    const [threadsDataStore, dispatch] = useReducer(threadsDataReducer, {
         map: {},
         keys: [],
     })
     const [error, setError] = useState<AxiosError | null>(null)
 
-    function addMessages(addMessagesActionPayload: AddMessagesActionPayload) {
-        dispatch({type: 'ADD_MESSAGES', payload: addMessagesActionPayload})
-    }
+    const addMessage = useCallback((addMessageActionPayload: AddMessageActionPayload) => {
+        if (labyrinth === null) throw new Error("Unexpected behaviour, when labyrinth is not initialized user shouldn't be able to receive or send messages")
+        AddMessageActionPayloadSchema.parse(addMessageActionPayload)
 
-    function addThreads(addThreadsActionPayload: AddThreadsActionPayload) {
-        dispatch({type: 'ADD_THREADS', payload: addThreadsActionPayload})
-    }
+        dispatch({type: 'ADD_MESSAGE', payload: addMessageActionPayload})
+        encryptMessageAndStoreInLabyrinth(
+            labyrinth,
+            addMessageActionPayload.threadId,
+            addMessageActionPayload.message
+        )
+    }, [labyrinth])
+
+    const addThread = useCallback((addThreadActionPayload: AddThreadActionPayload) => {
+        if (labyrinth === null) throw new Error("Unexpected behaviour, when labyrinth is not initialized user shouldn't be able to receive or send messages")
+        AddThreadActionPayloadSchema.parse(addThreadActionPayload)
+
+        dispatch({type: 'ADD_THREAD', payload: addThreadActionPayload})
+        encryptMessageAndStoreInLabyrinth(
+            labyrinth,
+            addThreadActionPayload.threadId,
+            addThreadActionPayload.initialMessage
+        )
+    }, [labyrinth])
 
     useEffect(() => {
         if (labyrinth === null) return
 
-        axiosInstance.get<AddThreadsActionPayload>(`/api/labyrinth/inbox/${labyrinth.inboxID}/threads/previews`)
-            .then(response => {
-                addThreads(response.data)
-
-                if (response.data.length > 0) {
-                    setChosenThreadID(response.data[0].threadID)
+        chatService.getThreadPreviews()
+            .then(async chatThreadPreviews => {
+                for (const p of chatThreadPreviews) {
+                    const message = await decryptMessage(
+                        labyrinth,
+                        p.threadId,
+                        p.message
+                    )
+                    addThread({
+                        threadId: p.threadId,
+                        threadName: p.threadName,
+                        initialMessage: message,
+                        membersVisibleNameByUserId: p.membersVisibleNameByUserId
+                    })
                 }
             })
-            .catch(setError)
-    }, [labyrinth]);
+    }, [addThread, labyrinth]);
 
     useEffect(() => {
-        if (chosenThreadID === null || labyrinth === null) return
+        if (chosenThreadId === null || labyrinth === null) return
 
-        axiosInstance.get<LabyrinthEncryptedMessageGetDTO[]>(`/api/labyrinth/inbox/${labyrinth.inboxID}/thread/${chosenThreadID}/messages`)
-            .then(async (response) => {
-                const encryptedMessages = response.data
-                const decryptedMessages = await Promise.all(encryptedMessages.map(async encryptedMessage => {
-                        const decryptedContent = await labyrinth.decrypt(
-                            chosenThreadID,
-                            encryptedMessage.epochSequenceID,
-                            encryptedMessage.encryptedContent
-                        )
-                        return {
-                            id: encryptedMessage.id,
-                            content: decryptedContent,
-                            authorID: encryptedMessage.authorID,
-                        } as Message
+        chatService.getMessages(chosenThreadId)
+            .then(async encryptedMessages => {
+                for (const em of encryptedMessages) {
+                    const message = await decryptMessage(
+                        labyrinth,
+                        chosenThreadId,
+                        em
+                    )
+                    addMessage({
+                        threadId: chosenThreadId,
+                        message
                     })
-                )
-                addMessages({
-                    threadID: chosenThreadID,
-                    messages: decryptedMessages
-                })
+                }
             })
-            .catch(setError)
-    }, [chosenThreadID, labyrinth, setError]);
+    }, [addMessage, chosenThreadId, labyrinth, setError]);
 
-    return {threadsData, chosenThreadID, error, setChosenThreadID, addMessages, addThreads} as const;
+    return {
+        addMessage,
+        addThread,
+        threadsDataStore,
+        chosenThreadId,
+        setChosenThreadId,
+        error,
+    } as const;
 }

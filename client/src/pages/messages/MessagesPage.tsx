@@ -6,7 +6,7 @@ import ChatContent from "@/pages/messages/ChatContent.tsx";
 import useLabyrinth, {LabyrinthLoadState} from "@/pages/messages/hooks/useLabyrinth.ts";
 
 export default function MessagesPage({sessionExpired, inactivateSession}: Readonly<ISessionProps>) {
-    const {loggedUserID} = usePrivateRouteContext()
+    const {loggedUserId} = usePrivateRouteContext()
     const {
         labyrinth,
         initialLoadState,
@@ -14,7 +14,7 @@ export default function MessagesPage({sessionExpired, inactivateSession}: Readon
         error,
         setLabyrinthFromRecoveryCode,
         setLabyrinthFromFirstEpoch
-    } = useLabyrinth(loggedUserID)
+    } = useLabyrinth(loggedUserId)
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export default function MessagesPage({sessionExpired, inactivateSession}: Readon
             }
 
             <ChatContent
-                loggedUserID={loggedUserID}
+                loggedUserId={loggedUserId}
                 labyrinth={labyrinth}
             />
         </div>

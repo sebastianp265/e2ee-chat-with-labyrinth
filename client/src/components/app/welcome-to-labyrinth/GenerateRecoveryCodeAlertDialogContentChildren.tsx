@@ -16,13 +16,11 @@ export type HandleGenerateRecoveryCodeResponse = {
 }
 
 export type GenerateRecoveryCodeCardContent = {
-    setOpen: React.Dispatch<React.SetStateAction<boolean>>,
     handleGenerateRecoveryCode: () => Promise<HandleGenerateRecoveryCodeResponse>;
     setError: React.Dispatch<React.SetStateAction<AxiosError | null>>
 }
 
 export default function GenerateRecoveryCodeAlertDialogContentChildren({
-                                                                           setOpen,
                                                                            handleGenerateRecoveryCode,
                                                                            setError
                                                                        }: Readonly<GenerateRecoveryCodeCardContent>) {

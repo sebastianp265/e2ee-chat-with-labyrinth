@@ -13,14 +13,13 @@ import {asciiStringToBytes, random} from "@/lib/labyrinth/crypto/utils.ts";
 import {kdf_two_keys} from "@/lib/labyrinth/crypto/key-derivation.ts";
 
 export type GetVirtualDeviceRecoverySecretsResponse = {
-    inboxID: string,
-    epochID: string,
+    epochId: string,
     virtualDeviceEncryptedRecoverySecrets: VirtualDeviceEncryptedRecoverySecretsSerialized,
     expectedVirtualDevicePublicKeyBundle: VirtualDevicePublicKeyBundleSerialized,
 }
 
 export type GetVirtualDeviceRecoverySecretsBody = {
-    virtualDeviceID: string
+    virtualDeviceId: string
 }
 
 export type GetVirtualDeviceRecoverySecretsWebClient = {
@@ -36,14 +35,14 @@ export class VirtualDevice {
         this.keyBundle = keyBundle
     }
 
-    public static async fromFirstEpoch(userID: string) {
+    public static async fromFirstEpoch(userId: string) {
         const recoveryCode = generateRecoveryCode()
         const {
-            virtualDeviceID,
+            virtualDeviceId,
             virtualDeviceDecryptionKey
-        } = await deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
+        } = await deriveVirtualDeviceIdAndDecryptionKey(userId, recoveryCode)
         const keyBundle = VirtualDeviceKeyBundle.generate()
-        const virtualDevice = new VirtualDevice(virtualDeviceID, keyBundle)
+        const virtualDevice = new VirtualDevice(virtualDeviceId, keyBundle)
 
         return {
             virtualDevice,
@@ -52,24 +51,23 @@ export class VirtualDevice {
         }
     }
 
-    public static async fromRecoveryCode(userID: string,
+    public static async fromRecoveryCode(userId: string,
                                          recoveryCode: string,
                                          webClient: GetVirtualDeviceRecoverySecretsWebClient) {
         const {
-            virtualDeviceID,
+            virtualDeviceId,
             virtualDeviceDecryptionKey
-        } = await deriveVirtualDeviceIDAndDecryptionKey(userID, recoveryCode)
+        } = await deriveVirtualDeviceIdAndDecryptionKey(userId, recoveryCode)
 
         const {
-            inboxID,
-            epochID,
+            epochId,
             virtualDeviceEncryptedRecoverySecrets,
             expectedVirtualDevicePublicKeyBundle,
-        } = await webClient.getVirtualDeviceRecoverySecrets({virtualDeviceID: BytesSerializer.serialize(virtualDeviceID)})
+        } = await webClient.getVirtualDeviceRecoverySecrets({virtualDeviceId: BytesSerializer.serialize(virtualDeviceId)})
 
         const {
             virtualDeviceKeyBundle,
-            epochWithoutID,
+            epochWithoutId,
         } = await decryptVirtualDeviceRecoverySecrets(
             virtualDeviceDecryptionKey,
             VirtualDeviceEncryptedRecoverySecrets.deserialize(virtualDeviceEncryptedRecoverySecrets),
@@ -77,16 +75,15 @@ export class VirtualDevice {
         )
 
         const epoch = {
-            id: epochID,
-            ...epochWithoutID
+            id: epochId,
+            ...epochWithoutId
         }
 
-        const virtualDevice = new VirtualDevice(virtualDeviceID, virtualDeviceKeyBundle)
+        const virtualDevice = new VirtualDevice(virtualDeviceId, virtualDeviceKeyBundle)
 
         return {
             virtualDevice,
             epoch,
-            inboxID,
         }
     }
 
@@ -118,13 +115,13 @@ export class InvalidRecoveryCodeFormatError extends Error {
     }
 }
 
-async function deriveVirtualDeviceIDAndDecryptionKey(userID: string, recoveryCode: string) {
+async function deriveVirtualDeviceIdAndDecryptionKey(userId: string, recoveryCode: string) {
     if (recoveryCode.length !== 40) throw new InvalidRecoveryCodeFormatError("Recovery code has to be 40 characters long")
 
     const ikm = asciiStringToBytes(recoveryCode.slice(3, 37))
-    const info = asciiStringToBytes(`BackupRecoveryCode_v${recoveryCode[0]}_${recoveryCode[1]}_${userID}`)
+    const info = asciiStringToBytes(`BackupRecoveryCode_v${recoveryCode[0]}_${recoveryCode[1]}_${userId}`)
 
-    const [virtualDeviceID, virtualDeviceDecryptionKey] = await kdf_two_keys(
+    const [virtualDeviceId, virtualDeviceDecryptionKey] = await kdf_two_keys(
         ikm,
         null,
         info,
@@ -133,7 +130,7 @@ async function deriveVirtualDeviceIDAndDecryptionKey(userID: string, recoveryCod
     )
 
     return {
-        virtualDeviceID: virtualDeviceID,
+        virtualDeviceId: virtualDeviceId,
         virtualDeviceDecryptionKey,
     }
 }

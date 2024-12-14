@@ -28,5 +28,5 @@ const createAxiosInstance = () => {
     return client
 }
 
-const axiosInstance = createAxiosInstance()
-export default axiosInstance
+const httpClient = createAxiosInstance()
+export default httpClient

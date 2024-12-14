@@ -1,3 +1,4 @@
 .idea
 client/.idea
 server/.idea
+client/cypress/utils/data.sql

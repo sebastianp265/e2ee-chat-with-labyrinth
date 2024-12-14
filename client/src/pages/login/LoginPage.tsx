@@ -1,8 +1,8 @@
 import {LoginForm} from "@/components/app/login/LoginForm.tsx";
-import axiosInstance from "@/api/axios/axiosInstance.ts";
+import httpClient from "@/api/httpClient.ts";
 import {useNavigate} from "react-router-dom";
 import {Button} from "@/components/ui/button.tsx";
-import {LOGGED_USER_ID_KEY} from "@/constants.ts";
+import {LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY} from "@/constants.ts";
 
 export type LoginRequestDTO = {
     username: string,
@@ -10,22 +10,22 @@ export type LoginRequestDTO = {
 }
 
 export type LoginResponseDTO = {
-    userID: string,
+    userId: string,
 }
 
 export default function LoginPage() {
     const navigate = useNavigate()
     const handleSubmit = (loginRequest: LoginRequestDTO) => {
-        axiosInstance.post<LoginResponseDTO>("/api/auth/login", loginRequest)
+        httpClient.post<LoginResponseDTO>("/api/auth/login", loginRequest)
             .then((response) => {
-                localStorage.setItem(LOGGED_USER_ID_KEY, response.data.userID)
+                localStorage.setItem(LOGGED_USER_ID_KEY, response.data.userId)
                 navigate("/")
             })
             .catch(reason => {
                 console.log(reason)
             })
     }
-    const isNotAuthenticated = localStorage.getItem("session_expires") === null
+    const isNotAuthenticated = localStorage.getItem(SESSION_EXPIRES_AT_KEY) === null
 
     return (
         <div className="w-[60%] h-[60%] m-auto pt-[25vh]">

@@ -21,7 +21,7 @@ export type FirstLoginDialogContentProps = {
 
 export default function RecoverSecretsDialogContentChildren({
                                                                 handleSubmitRecoveryCode,
-                                                                setError
+                                                                setError,
                                                             }: Readonly<FirstLoginDialogContentProps>) {
     const [loading, setLoading] = useState<boolean>(false)
     const [success, setSuccess] = useState<boolean>(false)

@@ -23,7 +23,6 @@ type WelcomeToLabyrinthAlertDialogContentProps = {
 }
 
 export default function WelcomeToLabyrinthAlertDialogContentChildren({
-                                                                         setOpen,
                                                                          labyrinthLoadState,
                                                                          retryInitialization,
                                                                          setLabyrinthFromFirstEpoch,
@@ -70,7 +69,6 @@ export default function WelcomeToLabyrinthAlertDialogContentChildren({
         case LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED:
             return (
                 <GenerateRecoveryCodeAlertDialogContentChildren
-                    setOpen={setOpen}
                     handleGenerateRecoveryCode={setLabyrinthFromFirstEpoch}
                     setError={setError}
                 />

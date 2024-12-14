@@ -1,5 +1,5 @@
-import {UserPool} from "../../../cypress";
-import {userPoolToDetails} from "../../support/commands.ts";
+import { UserPool } from '../../../cypress';
+import { userPoolToDetails } from '../../support/commands.ts';
 
 describe('Labyrinth Initialization', () => {
     const extractRecoveryCode = (text: string) => {
@@ -7,126 +7,124 @@ describe('Labyrinth Initialization', () => {
         if (matchArray && matchArray[1]) {
             return cy.wrap(matchArray[1]);
         } else {
-            throw new Error("Recovery code not found in the text!");
+            throw new Error('Recovery code not found in the text!');
         }
-    }
+    };
 
     const getLabyrinthFromLocalStorage = () => {
         return cy.window().then((win) => {
-            const labyrinth = win.localStorage.getItem("labyrinth");
-            if (labyrinth === null) throw Error("Labyrinth in local storage cannot be null")
-            return cy.wrap(labyrinth)
-        })
+            const labyrinth = win.localStorage.getItem('labyrinth');
+            if (labyrinth === null)
+                throw Error('Labyrinth in local storage cannot be null');
+            return cy.wrap(labyrinth);
+        });
     };
 
     const getDialogExpectTitleAndButtonName = (
         title: string,
         button: string,
     ) => {
-        cy.get("div[role=alertdialog]")
-            .should('have.attr', 'data-state', 'open')
-        cy.get("div[role=alertdialog]")
-            .within(() => {
-                cy.get("h2").should("have.text", title);
-                cy.get("button").should("have.text", button);
-            })
-        return cy.get("div[role=alertdialog]")
+        cy.get('div[role=alertdialog]').should(
+            'have.attr',
+            'data-state',
+            'open',
+        );
+        cy.get('div[role=alertdialog]').within(() => {
+            cy.get('h2').should('have.text', title);
+            cy.get('button').should('have.text', button);
+        });
+        return cy.get('div[role=alertdialog]');
     };
 
     const checkLabyrinthBeforeAndAfterState = () => {
-        cy.get<string>("@labyrinth-before").then((labyrinthBefore) => {
-            cy.get<string>("@labyrinth-after").then((labyrinthAfter) => {
+        cy.get<string>('@labyrinth-before').then((labyrinthBefore) => {
+            cy.get<string>('@labyrinth-after').then((labyrinthAfter) => {
                 const before = JSON.parse(labyrinthBefore);
                 const after = JSON.parse(labyrinthAfter);
 
-                expect(JSON.stringify(before.epochStorage)).to.equal(JSON.stringify(after.epochStorage));
+                expect(JSON.stringify(before.epochStorage)).to.equal(
+                    JSON.stringify(after.epochStorage),
+                );
             });
-        })
-    }
+        });
+    };
 
     it('should derive the same epoch secrets across devices', () => {
-        const chosenUser: UserPool = "user_not_in_labyrinth"
+        const chosenUser: UserPool = 'user_not_in_labyrinth';
         cy.login(chosenUser);
-        cy.visit("/messages")
+        cy.visit('/messages');
         getDialogExpectTitleAndButtonName(
-            "Welcome to chat with secure message storage!",
-            "Generate Recovery Code"
-        ).find("button").click()
+            'Welcome to chat with secure message storage!',
+            'Generate Recovery Code',
+        )
+            .find('button')
+            .click();
 
-        getDialogExpectTitleAndButtonName(
-            "Success",
-            "Close",
-        ).as("success-dialog")
-        cy.get("@success-dialog")
-            .find("p")
-            .invoke("text")
+        getDialogExpectTitleAndButtonName('Success', 'Close').as(
+            'success-dialog',
+        );
+        cy.get('@success-dialog')
+            .find('p')
+            .invoke('text')
             .then(extractRecoveryCode)
-            .as("recovery-code")
-        cy.get("@success-dialog").find("button").click()
-        cy.get("@success-dialog").should('not.exist')
+            .as('recovery-code');
+        cy.get('@success-dialog').find('button').click();
+        cy.get('@success-dialog').should('not.exist');
 
-        getLabyrinthFromLocalStorage().as("labyrinth-before")
-        cy.changeToNewDevice()
+        getLabyrinthFromLocalStorage().as('labyrinth-before');
+        cy.changeToNewDevice();
 
         cy.login(chosenUser);
-        cy.visit("/messages")
+        cy.visit('/messages');
 
-        getDialogExpectTitleAndButtonName(
-            "Welcome back!",
-            "Submit"
-        ).as("welcome-back-dialog")
-        cy.get<string>("@recovery-code").then(recoveryCode => {
-            return cy.get("@welcome-back-dialog")
-                .find("input")
-                .type(recoveryCode)
-        })
-        cy.get("@welcome-back-dialog")
-            .find("button")
-            .click()
+        getDialogExpectTitleAndButtonName('Welcome back!', 'Submit').as(
+            'welcome-back-dialog',
+        );
+        cy.get<string>('@recovery-code').then((recoveryCode) => {
+            return cy
+                .get('@welcome-back-dialog')
+                .find('input')
+                .type(recoveryCode);
+        });
+        cy.get('@welcome-back-dialog').find('button').click();
 
-        getDialogExpectTitleAndButtonName(
-            "Success",
-            "Close"
-        ).find("button").click()
-        getLabyrinthFromLocalStorage().as("labyrinth-after");
+        getDialogExpectTitleAndButtonName('Success', 'Close')
+            .find('button')
+            .click();
+        getLabyrinthFromLocalStorage().as('labyrinth-after');
 
-        cy.get("@welcome-back-dialog")
-            .should('not.exist')
+        cy.get('@welcome-back-dialog').should('not.exist');
 
-        checkLabyrinthBeforeAndAfterState()
+        checkLabyrinthBeforeAndAfterState();
     });
 
     it('verify if labyrinth state loaded from fixture is the same as from recovery code', () => {
-        const chosenUser: UserPool = "user_in_labyrinth_alice"
-        const chosenUserRecoveryCode = userPoolToDetails[chosenUser].recoveryCode!
+        const chosenUser: UserPool = 'user_in_labyrinth_alice';
+        const chosenUserRecoveryCode =
+            userPoolToDetails[chosenUser].recoveryCode!;
 
-        cy.loadLabyrinthForUser(chosenUser)
-        getLabyrinthFromLocalStorage().as("labyrinth-before")
+        cy.loadLabyrinthForUser(chosenUser);
+        getLabyrinthFromLocalStorage().as('labyrinth-before');
 
-        cy.changeToNewDevice()
+        cy.changeToNewDevice();
 
         cy.login(chosenUser);
-        cy.visit("/messages")
+        cy.visit('/messages');
 
-        getDialogExpectTitleAndButtonName(
-            "Welcome back!",
-            "Submit"
-        ).as("welcome-back-dialog")
+        getDialogExpectTitleAndButtonName('Welcome back!', 'Submit').as(
+            'welcome-back-dialog',
+        );
 
-        cy.get("@welcome-back-dialog")
-            .find("input")
-            .type(chosenUserRecoveryCode)
-        cy.get("@welcome-back-dialog")
-            .find("button")
-            .click()
+        cy.get('@welcome-back-dialog')
+            .find('input')
+            .type(chosenUserRecoveryCode);
+        cy.get('@welcome-back-dialog').find('button').click();
 
-        getDialogExpectTitleAndButtonName(
-            "Success",
-            "Close"
-        ).find("button").click()
+        getDialogExpectTitleAndButtonName('Success', 'Close')
+            .find('button')
+            .click();
 
-        getLabyrinthFromLocalStorage().as("labyrinth-after")
-        checkLabyrinthBeforeAndAfterState()
-    })
-
+        getLabyrinthFromLocalStorage().as('labyrinth-after');
+        checkLabyrinthBeforeAndAfterState();
+    });
 });

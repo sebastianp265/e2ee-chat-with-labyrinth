@@ -1,31 +1,32 @@
-import {useEffect, useState} from "react";
-import httpClient from "@/api/httpClient.ts";
-import {Button} from "@/components/ui/button.tsx";
-import {ISessionProps} from "@/SessionCheckWrapper.tsx";
+import { useEffect, useState } from 'react';
+import httpClient from '@/api/httpClient.ts';
+import { Button } from '@/components/ui/button.tsx';
+import { ISessionProps } from '@/SessionCheckWrapper.tsx';
 
 export type HelloGetDTO = {
-    name: string,
-    principal: string,
-    details: string,
-    credentials: string,
-    authorities: string[],
-    sessionId: string
-}
+    name: string;
+    principal: string;
+    details: string;
+    credentials: string;
+    authorities: string[];
+    sessionId: string;
+};
 
-export default function Hello({inactivateSession}: Readonly<ISessionProps>) {
-    const [hello, setHello] = useState({} as HelloGetDTO)
-    const [resend, setResend] = useState(false)
+export default function Hello({ inactivateSession }: Readonly<ISessionProps>) {
+    const [hello, setHello] = useState({} as HelloGetDTO);
+    const [resend, setResend] = useState(false);
 
     useEffect(() => {
-        httpClient.get<HelloGetDTO>("/api/auth/hello")
-            .then(response => {
-                setHello(response.data)
+        httpClient
+            .get<HelloGetDTO>('/api/auth/hello')
+            .then((response) => {
+                setHello(response.data);
             })
             .catch((error) => {
                 if (error.response.status == 401) {
-                    inactivateSession?.()
+                    inactivateSession?.();
                 }
-            })
+            });
     }, [resend, inactivateSession]);
 
     return (
@@ -39,5 +40,5 @@ export default function Hello({inactivateSession}: Readonly<ISessionProps>) {
             <h2>SessionId: {hello.sessionId}</h2>
             <Button onClick={() => setResend(!resend)}>Resend</Button>
         </div>
-    )
+    );
 }

@@ -24,7 +24,7 @@ export default {
         project: ['./tsconfig.json', './tsconfig.tsnode.json'],
         tsconfigRootDir: __dirname,
     },
-}
+};
 ```
 
 - Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or

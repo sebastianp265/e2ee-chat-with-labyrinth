@@ -1,30 +1,30 @@
 {
-  "thisDevice": {
-    "id": "7cc8dbc4-74c9-4de1-ad1b-5d4bbe2a4fd4",
-    "keyBundle": {
-      "priv": {
-        "deviceKeyPriv": "yOYgyvMF3MAZKHYOqI7T1biuDilwD7B9grgFqYMX9XU=",
-        "epochStorageKeyPriv": "KdCKLxKKEQ695jDkDoYMJrrIkSkuOvQ2hoH6hB9udNQ=",
-        "epochStorageAuthKeyPriv": "s9s7WAOHHmGoJoHsECNYHmVFxX6a5nFUdk2K2ChuGf4="
-      },
-      "pub": {
-        "deviceKeyPub": "6KsaQtJwzPRkr0H1+h8Ws7EiQMXdoVQvmWzPtD7X/Cc=",
-        "epochStorageKeyPub": "gPg7BwsM+hZNsTGWLOLBRT/DuuTS/w6/cLZjSEREyoc=",
-        "epochStorageKeySig": "0rGC1NcXL00RWvMxPtbGFwG3XZ9KlOasYtdpJI226byRRF6dAomuHptcOYsKyGtNcto4FJ1L+JU2Eyp3iRxQAg==",
-        "epochStorageAuthKeyPub": "+fz7cc/viUCVGykSO8qhydk4/ibm4iX9aRFHjHnA8/Q=",
-        "epochStorageAuthKeySig": "MbgbSe+dQQb3MfThFGgRU39XQkmkhTyscpQkYLaCJJN7+lXLc3adhDFo2OdM46yzqPGy3tiqHM7NqAvDEYCzAg=="
-      }
+    "thisDevice": {
+        "id": "7cc8dbc4-74c9-4de1-ad1b-5d4bbe2a4fd4",
+        "keyBundle": {
+            "priv": {
+                "deviceKeyPriv": "yOYgyvMF3MAZKHYOqI7T1biuDilwD7B9grgFqYMX9XU=",
+                "epochStorageKeyPriv": "KdCKLxKKEQ695jDkDoYMJrrIkSkuOvQ2hoH6hB9udNQ=",
+                "epochStorageAuthKeyPriv": "s9s7WAOHHmGoJoHsECNYHmVFxX6a5nFUdk2K2ChuGf4="
+            },
+            "pub": {
+                "deviceKeyPub": "6KsaQtJwzPRkr0H1+h8Ws7EiQMXdoVQvmWzPtD7X/Cc=",
+                "epochStorageKeyPub": "gPg7BwsM+hZNsTGWLOLBRT/DuuTS/w6/cLZjSEREyoc=",
+                "epochStorageKeySig": "0rGC1NcXL00RWvMxPtbGFwG3XZ9KlOasYtdpJI226byRRF6dAomuHptcOYsKyGtNcto4FJ1L+JU2Eyp3iRxQAg==",
+                "epochStorageAuthKeyPub": "+fz7cc/viUCVGykSO8qhydk4/ibm4iX9aRFHjHnA8/Q=",
+                "epochStorageAuthKeySig": "MbgbSe+dQQb3MfThFGgRU39XQkmkhTyscpQkYLaCJJN7+lXLc3adhDFo2OdM46yzqPGy3tiqHM7NqAvDEYCzAg=="
+            }
+        }
+    },
+    "epochStorage": {
+        "newestEpochSequenceId": "0",
+        "oldestEpochSequenceId": "0",
+        "sequenceIdToEpoch": {
+            "0": {
+                "id": "f67ff2c0-39b1-49db-a7c3-2f18ae046cd0",
+                "rootKey": "HGpyt/DdrP792rSeIqgJ2yrw//0XniboOHU3reCoAe0=",
+                "sequenceId": "0"
+            }
+        }
     }
-  },
-  "epochStorage": {
-    "newestEpochSequenceId": "0",
-    "oldestEpochSequenceId": "0",
-    "sequenceIdToEpoch": {
-      "0": {
-        "id": "f67ff2c0-39b1-49db-a7c3-2f18ae046cd0",
-        "rootKey": "HGpyt/DdrP792rSeIqgJ2yrw//0XniboOHU3reCoAe0=",
-        "sequenceId": "0"
-      }
-    }
-  }
 }

@@ -5,12 +5,12 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle
-} from "@/components/ui/alert-dialog.tsx";
-import {useNavigate} from "react-router-dom";
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog.tsx';
+import { useNavigate } from 'react-router-dom';
 
 function SessionExpiredAlert() {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
     return (
         <AlertDialog open={true}>
             <AlertDialogContent>
@@ -21,7 +21,9 @@ function SessionExpiredAlert() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogAction onClick={() => navigate("/login")}>Log in</AlertDialogAction>
+                    <AlertDialogAction onClick={() => navigate('/login')}>
+                        Log in
+                    </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

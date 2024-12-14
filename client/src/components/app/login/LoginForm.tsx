@@ -1,43 +1,53 @@
-import {zodResolver} from "@hookform/resolvers/zod"
-import {useForm} from "react-hook-form"
-import {z} from "zod"
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form.tsx';
 
-import {Button} from "@/components/ui/button.tsx";
-import {Input} from "@/components/ui/input.tsx";
-import {LoginRequestDTO} from "@/pages/login/LoginPage.tsx";
+import { Button } from '@/components/ui/button.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { LoginRequestDTO } from '@/pages/login/LoginPage.tsx';
 
 const formSchema = z.object({
-    username: z.string()
+    username: z
+        .string()
         .min(2, {
-            message: "Username must be at least 2 characters.",
+            message: 'Username must be at least 2 characters.',
         })
         .max(32, {
-            message: "Password must be at most 32 characters",
+            message: 'Password must be at most 32 characters',
         }),
-    password: z.string()
+    password: z
+        .string()
         .min(6, {
-            message: "Password must be at least 6 characters",
-        }).max(32, {
-            message: "Password must be at most 32 characters",
+            message: 'Password must be at least 6 characters',
         })
-})
+        .max(32, {
+            message: 'Password must be at most 32 characters',
+        }),
+});
 
 interface LoginFormProps {
-    handleSubmit: (loginRequest: LoginRequestDTO) => void
+    handleSubmit: (loginRequest: LoginRequestDTO) => void;
 }
 
-export function LoginForm({handleSubmit}: Readonly<LoginFormProps>) {
+export function LoginForm({ handleSubmit }: Readonly<LoginFormProps>) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            username: "",
-            password: ""
+            username: '',
+            password: '',
         },
-    })
+    });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        handleSubmit(values)
+        handleSubmit(values);
     }
 
     return (
@@ -46,31 +56,35 @@ export function LoginForm({handleSubmit}: Readonly<LoginFormProps>) {
                 <FormField
                     control={form.control}
                     name="username"
-                    render={({field}) => (
+                    render={({ field }) => (
                         <FormItem>
                             <FormLabel>Username</FormLabel>
                             <FormControl>
                                 <Input placeholder="Your username" {...field} />
                             </FormControl>
-                            <FormMessage/>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
                 <FormField
                     control={form.control}
                     name="password"
-                    render={({field}) => (
+                    render={({ field }) => (
                         <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                                <Input placeholder="Your password" type="password" {...field} />
+                                <Input
+                                    placeholder="Your password"
+                                    type="password"
+                                    {...field}
+                                />
                             </FormControl>
-                            <FormMessage/>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
                 <Button type="submit">Submit</Button>
             </form>
         </Form>
-    )
+    );
 }

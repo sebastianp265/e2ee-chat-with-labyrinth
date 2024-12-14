@@ -1,12 +1,11 @@
-import {mount} from "cypress/react18"
+import { mount } from 'cypress/react18';
 
 type UserPool =
-    | "user_for_logging_in"
-    | "user_not_in_labyrinth"
-    | "user_in_labyrinth_alice"
-    | "user_in_labyrinth_bob"
-    | "user_in_labyrinth_carol"
-
+    | 'user_for_logging_in'
+    | 'user_not_in_labyrinth'
+    | 'user_in_labyrinth_alice'
+    | 'user_in_labyrinth_bob'
+    | 'user_in_labyrinth_carol';
 
 declare global {
     namespace Cypress {
@@ -15,17 +14,17 @@ declare global {
         }
 
         interface Chainable {
-            login(username: UserPool): Chainable<void>
+            login(username: UserPool): Chainable<void>;
 
-            loadLabyrinthForUser(username: UserPool): Chainable<void>
+            loadLabyrinthForUser(username: UserPool): Chainable<void>;
 
-            connectToWebSocketAs(username: UserPool): Chainable<void>
+            connectToWebSocketAs(username: UserPool): Chainable<void>;
 
-            sendMessageAs(username: UserPool, message: object): Chainable<void>
+            sendMessageAs(username: UserPool, message: object): Chainable<void>;
 
-            getMessagesAs(username: UserPool): Chainable<object[]>
+            getMessagesAs(username: UserPool): Chainable<object[]>;
 
-            changeToNewDevice(): Chainable<void>
+            changeToNewDevice(): Chainable<void>;
         }
     }
 }

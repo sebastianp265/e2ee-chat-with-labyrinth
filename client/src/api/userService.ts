@@ -1,14 +1,14 @@
-import httpClient from "@/api/httpClient.ts";
+import httpClient from '@/api/httpClient.ts';
 
-const userServicePrefix = "/api/user-service"
+const userServicePrefix = '/api/user-service';
 
 export type FriendDTO = {
-    userId: string,
-    visibleName: string
-}
+    userId: string;
+    visibleName: string;
+};
 
 export const userService = {
     getFriends: async () =>
-        (await httpClient.get<FriendDTO[]>(`${userServicePrefix}/friends`)).data,
-
-}
+        (await httpClient.get<FriendDTO[]>(`${userServicePrefix}/friends`))
+            .data,
+};

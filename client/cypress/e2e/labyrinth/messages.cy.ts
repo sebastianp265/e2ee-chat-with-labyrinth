@@ -130,6 +130,9 @@ describe("Creating threads", () => {
         cy.loadLabyrinthForUser(alice)
         cy.visit("/messages")
 
+        // TODO: Delay needs to be added so Alice get create a websocket session with the server before bob creates thread,
+        //  should be resolved later when data will be added to temporary db
+        cy.wait(100)
 
         const userMessagePairs: [UserPool, string][] = [
             [bob, "Hi Alice!"],

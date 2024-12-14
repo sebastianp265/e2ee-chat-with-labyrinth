@@ -2,3 +2,4 @@
 client/.idea
 server/.idea
 client/cypress/utils/data.sql
+client/cypress/screenshots

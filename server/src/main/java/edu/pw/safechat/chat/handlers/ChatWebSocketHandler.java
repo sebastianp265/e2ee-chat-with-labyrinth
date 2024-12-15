@@ -2,6 +2,7 @@ package edu.pw.safechat.chat.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.pw.safechat.chat.internal.entities.ChatThread;
+import edu.pw.safechat.chat.internal.services.ChatMessageTemporaryStorageService;
 import edu.pw.safechat.chat.internal.services.ChatThreadService;
 import edu.pw.safechat.chat.payloads.received.GenericMessageReceived;
 import edu.pw.safechat.chat.payloads.received.NewChatMessageReceivedPayload;
@@ -37,11 +38,17 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ChatUserService chatUserService;
     private final ChatThreadService chatThreadService;
 
+    private final ChatMessageTemporaryStorageService messageTemporaryStorageService;
+
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         UUID userId = getUserIdFromSession(session);
 
         currentSessions.computeIfAbsent(userId, k -> new ArrayList<>()).add(session);
+        for (String m : messageTemporaryStorageService.getMessages(userId)) {
+            var tm = new TextMessage(m);
+            session.sendMessage(tm);
+        }
     }
 
     // TODO: Handle possible exceptions
@@ -60,8 +67,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private void handleNewChatThread(GenericMessageReceived receivedMessage, UUID userId) throws Exception {
         NewChatThreadReceivedPayload payload = mapper.treeToValue(receivedMessage.payload(), NewChatThreadReceivedPayload.class);
-
         ChatThread createdThread = chatThreadService.createNewThread(userId, payload.otherMemberUserIds());
+
+        UUID id = UUID.randomUUID();
+        long timestamp = Instant.now().toEpochMilli();
 
         var messageToSend = new GenericMessageToSend(
                 "NEW_CHAT_THREAD",
@@ -70,46 +79,50 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                         createdThread.getName(),
                         new WebSocketChatMessage(
                                 // TODO: consider almost impossible uuid collisions
-                                UUID.randomUUID(),
+                                id,
                                 userId,
                                 payload.initialMessageContent(),
-                                Instant.now().toEpochMilli()
+                                timestamp
                         ),
                         chatThreadService.getMembersVisibleNameByUserId(createdThread.getId())
                 )
         );
         var usersToSendTo = chatThreadService.getMembersUUIDByThreadId(createdThread.getId());
 
-        sendMessages(messageToSend, usersToSendTo);
+        sendMessages(usersToSendTo, messageToSend, timestamp);
     }
 
     private void handleNewChatMessage(UUID authorId, GenericMessageReceived receivedMessage) throws Exception {
         NewChatMessageReceivedPayload payload = mapper.treeToValue(receivedMessage.payload(), NewChatMessageReceivedPayload.class);
+        UUID id = UUID.randomUUID();
+        long timestamp = Instant.now().toEpochMilli();
         var messageToSend = new GenericMessageToSend(
                 "NEW_CHAT_MESSAGE",
                 new NewChatMessageToSendPayload(
                         payload.threadId(),
                         new WebSocketChatMessage(
                                 // TODO: consider almost impossible uuid collisions
-                                UUID.randomUUID(),
+                                id,
                                 authorId,
                                 payload.content(),
-                                Instant.now().toEpochMilli()
+                                timestamp
                         )
                 )
         );
         var usersToSendTo = chatThreadService.getMembersUUIDByThreadId(payload.threadId());
-        sendMessages(messageToSend, usersToSendTo);
+        sendMessages(usersToSendTo, messageToSend, timestamp);
     }
 
-    private void sendMessages(GenericMessageToSend messageToSend, List<UUID> usersToSendTo) throws Exception {
+    private void sendMessages(List<UUID> usersToSendTo, GenericMessageToSend messageToSend, long timestamp) throws Exception {
         var textMessageToSend = new TextMessage(mapper.writeValueAsString(messageToSend));
 
         for (UUID userIdToSendTo : usersToSendTo) {
-            log.error("SENDING TO '{}' MESSAGES: ", userIdToSendTo);
-            for (WebSocketSession s : currentSessions.get(userIdToSendTo)) {
-                log.error(textMessageToSend.getPayload());
-                s.sendMessage(textMessageToSend);
+            messageTemporaryStorageService.addMessage(userIdToSendTo, textMessageToSend.getPayload(), timestamp);
+            List<WebSocketSession> sessions = currentSessions.get(userIdToSendTo);
+            if (sessions != null) {
+                for (WebSocketSession s : currentSessions.get(userIdToSendTo)) {
+                    s.sendMessage(textMessageToSend);
+                }
             }
         }
     }

@@ -3,6 +3,7 @@ package edu.pw.safechat.labyrinth.services;
 import edu.pw.safechat.labyrinth.dtos.chat.ChatMessageGetDTO;
 import edu.pw.safechat.labyrinth.dtos.chat.ChatMessagePostDTO;
 import edu.pw.safechat.labyrinth.internal.entities.ChatMessage;
+import edu.pw.safechat.labyrinth.internal.entities.ChatMessageUniqueId;
 import edu.pw.safechat.labyrinth.internal.repositories.ChatMessageRepository;
 import edu.pw.safechat.labyrinth.internal.repositories.EpochRepository;
 import jakarta.transaction.Transactional;
@@ -28,7 +29,9 @@ public class LabyrinthMessageStorageService {
     @Transactional
     public List<ChatMessageGetDTO> getMessagesByThreadId(@NonNull UUID inboxId, @NonNull UUID threadId, Pageable pageable) {
         ChatMessage probe = ChatMessage.builder()
-                .inboxId(inboxId)
+                .chatMessageUniqueId(ChatMessageUniqueId.builder()
+                        .inboxId(inboxId)
+                        .build())
                 .threadId(threadId)
                 .build();
 
@@ -36,7 +39,7 @@ public class LabyrinthMessageStorageService {
 
         return chatMessageRepository.findAll(example, pageable)
                 .map(m -> new ChatMessageGetDTO(
-                        m.getMessageId(),
+                        m.getChatMessageUniqueId().getMessageId(),
                         m.getEpoch().getSequenceId(),
                         m.getEncryptedMessageData(),
                         m.getTimestamp().toEpochMilli()
@@ -51,7 +54,7 @@ public class LabyrinthMessageStorageService {
                 .map(m -> Pair.of(
                         m.getThreadId(),
                         new ChatMessageGetDTO(
-                                m.getMessageId(),
+                                m.getChatMessageUniqueId().getMessageId(),
                                 m.getEpoch().getSequenceId(),
                                 m.getEncryptedMessageData(),
                                 m.getTimestamp().toEpochMilli()
@@ -70,9 +73,11 @@ public class LabyrinthMessageStorageService {
         chatMessageRepository.saveAll(
                 messages.stream()
                         .map(m -> ChatMessage.builder()
-                                .messageId(m.id())
+                                .chatMessageUniqueId(ChatMessageUniqueId.builder()
+                                        .messageId(m.id())
+                                        .inboxId(inboxId)
+                                        .build())
                                 .threadId(threadId)
-                                .inboxId(inboxId)
                                 .timestamp(Instant.ofEpochMilli(m.timestamp()))
                                 .encryptedMessageData(m.encryptedMessageData())
                                 .epoch(

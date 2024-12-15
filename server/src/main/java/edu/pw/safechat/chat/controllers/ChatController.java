@@ -2,6 +2,7 @@ package edu.pw.safechat.chat.controllers;
 
 
 import edu.pw.safechat.chat.dtos.ChatThreadPreviewDTO;
+import edu.pw.safechat.chat.internal.services.ChatMessageTemporaryStorageService;
 import edu.pw.safechat.chat.internal.services.ChatService;
 import edu.pw.safechat.chat.internal.services.ChatThreadService;
 import edu.pw.safechat.chat.services.ChatInboxService;
@@ -28,6 +29,7 @@ public class ChatController {
     private final ChatThreadService chatThreadService;
     private final ChatInboxService chatInboxService;
     private final ChatUserService chatUserService;
+    private final ChatMessageTemporaryStorageService chatMessageTemporaryStorageService;
 
     @PostMapping("/threads/{threadId}/messages")
     public ResponseEntity<Void> storeMessage(
@@ -40,7 +42,7 @@ public class ChatController {
 
         chatThreadService.checkIfUserIsMemberOfThread(userId, threadId);
         labyrinthMessageStorageService.storeMessages(inboxId, threadId, List.of(chatMessagePostDTO));
-
+        chatMessageTemporaryStorageService.removeMessage(userId, chatMessagePostDTO.timestamp());
         return ResponseEntity.ok().build();
     }
 

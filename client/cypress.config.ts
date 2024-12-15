@@ -3,6 +3,7 @@ import pg from 'pg';
 import { readFileSync } from 'fs';
 import { WebSocket } from 'ws';
 import axios from 'axios';
+import { createClient } from 'redis';
 
 let activeConnections = {};
 let messagesPerConnection = {};
@@ -32,6 +33,14 @@ export default defineConfig({
                     }
 
                     await client.end();
+                    return null;
+                },
+                async clearRedis() {
+                    const client = createClient();
+
+                    await client.connect();
+
+                    await client.flushDb();
                     return null;
                 },
                 connectWebSocket({ connectionName, cookie }) {

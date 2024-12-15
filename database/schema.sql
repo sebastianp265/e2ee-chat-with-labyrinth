@@ -101,13 +101,14 @@ CREATE TABLE virtual_device_encrypted_recovery_secrets
 
 CREATE TABLE chat_message
 (
-    message_id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    message_id             UUID DEFAULT gen_random_uuid() NOT NULL,
     thread_id              UUID                           NOT NULL REFERENCES chat_thread,
     inbox_id               UUID                           NOT NULL REFERENCES chat_inbox,
     timestamp              TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL,
     encrypted_message_data BYTEA                          NOT NULL,
     epoch_id               UUID                           NOT NULL REFERENCES epoch,
-    version                BIGINT                         NOT NULL
+    version                BIGINT                         NOT NULL,
+    PRIMARY KEY (message_id, inbox_id)
 );
 
 CREATE INDEX inbox_thread_timestamp_index

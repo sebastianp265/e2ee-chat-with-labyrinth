@@ -19,14 +19,11 @@ import java.util.UUID;
 })
 public class ChatMessage {
 
-    @Id
-    private UUID messageId;
+    @EmbeddedId
+    private ChatMessageUniqueId chatMessageUniqueId;
 
     @Column(nullable = false)
     private UUID threadId;
-
-    @Column(nullable = false)
-    private UUID inboxId;
 
     @Column(nullable = false)
     private Instant timestamp;

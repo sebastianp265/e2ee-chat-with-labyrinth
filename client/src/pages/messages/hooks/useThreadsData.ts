@@ -138,21 +138,32 @@ function threadsDataReducer(
         case 'ADD_MESSAGE': {
             const { threadId, message } = action.payload;
 
-            if (!Object.hasOwn(state.map, threadId)) {
-                throw new Error(
-                    'Unexpected behaviour, message should be added to existing thread',
-                );
+            if (Object.hasOwn(state.map, threadId)) {
+                return {
+                    map: {
+                        ...state.map,
+                        [threadId]: {
+                            ...state.map[threadId],
+                            messages: combineMessages(
+                                state.map[threadId].messages,
+                                message,
+                            ),
+                        },
+                    },
+                    keys: [
+                        threadId,
+                        ...state.keys.filter((key) => key !== threadId),
+                    ],
+                };
             }
 
             return {
                 map: {
                     ...state.map,
                     [threadId]: {
-                        ...state.map[threadId],
-                        messages: combineMessages(
-                            state.map[threadId].messages,
-                            message,
-                        ),
+                        threadName: null,
+                        messages: [message],
+                        membersVisibleNameByUserId: {},
                     },
                 },
                 keys: [
@@ -169,10 +180,6 @@ function threadsDataReducer(
                 membersVisibleNameByUserId,
             } = action.payload;
 
-            if (Object.hasOwn(state.map, threadId)) {
-                throw new Error('Unexpected behaviour, thread already exists');
-            }
-
             return {
                 map: {
                     ...state.map,
@@ -182,7 +189,10 @@ function threadsDataReducer(
                         membersVisibleNameByUserId,
                     },
                 },
-                keys: [threadId, ...state.keys],
+                keys: [
+                    threadId,
+                    ...state.keys.filter((key) => key !== threadId),
+                ],
             };
         }
     }

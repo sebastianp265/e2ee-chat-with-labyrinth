@@ -1,13 +1,14 @@
 package edu.pw.safechat.labyrinth.internal.repositories;
 
 import edu.pw.safechat.labyrinth.internal.entities.ChatMessage;
+import edu.pw.safechat.labyrinth.internal.entities.ChatMessageUniqueId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
+public interface ChatMessageRepository extends JpaRepository<ChatMessage, ChatMessageUniqueId> {
 
     @Query(value = """
                 SELECT DISTINCT ON (thread_id) *

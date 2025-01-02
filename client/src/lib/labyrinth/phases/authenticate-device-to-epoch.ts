@@ -1,6 +1,6 @@
 import { kdf_one_key } from '@/lib/labyrinth/crypto/key-derivation.ts';
 import { mac } from '@/lib/labyrinth/crypto/message-authentication.ts';
-import { Epoch, EpochWithoutId } from '@/lib/labyrinth/epoch/EpochStorage.ts';
+import { Epoch, EpochWithoutId } from '@/lib/labyrinth/EpochStorage.ts';
 import { PublicKey } from '@/lib/labyrinth/crypto/keys.ts';
 import { asciiStringToBytes } from '@/lib/labyrinth/crypto/utils.ts';
 

@@ -1,7 +1,7 @@
 import {
     openFirstEpoch,
     OpenFirstEpochWebClient,
-} from '@/lib/labyrinth/epoch/open-new-epoch.ts';
+} from '@/lib/labyrinth/phases/open-first-epoch.ts';
 import {
     DeviceKeyBundle,
     DeviceKeyBundleSerialized,
@@ -9,8 +9,8 @@ import {
 } from '@/lib/labyrinth/device/key-bundle/DeviceKeyBundle.ts';
 import { VirtualDevice } from '@/lib/labyrinth/device/virtual-device/VirtualDevice.ts';
 import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
-import { generateEpochDeviceMac } from '@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts';
-import { Epoch } from '@/lib/labyrinth/epoch/EpochStorage.ts';
+import { generateEpochDeviceMac } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
+import { Epoch } from '@/lib/labyrinth/EpochStorage.ts';
 
 export type AuthenticateDeviceToEpochAndRegisterDeviceResponse = {
     assignedDeviceId: string;

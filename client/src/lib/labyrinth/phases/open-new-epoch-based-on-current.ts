@@ -1,108 +1,20 @@
 import {
+    CommonPublicKeyBundle,
+    CommonPublicKeyBundleSerialized,
+} from '@/lib/labyrinth/device/key-bundle/DeviceAndVirtualDeviceCommonKeyBundle.ts';
+import { VirtualDevicePublicKeyBundle } from '@/lib/labyrinth/device/key-bundle/VirtualDeviceKeyBundle.ts';
+import { Epoch, EpochWithoutId } from '@/lib/labyrinth/EpochStorage.ts';
+import { ThisDevice } from '@/lib/labyrinth/device/device.ts';
+import {
     kdf_one_key,
     kdf_two_keys,
 } from '@/lib/labyrinth/crypto/key-derivation.ts';
 import { asciiStringToBytes, random } from '@/lib/labyrinth/crypto/utils.ts';
+import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
+import { generateEpochDeviceMac } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
+import { PublicKey } from '@/lib/labyrinth/crypto/keys.ts';
 import { encrypt } from '@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts';
 import { pk_encrypt } from '@/lib/labyrinth/crypto/public-key-encryption.ts';
-import { generateEpochDeviceMac } from '@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts';
-import { Epoch, EpochWithoutId } from '@/lib/labyrinth/epoch/EpochStorage.ts';
-import {
-    DevicePublicKeyBundle,
-    DevicePublicKeyBundleSerialized,
-} from '@/lib/labyrinth/device/key-bundle/DeviceKeyBundle.ts';
-import { VirtualDevice } from '@/lib/labyrinth/device/virtual-device/VirtualDevice.ts';
-import {
-    encryptVirtualDeviceRecoverySecrets,
-    VirtualDeviceEncryptedRecoverySecretsSerialized,
-} from '@/lib/labyrinth/device/virtual-device/VirtualDeviceEncryptedRecoverySecrets.ts';
-import {
-    VirtualDevicePublicKeyBundle,
-    VirtualDevicePublicKeyBundleSerialized,
-} from '@/lib/labyrinth/device/key-bundle/VirtualDeviceKeyBundle.ts';
-import { ThisDevice } from '@/lib/labyrinth/device/device.ts';
-import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
-import { PublicKey } from '@/lib/labyrinth/crypto/keys.ts';
-import {
-    CommonPublicKeyBundle,
-    CommonPublicKeyBundleSerialized,
-} from '@/lib/labyrinth/device/key-bundle/DeviceAndVirtualDeviceCommonKeyBundle.ts';
-
-export type OpenFirstEpochBody = {
-    virtualDeviceId: string;
-    virtualDeviceEncryptedRecoverySecrets: VirtualDeviceEncryptedRecoverySecretsSerialized;
-    virtualDevicePublicKeyBundle: VirtualDevicePublicKeyBundleSerialized;
-    devicePublicKeyBundle: DevicePublicKeyBundleSerialized;
-    firstEpochMembershipProof: {
-        epochDeviceMac: string;
-        epochVirtualDeviceMac: string;
-    };
-};
-
-export type OpenFirstEpochResponse = {
-    deviceId: string;
-    epochId: string;
-};
-
-export type OpenFirstEpochWebClient = {
-    // returns assigned epoch id
-    openFirstEpoch: (
-        requestBody: OpenFirstEpochBody,
-    ) => Promise<OpenFirstEpochResponse>;
-};
-
-export async function openFirstEpoch(
-    devicePublicKeyBundle: DevicePublicKeyBundle,
-    virtualDeviceDecryptionKey: Uint8Array,
-    virtualDevice: VirtualDevice,
-    webClient: OpenFirstEpochWebClient,
-) {
-    const firstEpochWithoutId: EpochWithoutId = {
-        sequenceId: '0',
-        rootKey: random(32),
-    };
-
-    const epochVirtualDeviceMac = await generateEpochDeviceMac(
-        firstEpochWithoutId,
-        virtualDevice.keyBundle.pub.deviceKeyPub,
-    );
-
-    const epochThisDeviceMac = await generateEpochDeviceMac(
-        firstEpochWithoutId,
-        devicePublicKeyBundle.deviceKeyPub,
-    );
-
-    const virtualDeviceEncryptedRecoverySecrets =
-        await encryptVirtualDeviceRecoverySecrets(
-            virtualDeviceDecryptionKey,
-            firstEpochWithoutId,
-            virtualDevice.keyBundle.priv,
-        );
-
-    const openFirstEpochResponse = await webClient.openFirstEpoch({
-        virtualDeviceId: BytesSerializer.serialize(virtualDevice.id),
-        firstEpochMembershipProof: {
-            epochDeviceMac: BytesSerializer.serialize(epochThisDeviceMac),
-            epochVirtualDeviceMac: BytesSerializer.serialize(
-                epochVirtualDeviceMac,
-            ),
-        },
-        devicePublicKeyBundle: devicePublicKeyBundle.serialize(),
-        virtualDevicePublicKeyBundle: virtualDevice.keyBundle.pub.serialize(),
-        virtualDeviceEncryptedRecoverySecrets:
-            virtualDeviceEncryptedRecoverySecrets.serialize(),
-    });
-
-    const firstEpoch = {
-        id: openFirstEpochResponse.epochId,
-        ...firstEpochWithoutId,
-    } as Epoch;
-
-    return {
-        deviceId: openFirstEpochResponse.deviceId,
-        firstEpoch,
-    };
-}
 
 type DeviceInEpochSerialized = {
     id: string;

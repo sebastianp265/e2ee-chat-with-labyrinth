@@ -6,15 +6,15 @@ import {
     OpenFirstEpochWebClient,
     OpenNewEpochBasedOnCurrentResponse,
     OpenNewEpochBasedOnCurrentWebClient,
-} from '@/lib/labyrinth/epoch/open-new-epoch.ts';
+} from '@/lib/labyrinth/phases/open-first-epoch.ts';
 import {
     GetNewerEpochJoinDataResponse,
     GetNewestEpochSequenceIdResponse,
     GetOlderEpochJoinDataResponse,
     JoinEpochWebClient,
-} from '@/lib/labyrinth/epoch/join-epoch.ts';
+} from '@/lib/labyrinth/phases/join-epoch.ts';
 
-import { AuthenticateDeviceToEpochWebClient } from '@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts';
+import { AuthenticateDeviceToEpochWebClient } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
 import {
     AuthenticateDeviceToEpochAndRegisterDeviceRequestBody,
     AuthenticateDeviceToEpochAndRegisterDeviceResponse,

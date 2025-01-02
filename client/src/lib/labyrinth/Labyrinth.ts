@@ -2,15 +2,15 @@ import {
     Epoch,
     EpochStorage,
     EpochStorageSerialized,
-} from '@/lib/labyrinth/epoch/EpochStorage.ts';
-import { joinAllEpochs } from '@/lib/labyrinth/epoch/join-epoch.ts';
+} from '@/lib/labyrinth/EpochStorage.ts';
+import { joinAllEpochs } from '@/lib/labyrinth/phases/join-epoch.ts';
 import {
     decrypt,
     encrypt,
 } from '@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts';
 import { LabyrinthWebClient } from '@/lib/labyrinth/labyrinth-web-client.ts';
 import { kdf_one_key } from '@/lib/labyrinth/crypto/key-derivation.ts';
-import { generateEpochDeviceMac } from '@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts';
+import { generateEpochDeviceMac } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
 import {
     ThisDevice,
     ThisDeviceSerialized,

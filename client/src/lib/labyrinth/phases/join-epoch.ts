@@ -4,7 +4,7 @@ import {
 } from '@/lib/labyrinth/crypto/key-derivation.ts';
 import { pk_decrypt } from '@/lib/labyrinth/crypto/public-key-encryption.ts';
 import { decrypt } from '@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts';
-import { Epoch, EpochStorage } from '@/lib/labyrinth/epoch/EpochStorage.ts';
+import { Epoch, EpochStorage } from '@/lib/labyrinth/EpochStorage.ts';
 import {
     DeviceKeyBundle,
     DevicePublicKeyBundle,

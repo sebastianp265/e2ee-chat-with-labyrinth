@@ -1,3 +1,7 @@
+app:
+  labyrinth:
+    max-device-inactivity-seconds: 86400
+
 logging:
   level:
     org.springframework:

@@ -5,7 +5,7 @@ import edu.pw.safechat.labyrinth.dtos.common.DevicePublicKeyBundleWithoutEpochSt
 import java.util.List;
 import java.util.UUID;
 
-public record GetDevicesInEpochResponseDTO(
+public record AllDevicesDTO(
         List<DeviceInEpoch> devices,
         VirtualDeviceInEpoch virtualDevice
 ) {

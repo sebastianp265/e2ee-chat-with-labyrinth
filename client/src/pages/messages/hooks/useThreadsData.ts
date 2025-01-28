@@ -86,6 +86,12 @@ async function encryptMessageAndStoreInLabyrinth(
     async function createMessagePostDTO(m: Message) {
         const newestEpochId = labyrinth.getNewestEpochId();
         const newestEpochSequenceId = labyrinth.getNewestEpochSequenceId();
+        console.log(`IN MEM:`, labyrinth);
+        console.log(
+            `IN LOCAL STORAGE:`,
+            JSON.parse(localStorage.getItem('labyrinth')!),
+        );
+        console.log('Encrypting with', newestEpochSequenceId);
 
         return {
             id: m.id,
@@ -207,7 +213,10 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
     const [error, setError] = useState<AxiosError | null>(null);
 
     const addMessage = useCallback(
-        (addMessageActionPayload: AddMessageActionPayload) => {
+        (
+            addMessageActionPayload: AddMessageActionPayload,
+            storeInLabyrinth: boolean = true,
+        ) => {
             if (labyrinth === null)
                 throw new Error(
                     "Unexpected behaviour, when labyrinth is not initialized user shouldn't be able to receive or send messages",
@@ -215,17 +224,22 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
             AddMessageActionPayloadSchema.parse(addMessageActionPayload);
 
             dispatch({ type: 'ADD_MESSAGE', payload: addMessageActionPayload });
-            encryptMessageAndStoreInLabyrinth(
-                labyrinth,
-                addMessageActionPayload.threadId,
-                addMessageActionPayload.message,
-            );
+            if (storeInLabyrinth) {
+                encryptMessageAndStoreInLabyrinth(
+                    labyrinth,
+                    addMessageActionPayload.threadId,
+                    addMessageActionPayload.message,
+                );
+            }
         },
         [labyrinth],
     );
 
     const addThread = useCallback(
-        (addThreadActionPayload: AddThreadActionPayload) => {
+        (
+            addThreadActionPayload: AddThreadActionPayload,
+            storeInLabyrinth: boolean = true,
+        ) => {
             if (labyrinth === null)
                 throw new Error(
                     "Unexpected behaviour, when labyrinth is not initialized user shouldn't be able to receive or send messages",
@@ -233,11 +247,13 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
             AddThreadActionPayloadSchema.parse(addThreadActionPayload);
 
             dispatch({ type: 'ADD_THREAD', payload: addThreadActionPayload });
-            encryptMessageAndStoreInLabyrinth(
-                labyrinth,
-                addThreadActionPayload.threadId,
-                addThreadActionPayload.initialMessage,
-            );
+            if (storeInLabyrinth) {
+                encryptMessageAndStoreInLabyrinth(
+                    labyrinth,
+                    addThreadActionPayload.threadId,
+                    addThreadActionPayload.initialMessage,
+                );
+            }
         },
         [labyrinth],
     );
@@ -252,12 +268,16 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
                     p.threadId,
                     p.message,
                 );
-                addThread({
-                    threadId: p.threadId,
-                    threadName: p.threadName,
-                    initialMessage: message,
-                    membersVisibleNameByUserId: p.membersVisibleNameByUserId,
-                });
+                addThread(
+                    {
+                        threadId: p.threadId,
+                        threadName: p.threadName,
+                        initialMessage: message,
+                        membersVisibleNameByUserId:
+                            p.membersVisibleNameByUserId,
+                    },
+                    false,
+                );
             }
         });
     }, [addThread, labyrinth]);
@@ -274,10 +294,13 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
                         chosenThreadId,
                         em,
                     );
-                    addMessage({
-                        threadId: chosenThreadId,
-                        message,
-                    });
+                    addMessage(
+                        {
+                            threadId: chosenThreadId,
+                            message,
+                        },
+                        false,
+                    );
                 }
             });
     }, [addMessage, chosenThreadId, labyrinth, setError]);

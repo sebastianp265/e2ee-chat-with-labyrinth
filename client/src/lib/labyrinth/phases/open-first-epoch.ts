@@ -29,7 +29,7 @@ export type OpenFirstEpochResponse = {
     epochId: string;
 };
 
-export type OpenFirstEpochWebClient = {
+export type OpenFirstEpochServerClient = {
     openFirstEpoch: (
         requestBody: OpenFirstEpochBody,
     ) => Promise<OpenFirstEpochResponse>;
@@ -39,8 +39,8 @@ export async function openFirstEpoch(
     devicePublicKeyBundle: DevicePublicKeyBundle,
     virtualDeviceDecryptionKey: Uint8Array,
     virtualDevice: VirtualDevice,
-    webClient: OpenFirstEpochWebClient,
-) {
+    serverClient: OpenFirstEpochServerClient,
+): Promise<{ deviceId: string; firstEpoch: Epoch }> {
     const firstEpochWithoutId: EpochWithoutId = {
         sequenceId: '0',
         rootKey: random(32),
@@ -63,7 +63,7 @@ export async function openFirstEpoch(
             virtualDevice.keyBundle.priv,
         );
 
-    const openFirstEpochResponse = await webClient.openFirstEpoch({
+    const openFirstEpochResponse = await serverClient.openFirstEpoch({
         virtualDeviceId: BytesSerializer.serialize(virtualDevice.id),
         firstEpochMembershipProof: {
             epochDeviceMac: BytesSerializer.serialize(epochThisDeviceMac),

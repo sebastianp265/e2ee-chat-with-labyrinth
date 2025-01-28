@@ -1,47 +1,47 @@
 import {
-    pk_auth_keygen,
-    pk_decrypt,
-    pk_enc_keygen,
-    pk_encrypt,
+    labyrinth_hpke_decrypt,
+    labyrinth_hpke_encrypt,
 } from '@/lib/labyrinth/crypto/public-key-encryption.ts';
-import { encodeText, random } from '@/lib/labyrinth/crypto/utils.ts';
-import { KEY_LENGTH_BYTES } from '@/lib/labyrinth/crypto/keys.ts';
+import { asciiStringToBytes, random } from '@/lib/labyrinth/crypto/utils.ts';
+import {
+    generate_key_pair,
+    KEY_LENGTH_BYTES,
+} from '@/lib/labyrinth/crypto/keys.ts';
+import { expect, test } from 'vitest';
 
-describe('labyrinth public key encryption', () => {
-    test('sender encrypts the message and recipient decrypts it correctly', async () => {
-        // recipient data
-        const { publicKey: recipient_enc_pub, privateKey: recipient_enc_priv } =
-            pk_enc_keygen();
-        const psk = random(KEY_LENGTH_BYTES);
-        // sender data
-        const { publicKey: sender_auth_pub, privateKey: sender_auth_priv } =
-            pk_auth_keygen();
+test('sender encrypts the message and recipient decrypts it correctly', async () => {
+    // psk is shared before encryption
+    const psk = random(KEY_LENGTH_BYTES);
 
-        // sender fetches from the server the same psk recipient has
-        // also recipient_enc_pub is fetched
+    // recipient encryption key pair
+    const { publicKey: recipient_enc_pub, privateKey: recipient_enc_priv } =
+        generate_key_pair();
 
-        const aad = random(8);
+    // sender authorization key pair
+    const { publicKey: sender_auth_pub, privateKey: sender_auth_priv } =
+        generate_key_pair();
+    const aad = random(8);
 
-        // sender prepares the message
-        const plaintext = encodeText('Hello Alice!');
+    // operations on sender side
+    const plaintext = asciiStringToBytes('Hello Alice!');
+    const ciphertext = await labyrinth_hpke_encrypt(
+        recipient_enc_pub,
+        sender_auth_pub,
+        sender_auth_priv,
+        psk,
+        aad,
+        plaintext,
+    );
 
-        const ciphertext = await pk_encrypt(
-            recipient_enc_pub,
-            sender_auth_pub,
-            sender_auth_priv,
-            psk,
-            aad,
-            plaintext,
-        );
-        // ciphertext is sent to recipient
-        const decrypted_plaintext = await pk_decrypt(
-            recipient_enc_pub,
-            recipient_enc_priv,
-            sender_auth_pub,
-            psk,
-            aad,
-            ciphertext,
-        );
-        expect(decrypted_plaintext).toEqual(plaintext);
-    });
+    // operation on recipient side
+    const decrypted_plaintext = await labyrinth_hpke_decrypt(
+        recipient_enc_pub,
+        recipient_enc_priv,
+        sender_auth_pub,
+        psk,
+        aad,
+        ciphertext,
+    );
+
+    expect(decrypted_plaintext).toEqual(plaintext);
 });

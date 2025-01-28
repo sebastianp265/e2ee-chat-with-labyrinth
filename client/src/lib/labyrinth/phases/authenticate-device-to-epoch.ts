@@ -8,9 +8,10 @@ export type AuthenticateDeviceToEpochRequestBody = {
     epochDeviceMac: string;
 };
 
-export type AuthenticateDeviceToEpochWebClient = {
+export type AuthenticateDeviceToEpochServerClient = {
     authenticateDeviceToEpoch: (
         epochId: string,
+        deviceId: string,
         authenticateDeviceToEpochRequestBody: AuthenticateDeviceToEpochRequestBody,
     ) => Promise<void>;
 };

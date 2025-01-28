@@ -22,7 +22,8 @@ public class Epoch {
     @ManyToOne(optional = false)
     private Labyrinth labyrinth;
 
+    public static final String FIRST_SEQUENCE_ID = "0";
+
     @Column(nullable = false)
     private String sequenceId;
-
 }

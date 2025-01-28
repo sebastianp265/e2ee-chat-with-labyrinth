@@ -11,8 +11,11 @@ public interface DeviceMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "labyrinth", source = "labyrinth")
+    @Mapping(target = "lastActiveAt", expression = "java(java.time.Instant.now())")
     Device toEntity(
             DevicePublicKeyBundleDTO devicePublicKeyBundleDTO,
             Labyrinth labyrinth
     );
+
+    DevicePublicKeyBundleDTO toDevicePublicKeyBundleDTO(Device device);
 }

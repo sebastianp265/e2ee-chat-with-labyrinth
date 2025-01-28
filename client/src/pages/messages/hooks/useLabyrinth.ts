@@ -78,13 +78,14 @@ export default function useLabyrinth(loggedUserId: string) {
                 labyrinthWebClientImpl,
             ),
         );
+
         return {
             isSuccess: true,
         };
     }
 
     async function setLabyrinthFromFirstEpoch(): Promise<HandleGenerateRecoveryCodeResponse> {
-        const fromFirstEpoch = await Labyrinth.fromFirstEpoch(
+        const fromFirstEpoch = await Labyrinth.initialize(
             loggedUserId,
             labyrinthWebClientImpl,
         );

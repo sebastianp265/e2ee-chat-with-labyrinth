@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 @Service
@@ -27,7 +28,21 @@ public class EpochService {
                 .orElseThrow(EpochAccessDeniedException::new);
     }
 
-    public Epoch createAndSave(Labyrinth labyrinth, String sequenceId) {
+    public Epoch getEpochBySequenceIdAndLabyrinth(String sequenceId, Labyrinth labyrinth) {
+        Example<Epoch> epochExample = Example.of(Epoch.builder()
+                .labyrinth(labyrinth)
+                .sequenceId(sequenceId)
+                .build()
+        );
+
+        return epochRepository.findOne(epochExample)
+                .orElseThrow(EpochAccessDeniedException::new);
+    }
+
+    public Epoch createAndSave(
+            Labyrinth labyrinth,
+            String sequenceId
+    ) {
         return epochRepository.save(
                 Epoch.builder()
                         .labyrinth(labyrinth)
@@ -36,4 +51,14 @@ public class EpochService {
         );
     }
 
+    public String getNewestEpochSequenceId(Labyrinth labyrinth) {
+        return epochRepository.findTopByLabyrinthOrderBySequenceIdDesc(labyrinth)
+                .map(Epoch::getSequenceId)
+                .orElseThrow(EpochAccessDeniedException::new);
+    }
+
+    public String getNewerEpochSequenceId(String sequenceId) {
+        BigInteger sequenceIdBigInt = new BigInteger(sequenceId);
+        return sequenceIdBigInt.add(BigInteger.ONE).toString();
+    }
 }

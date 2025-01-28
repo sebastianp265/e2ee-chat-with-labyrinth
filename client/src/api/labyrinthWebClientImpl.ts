@@ -1,37 +1,42 @@
 import httpClient from '@/api/httpClient.ts';
-import { LabyrinthWebClient } from '@/lib/labyrinth/labyrinth-web-client.ts';
 import {
-    GetDevicesInEpochResponse,
     OpenFirstEpochResponse,
-    OpenFirstEpochWebClient,
-    OpenNewEpochBasedOnCurrentResponse,
-    OpenNewEpochBasedOnCurrentWebClient,
+    OpenFirstEpochServerClient,
 } from '@/lib/labyrinth/phases/open-first-epoch.ts';
 import {
     GetNewerEpochJoinDataResponse,
     GetNewestEpochSequenceIdResponse,
     GetOlderEpochJoinDataResponse,
-    JoinEpochWebClient,
+    JoinEpochServerClient,
 } from '@/lib/labyrinth/phases/join-epoch.ts';
 
-import { AuthenticateDeviceToEpochWebClient } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
+import { AuthenticateDeviceToEpochServerClient } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
 import {
     AuthenticateDeviceToEpochAndRegisterDeviceRequestBody,
     AuthenticateDeviceToEpochAndRegisterDeviceResponse,
-    AuthenticateDeviceToEpochAndRegisterDeviceWebClient,
+    AuthenticateDeviceToEpochAndRegisterDeviceServerClient,
 } from '@/lib/labyrinth/device/device.ts';
 import {
+    CheckIfAnyDeviceExceedInactivityLimitResponseDTO,
+    CheckIfAnyDeviceExceedInactivityLimitServerClient,
     CheckIfLabyrinthIsInitializedResponse,
-    CheckIfLabyrinthIsInitializedWebClient,
+    CheckIfLabyrinthIsInitializedServerClient,
+    NotifyAboutDeviceActivityServerClient,
 } from '@/lib/labyrinth/Labyrinth.ts';
 import {
     GetVirtualDeviceRecoverySecretsResponse,
-    GetVirtualDeviceRecoverySecretsWebClient,
+    GetVirtualDeviceRecoverySecretsServerClient,
 } from '@/lib/labyrinth/device/virtual-device/VirtualDevice.ts';
+import {
+    GetDevicesInEpochResponse,
+    OpenNewEpochBasedOnCurrentResponse,
+    OpenNewEpochBasedOnCurrentServerClient,
+} from '@/lib/labyrinth/phases/open-new-epoch-based-on-current.ts';
+import { LabyrinthServerClient } from '@/lib/labyrinth/labyrinth-server-client.ts';
 
 const labyrinthServicePrefix = '/api/labyrinth-service';
 
-const openFirstEpochWebClient: OpenFirstEpochWebClient = {
+const openFirstEpochServerClient: OpenFirstEpochServerClient = {
     openFirstEpoch: async (requestBody) =>
         (
             await httpClient.post<OpenFirstEpochResponse>(
@@ -41,7 +46,7 @@ const openFirstEpochWebClient: OpenFirstEpochWebClient = {
         ).data,
 };
 
-const openNewEpochBasedOnCurrentWebClient: OpenNewEpochBasedOnCurrentWebClient =
+const openNewEpochBasedOnCurrentServerClient: OpenNewEpochBasedOnCurrentServerClient =
     {
         getDevicesInEpoch: async (epochId) =>
             (
@@ -50,20 +55,33 @@ const openNewEpochBasedOnCurrentWebClient: OpenNewEpochBasedOnCurrentWebClient =
                 )
             ).data,
 
-        openNewEpochBasedOnCurrent: async (currentEpochId, requestBody) =>
+        openNewEpochBasedOnCurrent: async (
+            currentEpochId,
+            thisDeviceId,
+            requestBody,
+        ) =>
             (
                 await httpClient.post<OpenNewEpochBasedOnCurrentResponse>(
-                    `${labyrinthServicePrefix}/epochs/open-based-on-current/${currentEpochId}`,
+                    `${labyrinthServicePrefix}/epochs/open-based-on-current/${currentEpochId}/by-device/${thisDeviceId}`,
                     requestBody,
                 )
             ).data,
     };
 
-const joinEpochWebClient: JoinEpochWebClient = {
-    getNewerEpochJoinData: async (newerEpochSequenceId) =>
+const joinEpochServerClient: JoinEpochServerClient = {
+    getNewerEpochJoinDataForDevice: async (newerEpochSequenceId, deviceId) =>
         (
             await httpClient.get<GetNewerEpochJoinDataResponse>(
-                `${labyrinthServicePrefix}/epochs/by-sequence-id/${newerEpochSequenceId}/newer-epoch-join-data`,
+                `${labyrinthServicePrefix}/epochs/by-sequence-id/${newerEpochSequenceId}/newer-epoch-join-data/for-device/${deviceId}`,
+            )
+        ).data,
+
+    getNewerEpochJoinDataForVirtualDevice: async (
+        newerEpochSequenceId: string,
+    ) =>
+        (
+            await httpClient.get<GetNewerEpochJoinDataResponse>(
+                `${labyrinthServicePrefix}/epochs/by-sequence-id/${newerEpochSequenceId}/newer-epoch-join-data/for-virtual-device`,
             )
         ).data,
 
@@ -82,7 +100,7 @@ const joinEpochWebClient: JoinEpochWebClient = {
         ).data,
 };
 
-const getVirtualDeviceRecoverySecretsWebClient: GetVirtualDeviceRecoverySecretsWebClient =
+const getVirtualDeviceRecoverySecretsServerClient: GetVirtualDeviceRecoverySecretsServerClient =
     {
         getVirtualDeviceRecoverySecrets: async (
             getVirtualDeviceRecoverySecretsBody,
@@ -95,20 +113,22 @@ const getVirtualDeviceRecoverySecretsWebClient: GetVirtualDeviceRecoverySecretsW
             ).data,
     };
 
-const authenticateDeviceToEpochWebClient: AuthenticateDeviceToEpochWebClient = {
-    authenticateDeviceToEpoch: async (
-        epochId,
-        authenticateDeviceToEpochRequestBody,
-    ) =>
-        (
-            await httpClient.post<void>(
-                `${labyrinthServicePrefix}/epochs/${epochId}/authenticate`,
-                authenticateDeviceToEpochRequestBody,
-            )
-        ).data,
-};
+const authenticateDeviceToEpochServerClient: AuthenticateDeviceToEpochServerClient =
+    {
+        authenticateDeviceToEpoch: async (
+            epochId,
+            deviceId,
+            authenticateDeviceToEpochRequestBody,
+        ) =>
+            (
+                await httpClient.post<void>(
+                    `${labyrinthServicePrefix}/epochs/${epochId}/devices/${deviceId}/authenticate`,
+                    authenticateDeviceToEpochRequestBody,
+                )
+            ).data,
+    };
 
-const authenticateDeviceToEpochAndRegisterDeviceWebClient: AuthenticateDeviceToEpochAndRegisterDeviceWebClient =
+const authenticateDeviceToEpochAndRegisterDeviceServerClient: AuthenticateDeviceToEpochAndRegisterDeviceServerClient =
     {
         authenticateDeviceToEpochAndRegisterDevice: async (
             epochId: string,
@@ -122,7 +142,7 @@ const authenticateDeviceToEpochAndRegisterDeviceWebClient: AuthenticateDeviceToE
             ).data,
     };
 
-const checkIfLabyrinthIsInitializedWebClient: CheckIfLabyrinthIsInitializedWebClient =
+const checkIfLabyrinthIsInitializedServerClient: CheckIfLabyrinthIsInitializedServerClient =
     {
         checkIfLabyrinthIsInitialized: async () =>
             (
@@ -132,14 +152,36 @@ const checkIfLabyrinthIsInitializedWebClient: CheckIfLabyrinthIsInitializedWebCl
             ).data,
     };
 
+const notifyAboutDeviceActivityServerClient: NotifyAboutDeviceActivityServerClient =
+    {
+        notifyAboutDeviceActivity: async (deviceId) =>
+            (
+                await httpClient.post<void>(
+                    `${labyrinthServicePrefix}/devices/${deviceId}/notify-activity`,
+                )
+            ).data,
+    };
+
+const checkIfAnyDeviceExceedInactivityLimitServerClient: CheckIfAnyDeviceExceedInactivityLimitServerClient =
+    {
+        checkIfAnyDeviceExceedInactivityLimit: async () =>
+            (
+                await httpClient.get<CheckIfAnyDeviceExceedInactivityLimitResponseDTO>(
+                    `${labyrinthServicePrefix}/did-any-device-exceed-inactivity-limit`,
+                )
+            ).data,
+    };
+
 const labyrinthWebClientImpl = {
-    ...openFirstEpochWebClient,
-    ...openNewEpochBasedOnCurrentWebClient,
-    ...joinEpochWebClient,
-    ...getVirtualDeviceRecoverySecretsWebClient,
-    ...authenticateDeviceToEpochWebClient,
-    ...authenticateDeviceToEpochAndRegisterDeviceWebClient,
-    ...checkIfLabyrinthIsInitializedWebClient,
-} as LabyrinthWebClient;
+    ...openFirstEpochServerClient,
+    ...openNewEpochBasedOnCurrentServerClient,
+    ...joinEpochServerClient,
+    ...getVirtualDeviceRecoverySecretsServerClient,
+    ...authenticateDeviceToEpochServerClient,
+    ...authenticateDeviceToEpochAndRegisterDeviceServerClient,
+    ...checkIfLabyrinthIsInitializedServerClient,
+    ...notifyAboutDeviceActivityServerClient,
+    ...checkIfAnyDeviceExceedInactivityLimitServerClient,
+} as LabyrinthServerClient;
 
 export default labyrinthWebClientImpl;

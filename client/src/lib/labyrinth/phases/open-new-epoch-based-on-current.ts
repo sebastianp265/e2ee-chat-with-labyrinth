@@ -9,12 +9,16 @@ import {
     kdf_one_key,
     kdf_two_keys,
 } from '@/lib/labyrinth/crypto/key-derivation.ts';
-import { asciiStringToBytes, random } from '@/lib/labyrinth/crypto/utils.ts';
+import {
+    asciiStringToBytes,
+    bytes_equal,
+    random,
+} from '@/lib/labyrinth/crypto/utils.ts';
 import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
 import { generateEpochDeviceMac } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
 import { PublicKey } from '@/lib/labyrinth/crypto/keys.ts';
 import { encrypt } from '@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts';
-import { pk_encrypt } from '@/lib/labyrinth/crypto/public-key-encryption.ts';
+import { labyrinth_hpke_encrypt } from '@/lib/labyrinth/crypto/public-key-encryption.ts';
 
 type DeviceInEpochSerialized = {
     id: string;
@@ -22,7 +26,7 @@ type DeviceInEpochSerialized = {
 
 type VirtualDeviceInEpochSerialized = {
     mac: string;
-    publicKeyBundle: CommonPublicKeyBundleSerialized;
+    keyBundle: CommonPublicKeyBundleSerialized;
 };
 
 type DeviceInEpoch = {
@@ -64,24 +68,25 @@ export type OpenNewEpochBasedOnCurrentBody = {
         epochThisDeviceMac: string;
         epochVirtualDeviceMac: string;
     };
-    encryptedCurrentEpochJoinData: EncryptedCurrentEpochJoinData;
+    // encryptedCurrentEpochJoinData: EncryptedCurrentEpochJoinData;
 };
 
 export type OpenNewEpochBasedOnCurrentResponse = {
     openedEpochId: string;
 };
 
-export type OpenNewEpochBasedOnCurrentWebClient = {
+export type OpenNewEpochBasedOnCurrentServerClient = {
     getDevicesInEpoch: (epochId: string) => Promise<GetDevicesInEpochResponse>;
     openNewEpochBasedOnCurrent: (
         currentEpochId: string,
+        thisDeviceId: string,
         requestBody: OpenNewEpochBasedOnCurrentBody,
     ) => Promise<OpenNewEpochBasedOnCurrentResponse>;
 };
 
 export async function openNewEpochBasedOnCurrent(
     currentEpoch: Epoch,
-    webClient: OpenNewEpochBasedOnCurrentWebClient,
+    webClient: OpenNewEpochBasedOnCurrentServerClient,
     thisDevice: ThisDevice,
 ): Promise<Epoch> {
     const devicesInEpochPromise = webClient.getDevicesInEpoch(currentEpoch.id);
@@ -116,7 +121,7 @@ export async function openNewEpochBasedOnCurrent(
                     id: v.id,
                     mac: BytesSerializer.deserialize(v.mac),
                     publicKeyBundle: CommonPublicKeyBundle.deserialize(
-                        v.publicKeyBundle,
+                        v.keyBundle,
                     ),
                 } as DeviceInEpoch;
             }),
@@ -125,7 +130,7 @@ export async function openNewEpochBasedOnCurrent(
                     devicesInEpoch.virtualDevice.mac,
                 ),
                 publicKeyBundle: CommonPublicKeyBundle.deserialize(
-                    devicesInEpoch.virtualDevice.publicKeyBundle,
+                    devicesInEpoch.virtualDevice.keyBundle,
                 ),
             } as VirtualDeviceInEpoch,
             epochDistributionPreSharedKey,
@@ -134,6 +139,7 @@ export async function openNewEpochBasedOnCurrent(
 
     const { openedEpochId } = await webClient.openNewEpochBasedOnCurrent(
         currentEpoch.id,
+        thisDevice.id,
         {
             encryptedNewEpochEntropyForEveryDeviceInEpoch: {
                 deviceIdToEncryptedNewEpochEntropyMap: Object.fromEntries(
@@ -160,16 +166,11 @@ export async function openNewEpochBasedOnCurrent(
                     await generateEpochDeviceMac(
                         newEpochWithoutId,
                         PublicKey.deserialize(
-                            devicesInEpoch.virtualDevice.publicKeyBundle
-                                .deviceKeyPub,
+                            devicesInEpoch.virtualDevice.keyBundle.deviceKeyPub,
                         ),
                     ),
                 ),
             },
-            encryptedCurrentEpochJoinData: await encryptCurrentEpochJoinData(
-                currentEpoch,
-                newEpochWithoutId,
-            ),
         },
     );
 
@@ -180,6 +181,7 @@ export async function openNewEpochBasedOnCurrent(
     };
 }
 
+// @ts-ignore
 async function encryptCurrentEpochJoinData(
     currentEpoch: Epoch,
     newEpochWithoutId: EpochWithoutId,
@@ -243,7 +245,8 @@ async function encryptNewEpochEntropyForEveryDeviceInEpoch(
             currentEpoch,
             deviceInEpoch.publicKeyBundle.deviceKeyPub,
         );
-        if (deviceInEpoch.mac !== expectedEpochDeviceMac) {
+
+        if (!bytes_equal(deviceInEpoch.mac, expectedEpochDeviceMac)) {
             return null;
         }
 
@@ -258,7 +261,7 @@ async function encryptNewEpochEntropyForEveryDeviceInEpoch(
             return null;
         }
 
-        return pk_encrypt(
+        return labyrinth_hpke_encrypt(
             deviceInEpoch.publicKeyBundle.epochStorageKeyPub,
             thisDevice.keyBundle.pub.epochStorageAuthKeyPub,
             thisDevice.keyBundle.priv.epochStorageAuthKeyPriv,
@@ -274,15 +277,24 @@ async function encryptNewEpochEntropyForEveryDeviceInEpoch(
         throw new InvalidVirtualDeviceServerRepresentationError();
     }
 
+    const deviceIdToEncryptedNewEpochEntropyMap = Object.fromEntries(
+        (
+            await Promise.all(
+                devicesInEpoch.map(
+                    async (device) =>
+                        [
+                            device.id,
+                            await encryptNewEpochEntropyForDeviceInEpoch(
+                                device,
+                            ),
+                        ] as const,
+                ),
+            )
+        ).filter((e): e is [string, Uint8Array] => e[1] !== null),
+    );
+
     return {
-        deviceIdToEncryptedNewEpochEntropyMap: Object.fromEntries(
-            devicesInEpoch
-                .map((device) => [
-                    device.id,
-                    encryptNewEpochEntropyForDeviceInEpoch(device),
-                ])
-                .filter((device) => device !== null),
-        ),
+        deviceIdToEncryptedNewEpochEntropyMap,
         virtualDeviceEncryptedNewEpochEntropy,
     };
 }

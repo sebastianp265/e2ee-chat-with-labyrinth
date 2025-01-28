@@ -4,6 +4,10 @@ FROM chat_message;
 DELETE
 FROM device_epoch_membership_proof;
 DELETE
+FROM encrypted_epoch_entropy_for_device;
+DELETE
+FROM encrypted_epoch_entropy_for_virtual_device;
+DELETE
 FROM device;
 DELETE
 FROM virtual_device_encrypted_recovery_secrets;

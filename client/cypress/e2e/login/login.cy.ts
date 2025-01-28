@@ -1,6 +1,8 @@
+import { UserPool } from '../../../cypress';
+
 describe('The Login Page', () => {
     it('sets auth cookie when logging in via form submission', () => {
-        const username = 'user_for_logging_in';
+        const username: UserPool = 'user_for_logging_in';
         const password = '123456';
 
         cy.visit('/login');

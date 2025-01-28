@@ -16,7 +16,10 @@ declare global {
         interface Chainable {
             login(username: UserPool): Chainable<void>;
 
-            loadLabyrinthForUser(username: UserPool): Chainable<void>;
+            loadLabyrinthForUser(
+                username: UserPool,
+                loadFixtureOnly: boolean = false,
+            ): Chainable<void>;
 
             connectToWebSocketAs(username: UserPool): Chainable<void>;
 

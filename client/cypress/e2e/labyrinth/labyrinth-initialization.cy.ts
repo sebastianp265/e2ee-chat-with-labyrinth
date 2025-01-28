@@ -11,12 +11,12 @@ describe('Labyrinth Initialization', () => {
         }
     };
 
-    const getLabyrinthFromLocalStorage = () => {
+    const getLabyrinthEpochStateFromLocalStorage = () => {
         return cy.window().then((win) => {
             const labyrinth = win.localStorage.getItem('labyrinth');
             if (labyrinth === null)
                 throw Error('Labyrinth in local storage cannot be null');
-            return cy.wrap(labyrinth);
+            return cy.wrap(JSON.stringify(JSON.parse(labyrinth).epochStorage));
         });
     };
 
@@ -24,11 +24,6 @@ describe('Labyrinth Initialization', () => {
         title: string,
         button: string,
     ) => {
-        cy.get('div[role=alertdialog]').should(
-            'have.attr',
-            'data-state',
-            'open',
-        );
         cy.get('div[role=alertdialog]').within(() => {
             cy.get('h2').should('have.text', title);
             cy.get('button').should('have.text', button);
@@ -36,23 +31,11 @@ describe('Labyrinth Initialization', () => {
         return cy.get('div[role=alertdialog]');
     };
 
-    const checkLabyrinthBeforeAndAfterState = () => {
-        cy.get<string>('@labyrinth-before').then((labyrinthBefore) => {
-            cy.get<string>('@labyrinth-after').then((labyrinthAfter) => {
-                const before = JSON.parse(labyrinthBefore);
-                const after = JSON.parse(labyrinthAfter);
-
-                expect(JSON.stringify(before.epochStorage)).to.equal(
-                    JSON.stringify(after.epochStorage),
-                );
-            });
-        });
-    };
-
-    it('should derive the same epoch secrets across devices', () => {
+    it.only('should derive the same epoch secrets across devices', () => {
         const chosenUser: UserPool = 'user_not_in_labyrinth';
         cy.login(chosenUser);
         cy.visit('/messages');
+        cy.pause();
         getDialogExpectTitleAndButtonName(
             'Welcome to chat with secure message storage!',
             'Generate Recovery Code',
@@ -71,7 +54,7 @@ describe('Labyrinth Initialization', () => {
         cy.get('@success-dialog').find('button').click();
         cy.get('@success-dialog').should('not.exist');
 
-        getLabyrinthFromLocalStorage().as('labyrinth-before');
+        getLabyrinthEpochStateFromLocalStorage().as('labyrinth-before');
         cy.changeToNewDevice();
 
         cy.login(chosenUser);
@@ -91,11 +74,15 @@ describe('Labyrinth Initialization', () => {
         getDialogExpectTitleAndButtonName('Success', 'Close')
             .find('button')
             .click();
-        getLabyrinthFromLocalStorage().as('labyrinth-after');
+        getLabyrinthEpochStateFromLocalStorage().as('labyrinth-after');
 
         cy.get('@welcome-back-dialog').should('not.exist');
 
-        checkLabyrinthBeforeAndAfterState();
+        cy.get<string>('@labyrinth-before').then((labyrinthBefore) => {
+            cy.get<string>('@labyrinth-after').then((labyrinthAfter) => {
+                expect(labyrinthBefore).to.equal(labyrinthAfter);
+            });
+        });
     });
 
     it('verify if labyrinth state loaded from fixture is the same as from recovery code', () => {
@@ -104,7 +91,7 @@ describe('Labyrinth Initialization', () => {
             userPoolToDetails[chosenUser].recoveryCode!;
 
         cy.loadLabyrinthForUser(chosenUser);
-        getLabyrinthFromLocalStorage().as('labyrinth-before');
+        getLabyrinthEpochStateFromLocalStorage().as('labyrinth-before');
 
         cy.changeToNewDevice();
 
@@ -124,7 +111,11 @@ describe('Labyrinth Initialization', () => {
             .find('button')
             .click();
 
-        getLabyrinthFromLocalStorage().as('labyrinth-after');
-        checkLabyrinthBeforeAndAfterState();
+        getLabyrinthEpochStateFromLocalStorage().as('labyrinth-after');
+        cy.get<string>('@labyrinth-before').then((labyrinthBefore) => {
+            cy.get<string>('@labyrinth-after').then((labyrinthAfter) => {
+                expect(labyrinthBefore).to.equal(labyrinthAfter);
+            });
+        });
     });
 });

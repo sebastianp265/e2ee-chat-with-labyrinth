@@ -22,7 +22,7 @@ export type GetVirtualDeviceRecoverySecretsBody = {
     virtualDeviceId: string;
 };
 
-export type GetVirtualDeviceRecoverySecretsWebClient = {
+export type GetVirtualDeviceRecoverySecretsServerClient = {
     getVirtualDeviceRecoverySecrets: (
         getVirtualDeviceRecoverySecretsBody: GetVirtualDeviceRecoverySecretsBody,
     ) => Promise<GetVirtualDeviceRecoverySecretsResponse>;
@@ -37,7 +37,7 @@ export class VirtualDevice {
         this.keyBundle = keyBundle;
     }
 
-    public static async fromFirstEpoch(userId: string) {
+    public static async initialize(userId: string) {
         const recoveryCode = generateRecoveryCode();
         const { virtualDeviceId, virtualDeviceDecryptionKey } =
             await deriveVirtualDeviceIdAndDecryptionKey(userId, recoveryCode);
@@ -54,7 +54,7 @@ export class VirtualDevice {
     public static async fromRecoveryCode(
         userId: string,
         recoveryCode: string,
-        webClient: GetVirtualDeviceRecoverySecretsWebClient,
+        webClient: GetVirtualDeviceRecoverySecretsServerClient,
     ) {
         const { virtualDeviceId, virtualDeviceDecryptionKey } =
             await deriveVirtualDeviceIdAndDecryptionKey(userId, recoveryCode);

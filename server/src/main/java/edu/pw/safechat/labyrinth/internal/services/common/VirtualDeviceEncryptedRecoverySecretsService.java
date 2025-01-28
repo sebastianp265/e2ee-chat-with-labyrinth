@@ -25,7 +25,6 @@ public class VirtualDeviceEncryptedRecoverySecretsService {
     ) {
         VirtualDevice virtualDevice = virtualDeviceService.getVirtualDeviceByIdAndLabyrinth(virtualDeviceId, labyrinth);
         Example<VirtualDeviceEncryptedRecoverySecrets> example = Example.of(VirtualDeviceEncryptedRecoverySecrets.builder()
-                .labyrinth(labyrinth)
                 .virtualDevice(virtualDevice)
                 .build()
         );
@@ -37,15 +36,13 @@ public class VirtualDeviceEncryptedRecoverySecretsService {
     public void createAndSave(
             VirtualDeviceEncryptedRecoverySecretsDTO virtualDeviceEncryptedRecoverySecretsDTO,
             Epoch epoch,
-            VirtualDevice virtualDevice,
-            Labyrinth labyrinth
+            VirtualDevice virtualDevice
     ) {
         virtualDeviceEncryptedRecoverySecretsRepository.save(
                 virtualDeviceEncryptedRecoverySecretsMapper.toEntity(
                         virtualDeviceEncryptedRecoverySecretsDTO,
                         epoch,
-                        virtualDevice,
-                        labyrinth
+                        virtualDevice
                 )
         );
     }

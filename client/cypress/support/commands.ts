@@ -47,7 +47,7 @@ Cypress.Commands.add('login', (username) => {
     });
 });
 
-Cypress.Commands.add('loadLabyrinthForUser', (username) => {
+Cypress.Commands.add('loadLabyrinthForUser', (username, loadFixtureOnly) => {
     const fullPath = `local-storage/${username}.json`;
     cy.fixture(fullPath).then((obj) => {
         cy.window().then((win) => {
@@ -55,7 +55,9 @@ Cypress.Commands.add('loadLabyrinthForUser', (username) => {
         });
         cy.log(`loaded fixture: ${fullPath}`);
     });
-    cy.task('runSQLs', { filenames: [`${username}.sql`] });
+    if (loadFixtureOnly == false || loadFixtureOnly == undefined) {
+        cy.task('runSQLs', { filenames: [`${username}.sql`] });
+    }
 });
 
 Cypress.Commands.add('connectToWebSocketAs', (username) => {

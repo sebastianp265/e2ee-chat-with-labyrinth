@@ -1,7 +1,7 @@
 import {
     openFirstEpoch,
-    OpenFirstEpochWebClient,
-} from '@/lib/labyrinth/epoch/open-new-epoch.ts';
+    OpenFirstEpochServerClient,
+} from '@/lib/labyrinth/phases/open-first-epoch.ts';
 import {
     DeviceKeyBundle,
     DeviceKeyBundleSerialized,
@@ -9,8 +9,10 @@ import {
 } from '@/lib/labyrinth/device/key-bundle/DeviceKeyBundle.ts';
 import { VirtualDevice } from '@/lib/labyrinth/device/virtual-device/VirtualDevice.ts';
 import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
-import { generateEpochDeviceMac } from '@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts';
-import { Epoch } from '@/lib/labyrinth/epoch/EpochStorage.ts';
+import { generateEpochDeviceMac } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
+import { Epoch, EpochStorage } from '@/lib/labyrinth/EpochStorage.ts';
+import { joinAllEpochs } from '@/lib/labyrinth/phases/join-epoch.ts';
+import { LabyrinthServerClient } from '@/lib/labyrinth/labyrinth-server-client.ts';
 
 export type AuthenticateDeviceToEpochAndRegisterDeviceResponse = {
     assignedDeviceId: string;
@@ -21,7 +23,7 @@ export type AuthenticateDeviceToEpochAndRegisterDeviceRequestBody = {
     epochDeviceMac: string;
 };
 
-export type AuthenticateDeviceToEpochAndRegisterDeviceWebClient = {
+export type AuthenticateDeviceToEpochAndRegisterDeviceServerClient = {
     authenticateDeviceToEpochAndRegisterDevice: (
         epochId: string,
         requestBody: AuthenticateDeviceToEpochAndRegisterDeviceRequestBody,
@@ -42,9 +44,36 @@ export class ThisDevice {
         this.keyBundle = keyBundle;
     }
 
-    public static deserialize(
+    public static async deserialize(
         thisDeviceSerialized: ThisDeviceSerialized,
-    ): ThisDevice {
+        epochStorage: EpochStorage,
+        labyrinthServerClient: LabyrinthServerClient,
+    ): Promise<ThisDevice> {
+        const thisDevice = new ThisDevice(
+            thisDeviceSerialized.id,
+            DeviceKeyBundle.deserialize(thisDeviceSerialized.keyBundle),
+        );
+
+        const newestEpochSequenceIdBefore =
+            epochStorage.getNewestEpoch().sequenceId;
+        await joinAllEpochs(thisDevice, epochStorage, labyrinthServerClient);
+        const newestEpochAfter = epochStorage.getNewestEpoch();
+
+        if (newestEpochSequenceIdBefore != newestEpochAfter.sequenceId) {
+            await labyrinthServerClient.authenticateDeviceToEpoch(
+                newestEpochAfter.id,
+                thisDevice.id,
+                {
+                    epochDeviceMac: BytesSerializer.serialize(
+                        await generateEpochDeviceMac(
+                            newestEpochAfter,
+                            thisDevice.keyBundle.pub.deviceKeyPub,
+                        ),
+                    ),
+                },
+            );
+        }
+
         return new ThisDevice(
             thisDeviceSerialized.id,
             DeviceKeyBundle.deserialize(thisDeviceSerialized.keyBundle),
@@ -58,10 +87,10 @@ export class ThisDevice {
         };
     }
 
-    public static async fromFirstEpoch(
+    public static async initialize(
         virtualDevice: VirtualDevice,
         virtualDeviceDecryptionKey: Uint8Array,
-        labyrinthWebClient: OpenFirstEpochWebClient,
+        labyrinthWebClient: OpenFirstEpochServerClient,
     ) {
         const deviceKeyBundle = DeviceKeyBundle.generate();
 
@@ -82,7 +111,7 @@ export class ThisDevice {
 
     public static async fromRecoveryCode(
         newestRecoveredEpoch: Epoch,
-        webClient: AuthenticateDeviceToEpochAndRegisterDeviceWebClient,
+        webClient: AuthenticateDeviceToEpochAndRegisterDeviceServerClient,
     ) {
         const deviceKeyBundle = DeviceKeyBundle.generate();
 

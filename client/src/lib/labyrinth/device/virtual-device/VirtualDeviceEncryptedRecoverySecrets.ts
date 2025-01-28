@@ -1,5 +1,5 @@
 import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
-import { EpochWithoutId } from '@/lib/labyrinth/epoch/EpochStorage.ts';
+import { EpochWithoutId } from '@/lib/labyrinth/EpochStorage.ts';
 import {
     VirtualDeviceKeyBundle,
     VirtualDevicePrivateKeyBundle,

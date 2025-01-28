@@ -17,8 +17,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OpenFirstEpochService {
 
-    private static final String FIRST_SEQUENCE_ID = "0";
-
     private final DeviceService deviceService;
     private final EpochService epochService;
     private final LabyrinthService labyrinthService;
@@ -36,7 +34,7 @@ public class OpenFirstEpochService {
 
         Epoch epoch = epochService.createAndSave(
                 labyrinth,
-                FIRST_SEQUENCE_ID
+                Epoch.FIRST_SEQUENCE_ID
         );
 
         Device device = deviceService.createAndSave(
@@ -64,8 +62,7 @@ public class OpenFirstEpochService {
         virtualDeviceEncryptedRecoverySecretsService.createAndSave(
                 openFirstEpochBodyDTO.virtualDeviceEncryptedRecoverySecrets(),
                 epoch,
-                virtualDevice,
-                labyrinth
+                virtualDevice
         );
 
         return new OpenFirstEpochResponseDTO(device.getId(), epoch.getId());

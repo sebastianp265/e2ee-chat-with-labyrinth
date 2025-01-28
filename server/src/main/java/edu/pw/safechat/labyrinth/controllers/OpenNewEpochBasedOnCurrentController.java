@@ -1,10 +1,10 @@
 package edu.pw.safechat.labyrinth.controllers;
 
 import edu.pw.safechat.chat.services.ChatInboxService;
-import edu.pw.safechat.labyrinth.dtos.GetDevicesInEpochResponseDTO;
+import edu.pw.safechat.labyrinth.dtos.AllDevicesDTO;
 import edu.pw.safechat.labyrinth.dtos.OpenNewEpochBasedOnCurrentBodyDTO;
 import edu.pw.safechat.labyrinth.dtos.OpenNewEpochBasedOnCurrentResponseDTO;
-import edu.pw.safechat.labyrinth.internal.services.GetDevicesService;
+import edu.pw.safechat.labyrinth.internal.services.OpenNewEpochBasedOnCurrentService;
 import edu.pw.safechat.user.internal.services.ChatUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +18,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OpenNewEpochBasedOnCurrentController {
 
-    private final GetDevicesService getDevicesService;
+    private final OpenNewEpochBasedOnCurrentService openNewEpochBasedOnCurrentService;
     private final ChatUserService chatUserService;
     private final ChatInboxService chatInboxService;
 
     @GetMapping("/{epochId}/devices")
-    public ResponseEntity<GetDevicesInEpochResponseDTO> getDevicesInEpoch(
+    public ResponseEntity<AllDevicesDTO> getDevicesInEpoch(
             @PathVariable UUID epochId,
             Authentication authentication
     ) {
@@ -31,19 +31,30 @@ public class OpenNewEpochBasedOnCurrentController {
         UUID inboxId = chatInboxService.getChatInboxByUserId(userId);
 
         return ResponseEntity.ok(
-                getDevicesService.getDevicesInEpoch(
+                openNewEpochBasedOnCurrentService.getDevicesInEpoch(
                         epochId,
                         inboxId
                 )
         );
     }
 
-    @PostMapping("/open-based-on-current/{currentEpochId}")
+    @PostMapping("/open-based-on-current/{currentEpochId}/by-device/{deviceId}")
     public ResponseEntity<OpenNewEpochBasedOnCurrentResponseDTO> openNewEpochBasedOnCurrent(
             @PathVariable UUID currentEpochId,
+            @PathVariable UUID deviceId,
             @RequestBody OpenNewEpochBasedOnCurrentBodyDTO openNewEpochBasedOnCurrentBodyDTO,
             Authentication authentication
     ) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        UUID userId = chatUserService.getUserIdByAuthentication(authentication);
+        UUID inboxId = chatInboxService.getChatInboxByUserId(userId);
+
+        return ResponseEntity.ok(
+                openNewEpochBasedOnCurrentService.openNewEpochBasedOnCurrent(
+                        currentEpochId,
+                        deviceId,
+                        openNewEpochBasedOnCurrentBodyDTO,
+                        inboxId
+                )
+        );
     }
 }

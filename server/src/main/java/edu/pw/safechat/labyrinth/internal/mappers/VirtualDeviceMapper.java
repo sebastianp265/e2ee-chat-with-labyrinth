@@ -16,4 +16,6 @@ public interface VirtualDeviceMapper {
             VirtualDevicePublicKeyBundleDTO virtualDevicePublicKeyBundleDTO,
             Labyrinth labyrinth
     );
+
+
 }

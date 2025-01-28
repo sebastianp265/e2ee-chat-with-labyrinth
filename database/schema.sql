@@ -55,12 +55,13 @@ CREATE TABLE epoch
 CREATE TABLE device
 (
     id                         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    labyrinth_id               UUID  NOT NULL REFERENCES labyrinth,
-    device_key_pub             BYTEA NOT NULL,
-    epoch_storage_key_pub      BYTEA NOT NULL,
-    epoch_storage_key_sig      BYTEA NOT NULL,
-    epoch_storage_auth_key_pub BYTEA NOT NULL,
-    epoch_storage_auth_key_sig BYTEA NOT NULL
+    labyrinth_id               UUID                           NOT NULL REFERENCES labyrinth,
+    device_key_pub             BYTEA                          NOT NULL,
+    epoch_storage_key_pub      BYTEA                          NOT NULL,
+    epoch_storage_key_sig      BYTEA                          NOT NULL,
+    epoch_storage_auth_key_pub BYTEA                          NOT NULL,
+    epoch_storage_auth_key_sig BYTEA                          NOT NULL,
+    last_active_at             TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL
 );
 
 CREATE TABLE device_epoch_membership_proof
@@ -90,7 +91,6 @@ CREATE TABLE virtual_device_epoch_membership_proof
 CREATE TABLE virtual_device_encrypted_recovery_secrets
 (
     id                               BIGSERIAL PRIMARY KEY,
-    labyrinth_id                     UUID  NOT NULL REFERENCES labyrinth,
     virtual_device_id                BYTEA NOT NULL REFERENCES virtual_device,
     epoch_id                         UUID  NOT NULL REFERENCES epoch,
     encrypted_device_key_priv        BYTEA NOT NULL,
@@ -113,3 +113,20 @@ CREATE TABLE chat_message
 
 CREATE INDEX inbox_thread_timestamp_index
     ON chat_message (inbox_id, thread_id, timestamp);
+
+CREATE TABLE encrypted_epoch_entropy_for_device
+(
+    id                      BIGSERIAL PRIMARY KEY,
+    epoch_id                UUID  NOT NULL REFERENCES epoch,
+    sender_device_id        UUID  NOT NULL REFERENCES device,
+    recipient_device_id     UUID  NOT NULL REFERENCES device,
+    encrypted_epoch_entropy BYTEA NOT NULL
+);
+
+CREATE TABLE encrypted_epoch_entropy_for_virtual_device
+(
+    id                      BIGSERIAL PRIMARY KEY,
+    epoch_id                UUID  NOT NULL REFERENCES epoch,
+    sender_device_id        UUID  NOT NULL REFERENCES device,
+    encrypted_epoch_entropy BYTEA NOT NUll
+)

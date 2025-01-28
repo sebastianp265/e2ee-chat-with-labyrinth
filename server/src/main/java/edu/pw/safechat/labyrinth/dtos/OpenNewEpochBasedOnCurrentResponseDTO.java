@@ -1,4 +1,8 @@
 package edu.pw.safechat.labyrinth.dtos;
 
-public record OpenNewEpochBasedOnCurrentResponseDTO() {
+import java.util.UUID;
+
+public record OpenNewEpochBasedOnCurrentResponseDTO(
+        UUID openedEpochId
+) {
 }

@@ -16,9 +16,6 @@ public class VirtualDeviceEncryptedRecoverySecrets {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    private Labyrinth labyrinth;
-
     @OneToOne(optional = false)
     private VirtualDevice virtualDevice;
 

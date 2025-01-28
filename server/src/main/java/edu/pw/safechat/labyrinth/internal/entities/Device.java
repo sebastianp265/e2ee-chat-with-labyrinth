@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -34,5 +35,8 @@ public class Device {
     private byte[] epochStorageAuthKeyPub;
     @Column(nullable = false)
     private byte[] epochStorageAuthKeySig;
+
+    @Column(nullable = false)
+    private Instant lastActiveAt;
 
 }

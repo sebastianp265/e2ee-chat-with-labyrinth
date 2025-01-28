@@ -2,26 +2,25 @@ import {
     Epoch,
     EpochStorage,
     EpochStorageSerialized,
-} from '@/lib/labyrinth/epoch/EpochStorage.ts';
-import { joinAllEpochs } from '@/lib/labyrinth/epoch/join-epoch.ts';
+} from '@/lib/labyrinth/EpochStorage.ts';
+import { joinAllEpochs } from '@/lib/labyrinth/phases/join-epoch.ts';
 import {
     decrypt,
     encrypt,
 } from '@/lib/labyrinth/crypto/authenticated-symmetric-encryption.ts';
-import { LabyrinthWebClient } from '@/lib/labyrinth/labyrinth-web-client.ts';
 import { kdf_one_key } from '@/lib/labyrinth/crypto/key-derivation.ts';
-import { generateEpochDeviceMac } from '@/lib/labyrinth/epoch/authenticate-device-to-epoch.ts';
 import {
     ThisDevice,
     ThisDeviceSerialized,
 } from '@/lib/labyrinth/device/device.ts';
-import { BytesSerializer } from '@/lib/labyrinth/BytesSerializer.ts';
 import { VirtualDevice } from '@/lib/labyrinth/device/virtual-device/VirtualDevice.ts';
 import {
     asciiStringToBytes,
     base64StringToBytes,
     bytesToBase64String,
 } from '@/lib/labyrinth/crypto/utils.ts';
+import { openNewEpochBasedOnCurrent } from '@/lib/labyrinth/phases/open-new-epoch-based-on-current.ts';
+import { LabyrinthServerClient } from './labyrinth-server-client';
 
 export type LabyrinthSerialized = {
     thisDevice: ThisDeviceSerialized;
@@ -32,8 +31,20 @@ export type CheckIfLabyrinthIsInitializedResponse = {
     isInitialized: boolean;
 };
 
-export type CheckIfLabyrinthIsInitializedWebClient = {
+export type CheckIfLabyrinthIsInitializedServerClient = {
     checkIfLabyrinthIsInitialized: () => Promise<CheckIfLabyrinthIsInitializedResponse>;
+};
+
+export type NotifyAboutDeviceActivityServerClient = {
+    notifyAboutDeviceActivity: (deviceId: string) => Promise<void>;
+};
+
+export type CheckIfAnyDeviceExceedInactivityLimitResponseDTO = {
+    didAnyDeviceExceedInactivityLimit: boolean;
+};
+
+export type CheckIfAnyDeviceExceedInactivityLimitServerClient = {
+    checkIfAnyDeviceExceedInactivityLimit: () => Promise<CheckIfAnyDeviceExceedInactivityLimitResponseDTO>;
 };
 
 const textEncoder = new TextEncoder();
@@ -45,22 +56,22 @@ export class Labyrinth {
     private readonly epochStorage: EpochStorage;
 
     public static async checkIfLabyrinthIsInitialized(
-        labyrinthWebClient: LabyrinthWebClient,
+        labyrinthServerClient: LabyrinthServerClient,
     ) {
-        return await labyrinthWebClient.checkIfLabyrinthIsInitialized();
+        return await labyrinthServerClient.checkIfLabyrinthIsInitialized();
     }
 
-    public static async fromFirstEpoch(
+    public static async initialize(
         userId: string,
-        labyrinthWebClient: LabyrinthWebClient,
+        labyrinthServerClient: LabyrinthServerClient,
     ) {
         const { virtualDevice, virtualDeviceDecryptionKey, recoveryCode } =
-            await VirtualDevice.fromFirstEpoch(userId);
+            await VirtualDevice.initialize(userId);
 
-        const { firstEpoch, thisDevice } = await ThisDevice.fromFirstEpoch(
+        const { firstEpoch, thisDevice } = await ThisDevice.initialize(
             virtualDevice,
             virtualDeviceDecryptionKey,
-            labyrinthWebClient,
+            labyrinthServerClient,
         );
 
         const epochStorage = EpochStorage.createEmpty();
@@ -77,70 +88,55 @@ export class Labyrinth {
     public static async fromRecoveryCode(
         userId: string,
         recoveryCode: string,
-        labyrinthWebClient: LabyrinthWebClient,
+        labyrinthServerClient: LabyrinthServerClient,
     ): Promise<Labyrinth> {
         const { virtualDevice, epoch } = await VirtualDevice.fromRecoveryCode(
             userId,
             recoveryCode,
-            labyrinthWebClient,
+            labyrinthServerClient,
         );
 
         const epochStorage = EpochStorage.createEmpty();
         epochStorage.add(epoch);
 
-        await joinAllEpochs(
-            virtualDevice.keyBundle,
-            epochStorage,
-            labyrinthWebClient,
-        );
+        await joinAllEpochs(virtualDevice, epochStorage, labyrinthServerClient);
 
         const newestRecoveredEpoch = epochStorage.getNewestEpoch();
         const thisDevice = await ThisDevice.fromRecoveryCode(
             newestRecoveredEpoch,
-            labyrinthWebClient,
+            labyrinthServerClient,
         );
 
+        await labyrinthServerClient.notifyAboutDeviceActivity(thisDevice.id);
+        await checkIfAnyDeviceExceededInactivityLimitAndOpenNewEpochIfNeeded(
+            labyrinthServerClient,
+            thisDevice,
+            epochStorage,
+        );
         return new Labyrinth(thisDevice, epochStorage);
     }
 
     public static async deserialize(
         labyrinthSerialized: LabyrinthSerialized,
-        labyrinthWebClient: LabyrinthWebClient,
+        labyrinthServerClient: LabyrinthServerClient,
     ): Promise<Labyrinth> {
         const {
             thisDevice: thisDeviceSerialized,
             epochStorage: epochStorageSerialized,
         } = labyrinthSerialized;
-        const thisDevice = ThisDevice.deserialize(thisDeviceSerialized);
         const epochStorage = EpochStorage.deserialize(epochStorageSerialized);
-
-        const newestEpochBeforePotentiallyJoiningNewer =
-            epochStorage.getNewestEpoch();
-        await joinAllEpochs(
-            thisDevice.keyBundle,
+        const thisDevice = await ThisDevice.deserialize(
+            thisDeviceSerialized,
             epochStorage,
-            labyrinthWebClient,
+            labyrinthServerClient,
         );
-        const newestEpochAfter = epochStorage.getNewestEpoch();
 
-        const hasJoinedNewerEpoch =
-            newestEpochBeforePotentiallyJoiningNewer.sequenceId !==
-            newestEpochAfter.sequenceId;
-
-        if (hasJoinedNewerEpoch) {
-            await labyrinthWebClient.authenticateDeviceToEpoch(
-                newestEpochAfter.id,
-                {
-                    epochDeviceMac: BytesSerializer.serialize(
-                        await generateEpochDeviceMac(
-                            newestEpochAfter,
-                            thisDevice.keyBundle.pub.deviceKeyPub,
-                        ),
-                    ),
-                },
-            );
-        }
-
+        await labyrinthServerClient.notifyAboutDeviceActivity(thisDevice.id);
+        await checkIfAnyDeviceExceededInactivityLimitAndOpenNewEpochIfNeeded(
+            labyrinthServerClient,
+            thisDevice,
+            epochStorage,
+        );
         return new Labyrinth(thisDevice, epochStorage);
     }
 
@@ -163,7 +159,10 @@ export class Labyrinth {
     ): Promise<string> {
         return bytesToBase64String(
             await encrypt(
-                await this.getEncryptionKey(threadId, epochSequenceId),
+                await deriveMessageKey(
+                    threadId,
+                    this.epochStorage.getEpoch(epochSequenceId),
+                ),
                 asciiStringToBytes(`message_thread_${threadId}`),
                 textEncoder.encode(plaintext),
             ),
@@ -177,20 +176,13 @@ export class Labyrinth {
     ): Promise<string> {
         return textDecoder.decode(
             await decrypt(
-                await this.getEncryptionKey(threadId, epochSequenceId),
+                await deriveMessageKey(
+                    threadId,
+                    this.epochStorage.getEpoch(epochSequenceId),
+                ),
                 asciiStringToBytes(`message_thread_${threadId}`),
                 base64StringToBytes(ciphertext),
             ),
-        );
-    }
-
-    private async getEncryptionKey(
-        threadId: string,
-        epochSequenceId: string,
-    ): Promise<Uint8Array> {
-        return await deriveMessageKey(
-            threadId,
-            this.epochStorage.getEpoch(epochSequenceId),
         );
     }
 
@@ -213,4 +205,22 @@ function deriveMessageKey(threadId: string, epoch: Epoch) {
             `message_key_in_epoch_${epoch.sequenceId}_cipher_version_${CIPHER_VERSION}_${threadId}`,
         ),
     );
+}
+
+async function checkIfAnyDeviceExceededInactivityLimitAndOpenNewEpochIfNeeded(
+    labyrinthServerClient: LabyrinthServerClient,
+    thisDevice: ThisDevice,
+    epochStorage: EpochStorage,
+) {
+    const { didAnyDeviceExceedInactivityLimit } =
+        await labyrinthServerClient.checkIfAnyDeviceExceedInactivityLimit();
+
+    if (didAnyDeviceExceedInactivityLimit) {
+        const newCreatedEpoch = await openNewEpochBasedOnCurrent(
+            epochStorage.getNewestEpoch(),
+            labyrinthServerClient,
+            thisDevice,
+        );
+        epochStorage.add(newCreatedEpoch);
+    }
 }

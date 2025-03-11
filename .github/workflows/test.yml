@@ -14,13 +14,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Backend Image
-        run: docker-compose -f docker-compose-test.yml build server
+        run: docker compose -f docker-compose-test.yml build server
 
       - name: Build Frontend Image
-        run: docker-compose -f docker-compose-test.yml build client
+        run: docker compose -f docker-compose-test.yml build client
 
       - name: Verify Built Images
         run: docker images
@@ -33,13 +33,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Start Full Stack Services
-        run: docker-compose -f docker-compose-test.yml up -d
+        run: docker compose -f docker-compose-test.yml up -d
 
       - name: Wait for Services to Be Ready
         run: sleep 10
 
       - name: Run Cypress Tests
-        run: docker-compose exec client npx cypress run
+        run: docker compose exec client npx cypress run
 
       - name: Stop Services
-        run: docker-compose down
+        run: docker compose down

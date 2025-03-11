@@ -1,7 +1,23 @@
-version: "3.8"
-
 services:
+  #  TODO: setup client
+
+  server:
+    build: server
+    ports:
+      - '8080:8080'
+    environment:
+      POSTGRES_HOST: server_db
+      POSTGRES_PORT: 5432
+      REDIS_HOST: temporary_message_storage
+      REDIS_PORT: 6379
+    depends_on:
+      - server_db
+      - temporary_message_storage
+    networks:
+      - network_server_db
+
   server_db:
+    container_name: server_db
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: server
@@ -21,12 +37,15 @@ services:
       retries: 20
 
   temporary_message_storage:
+    container_name: temporary_message_storage
     image:
       redis:7.4-alpine
     ports:
       - '6379:6379'
     volumes:
       - redis_db:/data
+    networks:
+      - network_server_db
 
 volumes:
   db:

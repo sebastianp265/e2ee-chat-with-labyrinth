@@ -9,14 +9,12 @@ import useLabyrinth, {
 
 export default function MessagesPage({
     sessionExpired,
-    inactivateSession,
 }: Readonly<ISessionProps>) {
     const { loggedUserId } = usePrivateRouteContext();
     const {
         labyrinth,
         initialLoadState,
         retryInitialization,
-        error,
         setLabyrinthFromRecoveryCode,
         setLabyrinthFromFirstEpoch,
     } = useLabyrinth(loggedUserId);

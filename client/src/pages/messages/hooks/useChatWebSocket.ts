@@ -73,7 +73,7 @@ export default function useChatWebSocket(
         },
         shouldConnect,
     );
-    const [error, setError] = useState<null | unknown>();
+    const [error] = useState<null | unknown>();
 
     useEffect(() => {
         if (lastJsonMessage === null) return;

@@ -11,9 +11,9 @@ logging:
 
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/server
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${SERVER_DB_HOST}:${SERVER_DB_PORT}/${SERVER_DB_NAME}
+    username: ${SERVER_DB_USER}
+    password: ${SERVER_DB_PASSWORD}
 
   jpa:
     hibernate:

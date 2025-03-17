@@ -42,7 +42,7 @@ export default function useLabyrinth(loggedUserId: string) {
     );
 
     const [labyrinth, setLabyrinth] = useState<Labyrinth | null>(null);
-    const [error, setError] = useState<AxiosError | null>(null);
+    const [error] = useState<AxiosError | null>(null);
 
     useEffect(() => {
         if (initialLoadState === LabyrinthLoadState.NOT_INITIALIZED) {

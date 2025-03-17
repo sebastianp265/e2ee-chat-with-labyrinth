@@ -35,7 +35,6 @@ describe('Labyrinth Initialization', () => {
         const chosenUser: UserPool = 'user_not_in_labyrinth';
         cy.login(chosenUser);
         cy.visit('/messages');
-        cy.pause();
         getDialogExpectTitleAndButtonName(
             'Welcome to chat with secure message storage!',
             'Generate Recovery Code',

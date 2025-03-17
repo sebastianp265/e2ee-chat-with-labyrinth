@@ -55,20 +55,19 @@ export default function ChatContent({
     const {
         threadsDataStore,
         chosenThreadId,
-        error: threadsDataError,
         setChosenThreadId,
         addMessage,
         addThread,
     } = useThreadsData(labyrinth);
 
-    const { friends, error: friendsDataError, addFriends } = useFriendsData();
+    const { friends } = useFriendsData();
 
     const shouldConnect = useMemo(() => labyrinth !== null, [labyrinth]);
-    const {
-        sendChatMessage,
-        createChatThread,
-        error: chatWebSocketError,
-    } = useChatWebSocket(shouldConnect, addMessage, addThread);
+    const { sendChatMessage, createChatThread } = useChatWebSocket(
+        shouldConnect,
+        addMessage,
+        addThread,
+    );
 
     const [createThreadOpen, setCreateThreadOpen] = useState<boolean>(false);
 

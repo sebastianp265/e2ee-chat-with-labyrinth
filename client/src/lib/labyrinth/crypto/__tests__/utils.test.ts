@@ -4,6 +4,7 @@ import {
     bytesToAsciiString,
     bytesToBase64String,
 } from '@/lib/labyrinth/crypto/utils.ts';
+import { describe, expect, test } from 'vitest';
 
 describe('utils test', () => {
     test('Converting all possible bytes to ascii string is reversible', () => {

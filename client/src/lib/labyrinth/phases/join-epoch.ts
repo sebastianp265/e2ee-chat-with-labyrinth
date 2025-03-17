@@ -180,6 +180,7 @@ function getEpochJoinDataForDeviceInEpochWithSequenceId(
     }
 }
 
+// @ts-ignore
 async function chainBackwards(
     epochStorage: EpochStorage,
     joinEpochWebClient: JoinEpochServerClient,

@@ -101,7 +101,7 @@ describe('Creating threads', () => {
         });
     }
 
-    it.only('alice creates thread with initial message and bob should receive it and this thread persists after reload', () => {
+    it('alice creates thread with initial message and bob should receive it and this thread persists after reload', () => {
         const alice: UserPool = 'user_in_labyrinth_alice';
         const bob: UserPool = 'user_in_labyrinth_bob';
 
@@ -123,19 +123,14 @@ describe('Creating threads', () => {
             [alice, 'Both are long-haired German Shepherds :)'],
         ];
 
-        cy.pause();
-
         createThread([bob], userMessagePairs);
 
-        cy.pause();
         checkChatThreadContent([alice, bob], [userMessagePairs[0]]);
 
         performSendingMessages(alice, [bob], userMessagePairs.slice(1));
         checkChatThreadContent([alice, bob], userMessagePairs);
 
         cy.reload();
-
-        cy.pause();
 
         checkChatThreadContent([alice, bob], userMessagePairs);
     });

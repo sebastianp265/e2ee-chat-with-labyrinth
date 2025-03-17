@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DEFAULT_DOCKER_DB="e2ee-chat-with-labirynth-server_db-1"
-DEFAULT_DOCKER_TEMP_MESSAGE_STORAGE="e2ee-chat-with-labirynth-temporary_message_storage-1"
+DEFAULT_DOCKER_DB="server_db"
+DEFAULT_DOCKER_TEMP_MESSAGE_STORAGE="server_temp_db"
 
 docker_db=${1:-$DEFAULT_DOCKER_DB}
 docker_temp_message_storage=${2:-$DEFAULT_DOCKER_TEMP_MESSAGE_STORAGE}

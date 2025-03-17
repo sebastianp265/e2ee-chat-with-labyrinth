@@ -21,15 +21,8 @@ Currently, user creation is **not supported**, but a **predefined user pool** is
 To seed the database, run the following script:
 
 ```shell
-./script.sh [DOCKER_DB] [DOCKER_TEMP_MESSAGE_STORAGE]
+./manual-testing/prepare.sh
 ```
-
-#### Script Arguments
-
-| Argument                      | Description                             | Default Value                                          |
-|-------------------------------|-----------------------------------------|--------------------------------------------------------|
-| `DOCKER_DB`                   | Name of the PostgreSQL Docker container | `e2ee-chat-with-labirynth-server_db-1`                 |
-| `DOCKER_TEMP_MESSAGE_STORAGE` | Name of the Redis Docker container      | `e2ee-chat-with-labirynth-temporary_message_storage-1` |
 
 ### Open the Application
 

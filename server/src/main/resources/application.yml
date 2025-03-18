@@ -1,6 +1,6 @@
 app:
   labyrinth:
-    max-device-inactivity-seconds: 86400
+    max-device-inactivity: ${LABYRINTH_MAX_DEVICE_INACTIVITY}
 
 logging:
   level:

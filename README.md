@@ -28,7 +28,7 @@ To seed the database, run the following script:
 
 After the database is seeded, open the app in your browser:
 
-🔗 **[http://localhost:5173](http://localhost:5173)**
+🔗 **[http://localhost:4173](http://localhost:4173)**
 
 You can log in with one of the following test users:
 
@@ -38,3 +38,17 @@ You can log in with one of the following test users:
 
 The password for all users is:  
 `123456`
+
+## For Automated Tests With Cypress
+
+Run the following command to start the necessary containers:
+
+```shell
+docker compose --env-file .env.test up --build
+```
+
+Run Cypress inside 'client' directory
+
+```shell
+npm run cypress:test
+```

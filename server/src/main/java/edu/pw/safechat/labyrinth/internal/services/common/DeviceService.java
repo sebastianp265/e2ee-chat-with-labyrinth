@@ -13,8 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.Period;
 import java.util.UUID;
 
 @Service
@@ -25,7 +25,7 @@ public class DeviceService {
     private final DeviceMapper deviceMapper;
 
     @Value("${app.labyrinth.max-device-inactivity}")
-    private Period maxDeviceInactivity;
+    private Duration maxDeviceInactivity;
 
     public Device createAndSave(
             DevicePublicKeyBundleDTO devicePublicKeyBundleDTO,

@@ -13,6 +13,13 @@ import SessionCheckWrapper from '@/SessionCheckWrapper.tsx';
 import Hello from '@/pages/hello/Hello.tsx';
 import MessagesPage from '@/pages/messages/MessagesPage.tsx';
 import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY } from '@/constants.ts';
+import { bytesSerializerProvider } from '@sebastianp265/safe-server-side-storage-client';
+import { base64StringToBytes, bytesToBase64String } from '@/lib/utils.ts';
+
+bytesSerializerProvider.bytesSerializer = {
+    serialize: bytesToBase64String,
+    deserialize: base64StringToBytes,
+};
 
 type PrivateRouteContext = {
     loggedUserId: string;

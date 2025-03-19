@@ -1,7 +1,9 @@
 import { UserPool } from '../../../cypress';
 import { userPoolToDetails } from '../../support/commands.ts';
 import { NewChatThreadToSendPayload } from '@/pages/messages/hooks/useChatWebSocket.ts';
-import { EpochStorage } from '@/lib/labyrinth/EpochStorage.ts';
+import { EpochStorage } from '@sebastianp265/safe-server-side-storage-client/EpochStorage';
+import { bytesSerializerProvider } from '@sebastianp265/safe-server-side-storage-client';
+import { base64StringToBytes, bytesToBase64String } from '@/lib/utils.ts';
 
 describe('Opening new epochs', () => {
     const alice: UserPool = 'user_in_labyrinth_alice';
@@ -49,6 +51,10 @@ describe('Opening new epochs', () => {
             if (!labyrinth) {
                 throw new Error();
             }
+            bytesSerializerProvider.bytesSerializer = {
+                serialize: bytesToBase64String,
+                deserialize: base64StringToBytes,
+            };
             const epochStorage: EpochStorage = EpochStorage.deserialize(
                 JSON.parse(labyrinth).epochStorage,
             );

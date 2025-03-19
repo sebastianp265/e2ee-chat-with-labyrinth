@@ -31,7 +31,7 @@ describe('Labyrinth Initialization', () => {
         return cy.get('div[role=alertdialog]');
     };
 
-    it.only('should derive the same epoch secrets across devices', () => {
+    it('should derive the same epoch secrets across devices', () => {
         const chosenUser: UserPool = 'user_not_in_labyrinth';
         cy.login(chosenUser);
         cy.visit('/messages');

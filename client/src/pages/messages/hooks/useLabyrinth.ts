@@ -1,10 +1,13 @@
 import { LABYRINTH_INSTANCE_KEY } from '@/constants.ts';
-import { Labyrinth, LabyrinthSerialized } from '@/lib/labyrinth/Labyrinth.ts';
 import labyrinthWebClientImpl from '@/api/labyrinthWebClientImpl.ts';
 import { useEffect, useMemo, useState } from 'react';
 import { HandleSubmitRecoveryCodeResponse } from '@/components/app/welcome-to-labyrinth/RecoverSecretsDialogContentChildren.tsx';
 import { HandleGenerateRecoveryCodeResponse } from '@/components/app/welcome-to-labyrinth/GenerateRecoveryCodeAlertDialogContentChildren.tsx';
 import { AxiosError } from 'axios';
+import {
+    Labyrinth,
+    LabyrinthSerialized,
+} from '@sebastianp265/safe-server-side-storage-client';
 
 export enum LabyrinthLoadState {
     LOADING,

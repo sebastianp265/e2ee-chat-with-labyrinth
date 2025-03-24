@@ -1,38 +1,37 @@
 import httpClient from '@/api/httpClient.ts';
 import {
-    OpenFirstEpochResponse,
-    OpenFirstEpochServerClient,
-} from '@/lib/labyrinth/phases/open-first-epoch.ts';
+    GetVirtualDeviceRecoverySecretsResponse,
+    GetVirtualDeviceRecoverySecretsServerClient,
+} from '@sebastianp265/safe-server-side-storage-client/device/virtual-device/VirtualDevice';
 import {
     GetNewerEpochJoinDataResponse,
     GetNewestEpochSequenceIdResponse,
     GetOlderEpochJoinDataResponse,
     JoinEpochServerClient,
-} from '@/lib/labyrinth/phases/join-epoch.ts';
-
-import { AuthenticateDeviceToEpochServerClient } from '@/lib/labyrinth/phases/authenticate-device-to-epoch.ts';
+} from '@sebastianp265/safe-server-side-storage-client/phases/join-epoch';
+import {
+    OpenFirstEpochResponse,
+    OpenFirstEpochServerClient,
+} from '@sebastianp265/safe-server-side-storage-client/phases/open-first-epoch';
+import {
+    GetDevicesInEpochResponse,
+    OpenNewEpochBasedOnCurrentResponse,
+    OpenNewEpochBasedOnCurrentServerClient,
+} from '@sebastianp265/safe-server-side-storage-client/phases/open-new-epoch-based-on-current';
+import { AuthenticateDeviceToEpochServerClient } from '@sebastianp265/safe-server-side-storage-client/phases/authenticate-device-to-epoch';
 import {
     AuthenticateDeviceToEpochAndRegisterDeviceRequestBody,
     AuthenticateDeviceToEpochAndRegisterDeviceResponse,
     AuthenticateDeviceToEpochAndRegisterDeviceServerClient,
-} from '@/lib/labyrinth/device/device.ts';
+} from '@sebastianp265/safe-server-side-storage-client/device/ThisDevice';
 import {
     CheckIfAnyDeviceExceedInactivityLimitResponseDTO,
     CheckIfAnyDeviceExceedInactivityLimitServerClient,
     CheckIfLabyrinthIsInitializedResponse,
     CheckIfLabyrinthIsInitializedServerClient,
+    LabyrinthServerClient,
     NotifyAboutDeviceActivityServerClient,
-} from '@/lib/labyrinth/Labyrinth.ts';
-import {
-    GetVirtualDeviceRecoverySecretsResponse,
-    GetVirtualDeviceRecoverySecretsServerClient,
-} from '@/lib/labyrinth/device/virtual-device/VirtualDevice.ts';
-import {
-    GetDevicesInEpochResponse,
-    OpenNewEpochBasedOnCurrentResponse,
-    OpenNewEpochBasedOnCurrentServerClient,
-} from '@/lib/labyrinth/phases/open-new-epoch-based-on-current.ts';
-import { LabyrinthServerClient } from '@/lib/labyrinth/labyrinth-server-client.ts';
+} from '@sebastianp265/safe-server-side-storage-client';
 
 const labyrinthServicePrefix = '/api/labyrinth-service';
 

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useReducer, useState } from 'react';
-import { Labyrinth } from '@/lib/labyrinth/Labyrinth.ts';
 import { AxiosError } from 'axios';
 import {
     ChatMessageGetDTO,
@@ -7,19 +6,11 @@ import {
     chatService,
 } from '@/api/chatService.ts';
 import { z } from 'zod';
-
-export type ThreadsDataStore = {
-    map: {
-        [threadId: string]: {
-            threadName: string | null;
-            messages: Message[];
-            membersVisibleNameByUserId: {
-                [userId: string]: string;
-            };
-        };
-    };
-    keys: string[];
-};
+import {
+    bytesSerializerProvider,
+    Labyrinth,
+} from '@sebastianp265/safe-server-side-storage-client';
+import { threadsDataReducer } from '@/pages/messages/utils/threadsData.ts';
 
 const MessageSchema = z.object({
     id: z.string(),
@@ -55,15 +46,22 @@ const LabyrinthMessageDataSchema = z.object({
 
 type LabyrinthMessageData = z.infer<typeof LabyrinthMessageDataSchema>;
 
-async function decryptMessage(
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+function decryptMessage(
     labyrinth: Labyrinth,
     chosenThreadId: string,
     encryptedMessage: ChatMessageGetDTO,
-): Promise<Message> {
-    const decryptedMessageData = await labyrinth.decrypt(
-        chosenThreadId,
-        encryptedMessage.epochSequenceId,
-        encryptedMessage.encryptedMessageData,
+): Message {
+    const decryptedMessageData = textDecoder.decode(
+        labyrinth.decrypt(
+            chosenThreadId,
+            encryptedMessage.epochSequenceId,
+            bytesSerializerProvider.bytesSerializer.deserialize(
+                encryptedMessage.encryptedMessageData,
+            ),
+        ),
     );
 
     const { content, authorId } = LabyrinthMessageDataSchema.parse(
@@ -83,125 +81,28 @@ async function encryptMessageAndStoreInLabyrinth(
     threadId: string,
     message: Message,
 ) {
-    async function createMessagePostDTO(m: Message) {
-        const newestEpochId = labyrinth.getNewestEpochId();
-        const newestEpochSequenceId = labyrinth.getNewestEpochSequenceId();
-        console.log(`IN MEM:`, labyrinth);
-        console.log(
-            `IN LOCAL STORAGE:`,
-            JSON.parse(localStorage.getItem('labyrinth')!),
-        );
-        console.log('Encrypting with', newestEpochSequenceId);
+    const newestEpochId = labyrinth.getNewestEpochId();
+    const newestEpochSequenceId = labyrinth.getNewestEpochSequenceId();
 
-        return {
-            id: m.id,
-            epochId: newestEpochId,
-            encryptedMessageData: await labyrinth.encrypt(
+    const messagePostDTO = {
+        id: message.id,
+        epochId: newestEpochId,
+        encryptedMessageData: bytesSerializerProvider.bytesSerializer.serialize(
+            labyrinth.encrypt(
                 threadId,
                 newestEpochSequenceId,
-                JSON.stringify({
-                    content: m.content,
-                    authorId: m.authorId,
-                } as LabyrinthMessageData),
+                textEncoder.encode(
+                    JSON.stringify({
+                        content: message.content,
+                        authorId: message.authorId,
+                    } as LabyrinthMessageData),
+                ),
             ),
-            timestamp: m.timestamp,
-        } as ChatMessagePostDTO;
-    }
+        ),
+        timestamp: message.timestamp,
+    } as ChatMessagePostDTO;
 
-    return chatService.storeMessage(
-        threadId,
-        await createMessagePostDTO(message),
-    );
-}
-
-type Action =
-    | { type: 'ADD_MESSAGE'; payload: AddMessageActionPayload }
-    | { type: 'ADD_THREAD'; payload: AddThreadActionPayload };
-
-function combineMessages(prevMessages: Message[], messageToAdd: Message) {
-    const insertIndex = prevMessages.findIndex(
-        (m) => m.timestamp >= messageToAdd.timestamp,
-    );
-    if (insertIndex === -1) {
-        return [...prevMessages, messageToAdd];
-    }
-    if (prevMessages[insertIndex].id === messageToAdd.id) {
-        return prevMessages;
-    }
-
-    return [
-        ...prevMessages.slice(0, insertIndex),
-        messageToAdd,
-        ...prevMessages.slice(insertIndex),
-    ];
-}
-
-function threadsDataReducer(
-    state: ThreadsDataStore,
-    action: Action,
-): ThreadsDataStore {
-    switch (action.type) {
-        case 'ADD_MESSAGE': {
-            const { threadId, message } = action.payload;
-
-            if (Object.hasOwn(state.map, threadId)) {
-                return {
-                    map: {
-                        ...state.map,
-                        [threadId]: {
-                            ...state.map[threadId],
-                            messages: combineMessages(
-                                state.map[threadId].messages,
-                                message,
-                            ),
-                        },
-                    },
-                    keys: [
-                        threadId,
-                        ...state.keys.filter((key) => key !== threadId),
-                    ],
-                };
-            }
-
-            return {
-                map: {
-                    ...state.map,
-                    [threadId]: {
-                        threadName: null,
-                        messages: [message],
-                        membersVisibleNameByUserId: {},
-                    },
-                },
-                keys: [
-                    threadId,
-                    ...state.keys.filter((key) => key !== threadId),
-                ],
-            };
-        }
-        case 'ADD_THREAD': {
-            const {
-                threadId,
-                threadName,
-                initialMessage,
-                membersVisibleNameByUserId,
-            } = action.payload;
-
-            return {
-                map: {
-                    ...state.map,
-                    [threadId]: {
-                        threadName,
-                        messages: [initialMessage],
-                        membersVisibleNameByUserId,
-                    },
-                },
-                keys: [
-                    threadId,
-                    ...state.keys.filter((key) => key !== threadId),
-                ],
-            };
-        }
-    }
+    return chatService.storeMessage(threadId, messagePostDTO);
 }
 
 export default function useThreadsData(labyrinth: Labyrinth | null) {
@@ -212,48 +113,34 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
     });
     const [error, setError] = useState<AxiosError | null>(null);
 
-    const addMessage = useCallback(
-        (
-            addMessageActionPayload: AddMessageActionPayload,
-            storeInLabyrinth: boolean = true,
-        ) => {
-            if (labyrinth === null)
-                throw new Error(
-                    "Unexpected behaviour, when labyrinth is not initialized user shouldn't be able to receive or send messages",
-                );
+    const addMessageToStore = useCallback(
+        (addMessageActionPayload: AddMessageActionPayload) => {
             AddMessageActionPayloadSchema.parse(addMessageActionPayload);
-
             dispatch({ type: 'ADD_MESSAGE', payload: addMessageActionPayload });
-            if (storeInLabyrinth) {
-                encryptMessageAndStoreInLabyrinth(
-                    labyrinth,
-                    addMessageActionPayload.threadId,
-                    addMessageActionPayload.message,
-                );
-            }
         },
         [labyrinth],
     );
 
-    const addThread = useCallback(
-        (
-            addThreadActionPayload: AddThreadActionPayload,
-            storeInLabyrinth: boolean = true,
-        ) => {
+    const addThreadToStore = useCallback(
+        (addThreadActionPayload: AddThreadActionPayload) => {
+            AddThreadActionPayloadSchema.parse(addThreadActionPayload);
+            dispatch({ type: 'ADD_THREAD', payload: addThreadActionPayload });
+        },
+        [labyrinth],
+    );
+
+    const encryptAndPostMessage = useCallback(
+        (threadId: string, message: Message) => {
             if (labyrinth === null)
                 throw new Error(
                     "Unexpected behaviour, when labyrinth is not initialized user shouldn't be able to receive or send messages",
                 );
-            AddThreadActionPayloadSchema.parse(addThreadActionPayload);
-
-            dispatch({ type: 'ADD_THREAD', payload: addThreadActionPayload });
-            if (storeInLabyrinth) {
-                encryptMessageAndStoreInLabyrinth(
-                    labyrinth,
-                    addThreadActionPayload.threadId,
-                    addThreadActionPayload.initialMessage,
-                );
-            }
+            // TODO: Add error handling
+            encryptMessageAndStoreInLabyrinth(
+                labyrinth,
+                threadId,
+                message,
+            ).catch(setError);
         },
         [labyrinth],
     );
@@ -261,53 +148,41 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
     useEffect(() => {
         if (labyrinth === null) return;
 
-        chatService.getThreadPreviews().then(async (chatThreadPreviews) => {
+        chatService.getThreadPreviews().then((chatThreadPreviews) => {
             for (const p of chatThreadPreviews) {
-                const message = await decryptMessage(
+                const message = decryptMessage(
                     labyrinth,
                     p.threadId,
                     p.message,
                 );
-                addThread(
-                    {
-                        threadId: p.threadId,
-                        threadName: p.threadName,
-                        initialMessage: message,
-                        membersVisibleNameByUserId:
-                            p.membersVisibleNameByUserId,
-                    },
-                    false,
-                );
+                addThreadToStore({
+                    threadId: p.threadId,
+                    threadName: p.threadName,
+                    initialMessage: message,
+                    membersVisibleNameByUserId: p.membersVisibleNameByUserId,
+                });
             }
         });
-    }, [addThread, labyrinth]);
+    }, [addThreadToStore, labyrinth]);
 
     useEffect(() => {
         if (chosenThreadId === null || labyrinth === null) return;
 
-        chatService
-            .getMessages(chosenThreadId)
-            .then(async (encryptedMessages) => {
-                for (const em of encryptedMessages) {
-                    const message = await decryptMessage(
-                        labyrinth,
-                        chosenThreadId,
-                        em,
-                    );
-                    addMessage(
-                        {
-                            threadId: chosenThreadId,
-                            message,
-                        },
-                        false,
-                    );
-                }
-            });
-    }, [addMessage, chosenThreadId, labyrinth, setError]);
+        chatService.getMessages(chosenThreadId).then((encryptedMessages) => {
+            for (const em of encryptedMessages) {
+                const message = decryptMessage(labyrinth, chosenThreadId, em);
+                addMessageToStore({
+                    threadId: chosenThreadId,
+                    message,
+                });
+            }
+        });
+    }, [addMessageToStore, chosenThreadId, labyrinth, setError]);
 
     return {
-        addMessage,
-        addThread,
+        addMessageToStore,
+        addThreadToStore,
+        encryptAndPostMessage,
         threadsDataStore,
         chosenThreadId,
         setChosenThreadId,

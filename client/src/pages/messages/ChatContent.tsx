@@ -2,15 +2,17 @@ import { Button } from '@/components/ui/button.tsx';
 import ThreadPreview, {
     ThreadPreviewData,
 } from '@/components/app/messages/ThreadPreview.tsx';
-import useThreadsData, {
-    ThreadsDataStore,
-} from '@/pages/messages/hooks/useThreadsData.ts';
 import CreateThread from '@/components/app/messages/CreateThread.tsx';
 import Thread, { ThreadData } from '@/components/app/messages/Thread.tsx';
-import useChatWebSocket from '@/pages/messages/hooks/useChatWebSocket.ts';
-import { useMemo, useState } from 'react';
+import useChatWebSocket, {
+    ReceivedNewChatMessagePayload,
+    ReceivedNewChatThreadPayload,
+} from '@/pages/messages/hooks/useChatWebSocket.ts';
+import { useCallback, useMemo, useState } from 'react';
 import useFriendsData from '@/pages/messages/hooks/useFriendsData.ts';
-import { Labyrinth } from '@/lib/labyrinth/Labyrinth.ts';
+import { Labyrinth } from '@sebastianp265/safe-server-side-storage-client';
+import useThreadsData from '@/pages/messages/hooks/useThreadsData.ts';
+import { ThreadsDataStore } from '@/pages/messages/utils/threadsData.ts';
 
 type ChatContentProps = {
     loggedUserId: string;
@@ -56,17 +58,40 @@ export default function ChatContent({
         threadsDataStore,
         chosenThreadId,
         setChosenThreadId,
-        addMessage,
-        addThread,
+        addMessageToStore,
+        addThreadToStore,
+        encryptAndPostMessage,
     } = useThreadsData(labyrinth);
 
     const { friends } = useFriendsData();
 
-    const shouldConnect = useMemo(() => labyrinth !== null, [labyrinth]);
+    const isLabyrinthInitialized = useMemo(
+        () => labyrinth !== null,
+        [labyrinth],
+    );
+    const onNewChatMessageReceivedCallback = useCallback(
+        (payload: ReceivedNewChatMessagePayload) => {
+            if (isLabyrinthInitialized) {
+                addMessageToStore(payload);
+                encryptAndPostMessage(payload.threadId, payload.message);
+            }
+        },
+        [isLabyrinthInitialized],
+    );
+    const onNewChatThreadReceivedCallback = useCallback(
+        (payload: ReceivedNewChatThreadPayload) => {
+            if (isLabyrinthInitialized) {
+                addThreadToStore(payload);
+                encryptAndPostMessage(payload.threadId, payload.initialMessage);
+            }
+        },
+        [isLabyrinthInitialized],
+    );
+
     const { sendChatMessage, createChatThread } = useChatWebSocket(
-        shouldConnect,
-        addMessage,
-        addThread,
+        isLabyrinthInitialized,
+        onNewChatMessageReceivedCallback,
+        onNewChatThreadReceivedCallback,
     );
 
     const [createThreadOpen, setCreateThreadOpen] = useState<boolean>(false);

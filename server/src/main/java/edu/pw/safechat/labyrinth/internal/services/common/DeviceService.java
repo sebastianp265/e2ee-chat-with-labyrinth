@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,8 +24,8 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final DeviceMapper deviceMapper;
 
-    @Value("${app.labyrinth.max-device-inactivity-seconds}")
-    private long maxDeviceInactivitySeconds;
+    @Value("${app.labyrinth.max-device-inactivity}")
+    private Duration maxDeviceInactivity;
 
     public Device createAndSave(
             DevicePublicKeyBundleDTO devicePublicKeyBundleDTO,
@@ -54,13 +55,13 @@ public class DeviceService {
     public boolean didAnyDeviceExceedInactivityLimit(Labyrinth labyrinth) {
         return deviceRepository.existsByLabyrinthAndLastActiveAtLessThan(
                 labyrinth,
-                Instant.now().minusSeconds(maxDeviceInactivitySeconds)
+                Instant.now().minus(maxDeviceInactivity)
         );
     }
 
     public boolean isDeviceActive(Device device) {
         return device.getLastActiveAt()
-                .plusSeconds(maxDeviceInactivitySeconds)
+                .plus(maxDeviceInactivity)
                 .isBefore(Instant.now());
     }
 

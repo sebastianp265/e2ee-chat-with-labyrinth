@@ -16,9 +16,6 @@ jobs:
       - name: Start Full Stack Services
         run: docker compose -f compose.yml --env-file .env.test up --build -d
 
-      - name: Wait for Services to Be Ready
-        run: sleep 100
-
       - name: Run Cypress Tests
         working-directory: ./client
         run: npm i; npx cypress run

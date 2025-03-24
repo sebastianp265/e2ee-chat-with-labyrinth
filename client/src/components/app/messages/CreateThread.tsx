@@ -19,10 +19,7 @@ export type CreateThreadProps = {
     handleCreateThread: (newThread: NewChatThreadToSendPayload) => void;
 };
 
-export default function CreateThread({
-    friends,
-    handleCreateThread,
-}: Readonly<CreateThreadProps>) {
+export default function CreateThread({ friends }: Readonly<CreateThreadProps>) {
     const [open, setOpen] = useState(false);
     const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
     const [optionClicked, setOptionClicked] = useState(false);
@@ -83,16 +80,7 @@ export default function CreateThread({
                     ))}
                 </CommandList>
             </Command>
-            <MessageInput
-                handleSendMessage={(messageContent: string) =>
-                    handleCreateThread({
-                        initialMessageContent: messageContent,
-                        otherMemberUserIds: selectedFriends.map(
-                            (f) => f.userId,
-                        ),
-                    })
-                }
-            />
+            <MessageInput handleSendMessage={(messageContent: string) => {}} />
         </>
     );
 }

@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start Full Stack Services
-        run: docker compose -f compose.yml --env-file .env.test up --build
+        run: docker compose -f compose.yml --env-file .env.test up --build -d
 
       - name: Wait for Services to Be Ready
         run: sleep 100

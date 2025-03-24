@@ -1,4 +1,4 @@
-name: Tests Pipeline
+name: Tests
 
 on:
   push:
@@ -11,16 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build Backend Image
-        run: docker compose -f docker-compose-test.yml build server
+        run: docker compose build server
 
       - name: Build Frontend Image
-        run: docker compose -f docker-compose-test.yml build client
+        run: docker compose build client
 
       - name: Verify Built Images
         run: docker images
@@ -30,16 +30,17 @@ jobs:
     needs: build
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Start Full Stack Services
-        run: docker compose -f docker-compose-test.yml up -d
+        run: docker compose --env-file .env.test up --build
 
       - name: Wait for Services to Be Ready
-        run: sleep 10
+        run: sleep 100
 
       - name: Run Cypress Tests
-        run: docker compose exec client npx cypress run
+        working-directory: ./client
+        run: npx cypress run
 
       - name: Stop Services
         run: docker compose down

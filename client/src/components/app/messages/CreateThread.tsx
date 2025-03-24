@@ -27,6 +27,7 @@ export default function CreateThread({ friends }: Readonly<CreateThreadProps>) {
     const notSelectedFriends = friends.filter(
         (f) => !selectedFriends.includes(f),
     );
+    // @ts-ignore
     return (
         <>
             <div>
@@ -80,7 +81,7 @@ export default function CreateThread({ friends }: Readonly<CreateThreadProps>) {
                     ))}
                 </CommandList>
             </Command>
-            <MessageInput handleSendMessage={(messageContent: string) => {}} />
+            <MessageInput handleSendMessage={() => {}} />
         </>
     );
 }

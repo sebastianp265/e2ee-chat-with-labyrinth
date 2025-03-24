@@ -7,27 +7,8 @@ on:
   pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Backend Image
-        run: docker compose -f compose.yml build server
-
-      - name: Build Frontend Image
-        run: docker compose -f compose.yml build client
-
-      - name: Verify Built Images
-        run: docker images
-
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -40,7 +21,7 @@ jobs:
 
       - name: Run Cypress Tests
         working-directory: ./client
-        run: npx cypress run
+        run: npm i; npx cypress run
 
       - name: Stop Services
         run: docker compose -f compose.yml down

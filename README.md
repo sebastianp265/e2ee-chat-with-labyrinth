@@ -7,10 +7,10 @@ A secure messaging app using my own library **[safe-server-side-storage-client](
 # Why is it safe?
 
 This application ensures secure storage of messages even after delivery. The core security principles include:
-* End-to-End Encryption (E2EE): Messages are ideally delivered via an encrypted channel before storage.
-* AES Encryption: The server only stores AES-encrypted messages, meaning it never sees plaintext content.
-* Key Management: Encryption keys are stored locally on the user's device and can be recovered on new devices using a recovery code.
-* Cryptographic Device Revocation: The protocol supports revoking inactive devices and ensuring cryptographic key rotation, which strengthens security against compromised or lost devices.
+* **End-to-End Encryption (E2EE)**: Messages are ideally delivered via an encrypted channel before storage.
+* **AES Encryption**: The server only stores AES-encrypted messages, meaning it never sees plaintext content.
+* **Key Management**: Encryption keys are stored locally on the user's device and can be recovered on new devices using a recovery code.
+* **Cryptographic Device Revocation**: The protocol supports revoking inactive devices and ensuring cryptographic key rotation, which strengthens security against compromised or lost devices.
 
 # Features
 

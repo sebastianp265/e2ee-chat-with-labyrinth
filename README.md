@@ -1,7 +1,23 @@
 # e2ee-chat-with-labyrinth
 
-Chat with end-to-end encryption storing messages securely on server side using Meta Labirynth
-Protocol - https://engineering.fb.com/wp-content/uploads/2023/12/TheLabyrinthEncryptedMessageStorageProtocol_12-6-2023.pdf
+# About
+
+A secure messaging app using my own library **[safe-server-side-storage-client](https://github.com/sebastianp265/safe-server-side-storage-client)** for safe server-side message storage. The library is based on **[Labyrinth](https://engineering.fb.com/wp-content/uploads/2023/12/TheLabyrinthEncryptedMessageStorageProtocol_12-6-2023.pdf)**, an encrypted message storage protocol developed by **Meta**.
+
+# Why is it safe?
+
+This application ensures secure storage of messages even after delivery. The core security principles include:
+* End-to-End Encryption (E2EE): Messages are ideally delivered via an encrypted channel before storage.
+* AES Encryption: The server only stores AES-encrypted messages, meaning it never sees plaintext content.
+* Key Management: Encryption keys are stored locally on the user's device and can be recovered on new devices using a recovery code.
+* Cryptographic Device Revocation: The protocol supports revoking inactive devices and ensuring cryptographic key rotation, which strengthens security against compromised or lost devices.
+
+# Features
+
+* Secure message storage with Labyrinth-based encryption.
+* Multi-device support with cryptographic recovery.
+* Cryptographic revocation of inactive devices.
+* Built-in key rotation for enhanced security.
 
 # How To Run
 

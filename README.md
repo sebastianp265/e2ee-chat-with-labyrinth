@@ -7,7 +7,7 @@ A secure messaging app using my own library **[safe-server-side-storage-client](
 # Why is it safe?
 
 This application ensures secure storage of messages even after delivery. The core security principles include:
-* **End-to-End Encryption (E2EE)**: Messages are ideally delivered via an encrypted channel before storage.
+* **End-to-End Encryption (E2EE)**: Messages are intended to be delivered over an encrypted channel before storage (not yet implemented due to the complexity involved).
 * **AES Encryption**: The server only stores AES-encrypted messages, meaning it never sees plaintext content.
 * **Key Management**: Encryption keys are stored locally on the user's device and can be recovered on new devices using a recovery code.
 * **Cryptographic Device Revocation**: The protocol supports revoking inactive devices and ensuring cryptographic key rotation, which strengthens security against compromised or lost devices.
@@ -18,6 +18,22 @@ This application ensures secure storage of messages even after delivery. The cor
 * Multi-device support with cryptographic recovery.
 * Cryptographic revocation of inactive devices.
 * Built-in key rotation for enhanced security.
+
+# Screenshots
+
+## First time login
+
+![okno-powitalne](https://github.com/user-attachments/assets/c6421950-a671-4e7e-b238-c0307588b4be)
+![kod-odzyskiwania](https://github.com/user-attachments/assets/2538182b-4048-4653-958f-c5788dc164a8)
+
+## Logging in on new devices
+
+![okno-z-miejscem-na-kod](https://github.com/user-attachments/assets/91746ae0-958b-4d85-8ca9-ab23b6767655)
+![sukces-odzyskiwania](https://github.com/user-attachments/assets/ee66147d-76c3-4140-9c96-36836ee7ec4c)
+
+## Sending messages
+
+![obraz](https://github.com/user-attachments/assets/374b1bdb-df6a-42ca-ad2e-e6ce5a966115)
 
 # How To Run
 

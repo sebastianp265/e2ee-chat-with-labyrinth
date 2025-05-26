@@ -15,6 +15,13 @@ import useThreadsData from '@/pages/messages/hooks/useThreadsData.ts';
 import { ThreadsDataStore } from '@/pages/messages/utils/threadsData.ts';
 import httpClient from '@/api/httpClient.ts';
 import { useNavigate } from 'react-router-dom';
+import { LogOut, PlusSquare } from 'lucide-react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type ChatContentProps = {
     loggedUserId: string;
@@ -115,19 +122,44 @@ export default function ChatContent({
     return (
         <>
             <div className="flex flex-col space-y-2 border p-2 w-[20%]">
-                <Button
-                    onClick={() => {
-                        setCreateThreadOpen(true);
-                    }}
-                >
-                    Create new thread
-                </Button>
-                <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                >
-                    Logout
-                </Button>
+                <TooltipProvider>
+                    <div className="flex space-x-2 justify-end w-full">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => {
+                                        setCreateThreadOpen(true);
+                                    }}
+                                    aria-label="Create new thread"
+                                    size="icon"
+                                    variant="outline"
+                                    className="rounded-full"
+                                >
+                                    <PlusSquare className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Create new thread</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={handleLogout}
+                                    variant="outline"
+                                    aria-label="Logout"
+                                    size="icon"
+                                    className="rounded-full"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Logout</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TooltipProvider>
                 <div data-cy="thread-previews-container">
                     {threadsDataStore.keys.map((threadId) => (
                         <ThreadPreview

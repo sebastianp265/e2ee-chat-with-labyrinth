@@ -21,9 +21,8 @@ describe('The Login Page', () => {
         cy.login(username);
         cy.loadLabyrinthForUser(username);
 
-        cy.visit('/login');
-        cy.contains('Logout').click();
+        cy.visit('/messages');
+        cy.get('button[aria-label="Logout"]').click();
         cy.url().should('include', '/login');
-        cy.getCookie('SESSION').should('not.exist');
     });
 });

@@ -15,4 +15,15 @@ describe('The Login Page', () => {
         cy.url().should('include', '/messages');
         cy.getCookie('SESSION').should('exist');
     });
+
+    it('logs out successfully', () => {
+        const username: UserPool = 'user_in_labyrinth_alice';
+        cy.login(username);
+        cy.loadLabyrinthForUser(username);
+
+        cy.visit('/login');
+        cy.contains('Logout').click();
+        cy.url().should('include', '/login');
+        cy.getCookie('SESSION').should('not.exist');
+    });
 });

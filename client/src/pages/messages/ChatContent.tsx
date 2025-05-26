@@ -13,10 +13,13 @@ import useFriendsData from '@/pages/messages/hooks/useFriendsData.ts';
 import { Labyrinth } from '@sebastianp265/safe-server-side-storage-client';
 import useThreadsData from '@/pages/messages/hooks/useThreadsData.ts';
 import { ThreadsDataStore } from '@/pages/messages/utils/threadsData.ts';
+import httpClient from '@/api/httpClient.ts';
+import { useNavigate } from 'react-router-dom';
 
 type ChatContentProps = {
     loggedUserId: string;
     labyrinth: Labyrinth | null;
+    inactivateSession: () => void;
 };
 
 function getThreadDataFromStore(
@@ -53,6 +56,7 @@ function threadPreviewDataFromThreadData(
 export default function ChatContent({
     loggedUserId,
     labyrinth,
+    inactivateSession,
 }: Readonly<ChatContentProps>) {
     const {
         threadsDataStore,
@@ -95,6 +99,18 @@ export default function ChatContent({
     );
 
     const [createThreadOpen, setCreateThreadOpen] = useState<boolean>(false);
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        httpClient.post('/api/auth/logout')
+            .catch((error) => {
+                console.error('Logout failed', error);
+            })
+            .finally(() => {
+                inactivateSession()
+                navigate('/login');
+            });
+    };
 
     return (
         <>
@@ -105,6 +121,12 @@ export default function ChatContent({
                     }}
                 >
                     Create new thread
+                </Button>
+                <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                >
+                    Logout
                 </Button>
                 <div data-cy="thread-previews-container">
                     {threadsDataStore.keys.map((threadId) => (

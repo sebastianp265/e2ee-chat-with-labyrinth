@@ -16,7 +16,7 @@ describe('Creating threads', () => {
         withUsers: UserPool[],
         userMessagePairs: [UserPool, string][],
     ) {
-        cy.get('button').click();
+        cy.contains('Create new thread').click();
 
         cy.get('div[cmdk-list]').should('be.hidden');
         cy.get('input[cmdk-input]').click();

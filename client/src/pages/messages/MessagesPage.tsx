@@ -9,6 +9,7 @@ import useLabyrinth, {
 
 export default function MessagesPage({
     sessionExpired,
+    inactivateSession,
 }: Readonly<ISessionProps>) {
     const { loggedUserId } = usePrivateRouteContext();
     const {
@@ -39,7 +40,11 @@ export default function MessagesPage({
                 />
             )}
 
-            <ChatContent loggedUserId={loggedUserId} labyrinth={labyrinth} />
+            <ChatContent
+                loggedUserId={loggedUserId}
+                labyrinth={labyrinth}
+                inactivateSession={inactivateSession!!}
+            />
         </div>
     );
 }

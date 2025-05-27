@@ -1,6 +1,6 @@
 import SessionExpiredAlert from '@/components/app/SessionExpiredAlert.tsx';
 import React, { ReactElement, useEffect, useState } from 'react';
-import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY } from '@/constants.ts';
+import { sessionManager } from '@/lib/sessionManager.ts';
 
 export interface ISessionProps {
     sessionExpired?: boolean;
@@ -18,21 +18,18 @@ export default function SessionCheckWrapper({
 
     const inactivateSession = () => {
         setSessionExpired(true);
-        localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
-        localStorage.removeItem(LOGGED_USER_ID_KEY);
+        sessionManager.clearSession();
     };
 
     useEffect(() => {
         function checkAuthentication() {
-            const sessionExpiresAt = localStorage.getItem(
-                SESSION_EXPIRES_AT_KEY,
-            );
-            if (sessionExpiresAt == null) {
+            const sessionDetails = sessionManager.getSessionDetails();
+            if (!sessionDetails) {
                 inactivateSession();
                 return;
             }
 
-            const sessionMsLeft = parseInt(sessionExpiresAt) - Date.now();
+            const sessionMsLeft = sessionDetails.expiresAt - Date.now();
             if (sessionMsLeft < 0) {
                 inactivateSession();
                 return;

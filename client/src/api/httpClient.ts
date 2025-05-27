@@ -1,8 +1,5 @@
 import axios from 'axios';
-import {
-    SESSION_EXPIRATION_TIME_MIN,
-    SESSION_EXPIRES_AT_KEY,
-} from '@/constants.ts';
+import { sessionManager } from '@/lib/sessionManager.ts';
 import { transformAxiosError, CustomApiError } from '@/lib/errorUtils.ts';
 
 const createAxiosInstance = () => {
@@ -21,13 +18,7 @@ const createAxiosInstance = () => {
 
     client.interceptors.response.use(
         (response) => {
-            localStorage.setItem(
-                SESSION_EXPIRES_AT_KEY,
-                (
-                    Date.now() +
-                    SESSION_EXPIRATION_TIME_MIN * 60 * 1000
-                ).toString(),
-            );
+            sessionManager.refreshSessionExpiry();
             return response;
         },
         (error: Error) => {

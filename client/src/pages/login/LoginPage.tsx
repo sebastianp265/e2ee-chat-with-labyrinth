@@ -1,16 +1,17 @@
 import { LoginForm } from '@/components/app/login/LoginForm.tsx';
 import { useNavigate } from 'react-router-dom';
-import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY } from '@/constants.ts';
 import { useEffect } from 'react';
 import { CustomApiError } from '@/lib/errorUtils.ts';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService, LoginRequestDTO, LoginResponseDTO } from '@/api/authService';
+import { sessionManager } from '@/lib/sessionManager.ts';
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     useEffect(() => {
-        if (localStorage.getItem(SESSION_EXPIRES_AT_KEY) !== null) {
+        if (sessionManager.isSessionValid()) {
             navigate('/');
         }
     }, [navigate]);
@@ -18,7 +19,8 @@ export default function LoginPage() {
     const loginMutation = useMutation<LoginResponseDTO, CustomApiError, LoginRequestDTO>({
         mutationFn: authService.login,
         onSuccess: (data: LoginResponseDTO) => {
-            localStorage.setItem(LOGGED_USER_ID_KEY, data.userId);
+            queryClient.invalidateQueries({ queryKey: ['user'] });
+            sessionManager.setUserIdOnLogin(data.userId);
             navigate('/');
         },
     });

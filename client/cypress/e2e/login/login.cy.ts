@@ -22,7 +22,7 @@ describe('The Login Page', () => {
         cy.loadLabyrinthForUser(username);
 
         cy.visit('/messages');
-        cy.get('button[aria-label="Logout"]').click();
+        cy.get('button[aria-label="Logout"]').should('not.be.disabled').click();
         cy.url().should('include', '/login');
     });
 });

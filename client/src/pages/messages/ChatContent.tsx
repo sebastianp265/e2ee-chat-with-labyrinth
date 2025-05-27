@@ -134,6 +134,7 @@ export default function ChatContent({
                                     size="icon"
                                     variant="outline"
                                     className="rounded-full"
+                                    disabled={!isLabyrinthInitialized}
                                 >
                                     <PlusSquare className="h-4 w-4" />
                                 </Button>
@@ -150,6 +151,7 @@ export default function ChatContent({
                                     aria-label="Logout"
                                     size="icon"
                                     className="rounded-full"
+                                    disabled={!isLabyrinthInitialized}
                                 >
                                     <LogOut className="h-4 w-4" />
                                 </Button>

@@ -32,14 +32,16 @@ const errorCodeMessages: Record<
         'Login failed due to an account access issue. Please try again later or contact support.',
     VIRTUAL_DEVICE_ACCESS_DENIED:
         'Login from this device is currently not permitted. Please try again from an authorized device or contact support.',
-    CHAT_INBOX_NOT_FOUND: "The requested chat inbox could not be found. Please try again or contact support if the issue persists.",
+    CHAT_INBOX_NOT_FOUND:
+        'The requested chat inbox could not be found. Please try again or contact support if the issue persists.',
 };
 
 export function transformAxiosError(error: Error): CustomApiError {
     if (!(error instanceof AxiosError)) {
         console.error('Unexpected non-Axios error:', error);
         return {
-            userFriendlyMessage: 'An unexpected error occurred. Please try again.',
+            userFriendlyMessage:
+                'An unexpected error occurred. Please try again.',
             originalError: error,
         };
     }
@@ -49,7 +51,8 @@ export function transformAxiosError(error: Error): CustomApiError {
 
     if (error.response) {
         if (responseData != null) {
-            const parsedResult = BackendApiErrorDataSchema.safeParse(responseData);
+            const parsedResult =
+                BackendApiErrorDataSchema.safeParse(responseData);
             if (parsedResult.success) {
                 const { errorCode, errorDetails } = parsedResult.data;
                 if (errorCode && errorCodeMessages[errorCode]) {
@@ -114,4 +117,4 @@ export function transformAxiosError(error: Error): CustomApiError {
         isRequestSetupError: true,
         originalError: error,
     };
-} 
+}

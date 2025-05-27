@@ -109,12 +109,13 @@ export default function ChatContent({
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        httpClient.post('/api/auth/logout')
+        httpClient
+            .post('/api/auth/logout')
             .catch((error) => {
                 console.error('Logout failed', error);
             })
             .finally(() => {
-                inactivateSession()
+                inactivateSession();
                 navigate('/login');
             });
     };

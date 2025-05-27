@@ -3,4 +3,4 @@ export const APP_ROUTES = {
     LOGIN: 'login',
     MESSAGES: 'messages',
     HELLO: 'hello',
-} as const; 
+} as const;

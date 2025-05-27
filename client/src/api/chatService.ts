@@ -45,7 +45,9 @@ export const chatService = {
             .parse(data) as ChatMessageGetDTO[];
     },
     getThreadPreviews: async () => {
-        const { data } = await httpClient.get(`${chatServicePrefix}/threads/previews`);
+        const { data } = await httpClient.get(
+            `${chatServicePrefix}/threads/previews`,
+        );
         return z
             .array(ChatThreadPreviewDTOSchema)
             .parse(data) as ChatThreadPreviewDTO[];

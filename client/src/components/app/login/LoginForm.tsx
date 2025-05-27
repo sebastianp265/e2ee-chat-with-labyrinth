@@ -40,7 +40,11 @@ interface LoginFormProps {
     isPending: boolean;
 }
 
-export function LoginForm({ handleSubmit, loginError, isPending }: Readonly<LoginFormProps>) {
+export function LoginForm({
+    handleSubmit,
+    loginError,
+    isPending,
+}: Readonly<LoginFormProps>) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {

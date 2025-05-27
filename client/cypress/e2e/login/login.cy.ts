@@ -35,6 +35,8 @@ describe('The Login Page', () => {
 
         cy.url().should('include', '/login');
         cy.getCookie('SESSION').should('not.exist');
-        cy.contains('Invalid username or password. Please try again.').should('be.visible');
+        cy.contains('Invalid username or password. Please try again.').should(
+            'be.visible',
+        );
     });
 });

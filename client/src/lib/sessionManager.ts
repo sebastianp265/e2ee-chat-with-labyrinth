@@ -1,4 +1,8 @@
-import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY, SESSION_EXPIRATION_TIME_MIN } from '@/constants.ts';
+import {
+    LOGGED_USER_ID_KEY,
+    SESSION_EXPIRES_AT_KEY,
+    SESSION_EXPIRATION_TIME_MIN,
+} from '@/constants.ts';
 
 export interface AuthTokenDetails {
     userId: string;
@@ -46,8 +50,9 @@ export const sessionManager = {
     refreshSessionExpiry(): void {
         const userId = getUserId();
         if (userId) {
-            const expiresAt = Date.now() + SESSION_EXPIRATION_TIME_MIN * 60 * 1000;
+            const expiresAt =
+                Date.now() + SESSION_EXPIRATION_TIME_MIN * 60 * 1000;
             localStorage.setItem(SESSION_EXPIRES_AT_KEY, expiresAt.toString());
         }
     },
-}; 
+};

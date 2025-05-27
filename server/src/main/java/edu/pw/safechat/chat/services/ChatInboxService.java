@@ -1,5 +1,6 @@
 package edu.pw.safechat.chat.services;
 
+import edu.pw.safechat.chat.exceptions.ChatInboxNotFoundException;
 import edu.pw.safechat.chat.internal.entities.ChatInbox;
 import edu.pw.safechat.chat.internal.repositories.ChatInboxRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ public class ChatInboxService {
     public UUID getChatInboxByUserId(UUID userId) {
         return chatInboxRepository.findByUserId(userId)
                 .map(ChatInbox::getId)
-                .orElseThrow();
+                .orElseThrow(ChatInboxNotFoundException::new);
     }
 
 }

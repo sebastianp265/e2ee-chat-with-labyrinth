@@ -32,6 +32,7 @@ const errorCodeMessages: Record<
         'Login failed due to an account access issue. Please try again later or contact support.',
     VIRTUAL_DEVICE_ACCESS_DENIED:
         'Login from this device is currently not permitted. Please try again from an authorized device or contact support.',
+    CHAT_INBOX_NOT_FOUND: "The requested chat inbox could not be found. Please try again or contact support if the issue persists.",
 };
 
 export function transformAxiosError(error: Error): CustomApiError {

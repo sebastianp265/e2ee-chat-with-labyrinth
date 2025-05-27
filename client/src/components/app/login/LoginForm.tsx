@@ -12,7 +12,8 @@ import {
 
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
-import { LoginRequestDTO } from '@/pages/login/LoginPage.tsx';
+import { LoginRequestDTO } from '@/api/authService.ts';
+import { LoadingSpinner } from '@/components/ui/loading-spinner.tsx';
 
 const formSchema = z.object({
     username: z
@@ -36,9 +37,10 @@ const formSchema = z.object({
 interface LoginFormProps {
     handleSubmit: (loginRequest: LoginRequestDTO) => void;
     loginError: string | null;
+    isPending: boolean;
 }
 
-export function LoginForm({ handleSubmit, loginError }: Readonly<LoginFormProps>) {
+export function LoginForm({ handleSubmit, loginError, isPending }: Readonly<LoginFormProps>) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -89,7 +91,10 @@ export function LoginForm({ handleSubmit, loginError }: Readonly<LoginFormProps>
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Submit</Button>
+                <Button type="submit" disabled={isPending}>
+                    {isPending && <LoadingSpinner size={20} className="mr-2" />}
+                    Submit
+                </Button>
             </form>
         </Form>
     );

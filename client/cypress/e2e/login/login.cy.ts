@@ -26,7 +26,7 @@ describe('The Login Page', () => {
         cy.url().should('include', '/login');
     });
 
-    it.only('shows an error message on failed login', () => {
+    it('shows an error message on failed login', () => {
         cy.visit('/login');
 
         cy.get('input[name=username]').type('invalid_user');

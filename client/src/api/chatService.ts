@@ -31,27 +31,21 @@ export type ChatThreadPreviewDTO = z.infer<typeof ChatThreadPreviewDTOSchema>;
 export const chatService = {
     storeMessage: async (threadId: string, chatMessage: ChatMessagePostDTO) => {
         ChatMessagePostDTOSchema.parse(chatMessage);
-        return (
-            await httpClient.post<void>(
-                `${chatServicePrefix}/threads/${threadId}/messages`,
-                chatMessage,
-            )
-        ).data;
+        await httpClient.post<void>(
+            `${chatServicePrefix}/threads/${threadId}/messages`,
+            chatMessage,
+        );
     },
     getMessages: async (threadId: string) => {
-        const data = (
-            await httpClient.get(
-                `${chatServicePrefix}/threads/${threadId}/messages`,
-            )
-        ).data;
+        const { data } = await httpClient.get(
+            `${chatServicePrefix}/threads/${threadId}/messages`,
+        );
         return z
             .array(ChatMessageGetDTOSchema)
             .parse(data) as ChatMessageGetDTO[];
     },
     getThreadPreviews: async () => {
-        const data = (
-            await httpClient.get(`${chatServicePrefix}/threads/previews`)
-        ).data;
+        const { data } = await httpClient.get(`${chatServicePrefix}/threads/previews`);
         return z
             .array(ChatThreadPreviewDTOSchema)
             .parse(data) as ChatThreadPreviewDTO[];

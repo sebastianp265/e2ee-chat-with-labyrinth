@@ -1,22 +1,13 @@
 import { LoginForm } from '@/components/app/login/LoginForm.tsx';
-import httpClient from '@/api/httpClient.ts';
 import { useNavigate } from 'react-router-dom';
 import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY } from '@/constants.ts';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { CustomApiError } from '@/lib/errorUtils.ts';
-
-export type LoginRequestDTO = {
-    username: string;
-    password: string;
-};
-
-export type LoginResponseDTO = {
-    userId: string;
-};
+import { useMutation } from '@tanstack/react-query';
+import { authService, LoginRequestDTO, LoginResponseDTO } from '@/api/authService';
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const [loginError, setLoginError] = useState<string | null>(null);
 
     useEffect(() => {
         if (localStorage.getItem(SESSION_EXPIRES_AT_KEY) !== null) {
@@ -24,22 +15,21 @@ export default function LoginPage() {
         }
     }, [navigate]);
 
-    const handleSubmit = (loginRequest: LoginRequestDTO) => {
-        setLoginError(null);
-        httpClient
-            .post<LoginResponseDTO>('/api/auth/login', loginRequest)
-            .then((response) => {
-                localStorage.setItem(LOGGED_USER_ID_KEY, response.data.userId);
-                navigate('/');
-            })
-            .catch((error: CustomApiError) => {
-                setLoginError(error.userFriendlyMessage);
-            });
-    };
+    const loginMutation = useMutation<LoginResponseDTO, CustomApiError, LoginRequestDTO>({
+        mutationFn: authService.login,
+        onSuccess: (data: LoginResponseDTO) => {
+            localStorage.setItem(LOGGED_USER_ID_KEY, data.userId);
+            navigate('/');
+        },
+    });
 
     return (
         <div className="w-[60%] h-[60%] m-auto pt-[25vh]">
-            <LoginForm handleSubmit={handleSubmit} loginError={loginError} />
+            <LoginForm
+                handleSubmit={loginMutation.mutate}
+                loginError={loginMutation.error?.userFriendlyMessage || null}
+                isPending={loginMutation.isPending}
+            />
         </div>
     );
 }

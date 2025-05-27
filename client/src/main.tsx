@@ -15,6 +15,9 @@ import MessagesPage from '@/pages/messages/MessagesPage.tsx';
 import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY } from '@/constants.ts';
 import { bytesSerializerProvider } from '@sebastianp265/safe-server-side-storage-client';
 import { base64StringToBytes, bytesToBase64String } from '@/lib/utils.ts';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 bytesSerializerProvider.bytesSerializer = {
     serialize: bytesToBase64String,
@@ -53,34 +56,37 @@ export function usePrivateRouteContext() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
+    // TODO: Uncomment this and see what happens
     // <React.StrictMode>
-    <BrowserRouter>
-        <Routes>
-            <Route element={<PrivateRoutes />}>
-                <Route
-                    index={true}
-                    path="/"
-                    element={<Navigate to="/messages" />}
-                />
-                <Route
-                    path="/messages"
-                    element={
-                        <SessionCheckWrapper>
-                            <MessagesPage />
-                        </SessionCheckWrapper>
-                    }
-                />
-                <Route
-                    path="/hello"
-                    element={
-                        <SessionCheckWrapper>
-                            <Hello />
-                        </SessionCheckWrapper>
-                    }
-                />
-            </Route>
-            <Route path="/login" element={<LoginPage />} />
-        </Routes>
-    </BrowserRouter>,
+    <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+            <Routes>
+                <Route element={<PrivateRoutes />}>
+                    <Route
+                        index={true}
+                        path="/"
+                        element={<Navigate to="/messages" />}
+                    />
+                    <Route
+                        path="/messages"
+                        element={
+                            <SessionCheckWrapper>
+                                <MessagesPage />
+                            </SessionCheckWrapper>
+                        }
+                    />
+                    <Route
+                        path="/hello"
+                        element={
+                            <SessionCheckWrapper>
+                                <Hello />
+                            </SessionCheckWrapper>
+                        }
+                    />
+                </Route>
+                <Route path="/login" element={<LoginPage />} />
+            </Routes>
+        </BrowserRouter>
+    </QueryClientProvider>,
     // </React.StrictMode>,
 );

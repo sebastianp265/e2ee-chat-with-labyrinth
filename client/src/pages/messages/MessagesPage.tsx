@@ -1,10 +1,10 @@
 import { ISessionProps } from '@/SessionCheckWrapper.tsx';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuthContext } from '@/router.tsx';
 import WelcomeToLabyrinthAlertDialog from '@/pages/messages/WelcomeToLabyrinthAlertDialog.tsx';
 import ChatContent from '@/pages/messages/ChatContent.tsx';
 import useLabyrinth, {
-    LabyrinthLoadState,
+    LabyrinthStatus,
 } from '@/pages/messages/hooks/useLabyrinth.ts';
 
 export default function MessagesPage({
@@ -13,36 +13,38 @@ export default function MessagesPage({
 }: Readonly<ISessionProps>) {
     const { loggedUserId } = useAuthContext();
     const {
-        labyrinth,
-        initialLoadState,
+        labyrinthHookState,
+        initializeLabyrinthFromFirstEpoch,
+        initializeLabyrinthFromRecoveryCode,
         retryInitialization,
-        setLabyrinthFromRecoveryCode,
-        setLabyrinthFromFirstEpoch,
+        finishInitializationFromDialog,
     } = useLabyrinth(loggedUserId);
-    const [open, setOpen] = useState(false);
-
-    useEffect(() => {
-        if (initialLoadState !== LabyrinthLoadState.LOADING) {
-            setOpen(true);
-        }
-    }, [initialLoadState]);
+    const [openDialog, setOpenDialog] = useState(false);
 
     return (
         <div className="flex h-full">
-            {initialLoadState !== LabyrinthLoadState.LOADING && (
-                <WelcomeToLabyrinthAlertDialog
-                    open={!sessionExpired && open}
-                    setOpen={setOpen}
-                    labyrinthLoadState={initialLoadState}
-                    setLabyrinthFromRecoveryCode={setLabyrinthFromRecoveryCode}
-                    setLabyrinthFromFirstEpoch={setLabyrinthFromFirstEpoch}
-                    retryInitialization={retryInitialization}
-                />
-            )}
+            <WelcomeToLabyrinthAlertDialog
+                open={!sessionExpired && openDialog}
+                setOpen={setOpenDialog}
+                labyrinthHookState={labyrinthHookState}
+                initializeLabyrinthFromRecoveryCode={
+                    initializeLabyrinthFromRecoveryCode
+                }
+                initializeLabyrinthFromFirstEpoch={
+                    initializeLabyrinthFromFirstEpoch
+                }
+                retryInitialization={retryInitialization}
+                finishInitializationFromDialog={finishInitializationFromDialog}
+            />
 
             <ChatContent
                 loggedUserId={loggedUserId}
-                labyrinth={labyrinth}
+                labyrinth={
+                    labyrinthHookState.status ===
+                    LabyrinthStatus.READY_TO_USE_LABYRINTH
+                        ? labyrinthHookState.instance
+                        : null
+                }
                 inactivateSession={inactivateSession!!}
             />
         </div>

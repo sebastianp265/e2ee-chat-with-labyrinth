@@ -1,77 +1,70 @@
-import { LabyrinthLoadState } from '@/pages/messages/hooks/useLabyrinth.ts';
 import ErrorDialogContentChildren from '@/components/app/welcome-to-labyrinth/ErrorDialogContentChildren.tsx';
 import LoadingSpinnerDialogContentChildren from '@/components/app/welcome-to-labyrinth/LoadingSpinnerDialogContentChildren.tsx';
 import RecoverSecretsDialogContentChildren, {
-    HandleSubmitRecoveryCodeResponse,
+    RecoverSecretsDialogContentChildrenType as RecoverSecretsDialogContentChildrenProps,
 } from '@/components/app/welcome-to-labyrinth/RecoverSecretsDialogContentChildren.tsx';
 import GenerateRecoveryCodeAlertDialogContentChildren, {
-    HandleGenerateRecoveryCodeResponse,
+    GenerateRecoveryCodeAlertDialogContentChildrenType as GenerateRecoveryCodeAlertDialogContentChildrenProps,
 } from '@/components/app/welcome-to-labyrinth/GenerateRecoveryCodeAlertDialogContentChildren.tsx';
-import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import { LabyrinthHookState, LabyrinthStatus } from './hooks/useLabyrinth';
+import WelcomeToLabyrinthSuccessDialog from '@/components/app/welcome-to-labyrinth/WelcomeToLabyrinthSuccessDialog';
 
-type WelcomeToLabyrinthAlertDialogContentProps = {
-    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    labyrinthLoadState:
-        | LabyrinthLoadState.NOT_INITIALIZED
-        | LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED
-        | LabyrinthLoadState.NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE;
-    retryInitialization: () => Promise<void>;
-    setLabyrinthFromFirstEpoch: () => Promise<HandleGenerateRecoveryCodeResponse>;
-    setLabyrinthFromRecoveryCode: (
-        recoveryCode: string,
-    ) => Promise<HandleSubmitRecoveryCodeResponse>;
-};
+export type WelcomeToLabyrinthAlertDialogContentProps = {
+    labyrinthHookState: LabyrinthHookState;
+    retryInitialization: () => void;
+} & RecoverSecretsDialogContentChildrenProps &
+    GenerateRecoveryCodeAlertDialogContentChildrenProps;
 
 export default function WelcomeToLabyrinthAlertDialogContentChildren({
-    labyrinthLoadState,
+    labyrinthHookState,
     retryInitialization,
-    setLabyrinthFromFirstEpoch,
-    setLabyrinthFromRecoveryCode,
+    initializeLabyrinthFromFirstEpoch,
+    initializeLabyrinthFromRecoveryCode,
 }: Readonly<WelcomeToLabyrinthAlertDialogContentProps>) {
-    const [error, setError] = useState<AxiosError | null>(null);
 
-    if (error !== null) {
-        let errorMessageContent: string;
-        if (error.request !== undefined && error.response === undefined) {
-            errorMessageContent =
-                'Server is unavailable, please try again later or check your internet connection.';
-        } else {
-            console.error(error);
-            errorMessageContent =
-                'An unexpected error occurred, please contact with the administrator.';
-        }
-
-        const onTryAgainClicked = () => {
-            retryInitialization().catch(setError);
-        };
-
-        return (
-            <ErrorDialogContentChildren
-                message={errorMessageContent}
-                onTryAgainClicked={onTryAgainClicked}
-            />
-        );
-    }
-
-    switch (labyrinthLoadState) {
-        case LabyrinthLoadState.NOT_INITIALIZED:
+    switch (labyrinthHookState.status) {
+        case LabyrinthStatus.ERROR:
             return (
-                <LoadingSpinnerDialogContentChildren title="Checking if you have joined Labyrinth..." />
-            );
-        case LabyrinthLoadState.NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE:
-            return (
-                <RecoverSecretsDialogContentChildren
-                    handleSubmitRecoveryCode={setLabyrinthFromRecoveryCode}
-                    setError={setError}
+                <ErrorDialogContentChildren
+                    message={labyrinthHookState.error.userFriendlyMessage}
+                    onTryAgainClicked={retryInitialization}
                 />
             );
-        case LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED:
+
+        case LabyrinthStatus.AWAITING_FIRST_EPOCH_CREATION:
             return (
                 <GenerateRecoveryCodeAlertDialogContentChildren
-                    handleGenerateRecoveryCode={setLabyrinthFromFirstEpoch}
-                    setError={setError}
+                    initializeLabyrinthFromFirstEpoch={
+                        initializeLabyrinthFromFirstEpoch
+                    }
                 />
+            );
+        case LabyrinthStatus.CREATING_FIRST_EPOCH:
+            return (
+                <LoadingSpinnerDialogContentChildren title="Generating recovery code and registering your device to the server..." />
+            );
+        case LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION:
+            return (
+                <WelcomeToLabyrinthSuccessDialog
+                    description={`You have successfully generated recovery code. Your recovery code is: ${labyrinthHookState.recoveryCode}`}
+                />
+            );
+
+        case LabyrinthStatus.AWAITING_RECOVERY_CODE:
+            return (
+                <RecoverSecretsDialogContentChildren
+                    initializeLabyrinthFromRecoveryCode={
+                        initializeLabyrinthFromRecoveryCode
+                    }
+                />
+            );
+        case LabyrinthStatus.PROCESSING_RECOVERY_CODE:
+            return (
+                <LoadingSpinnerDialogContentChildren title="Recovering your secrets..." />
+            );
+        case LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED:
+            return (
+                <WelcomeToLabyrinthSuccessDialog description="You have successfully recovered your secrets. Enjoy secure message storage!" />
             );
     }
 }

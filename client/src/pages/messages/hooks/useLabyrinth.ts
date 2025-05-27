@@ -1,28 +1,58 @@
 import { LABYRINTH_INSTANCE_KEY } from '@/constants.ts';
 import labyrinthWebClientImpl from '@/api/labyrinthWebClientImpl.ts';
-import { useEffect, useMemo, useState } from 'react';
-import { HandleSubmitRecoveryCodeResponse } from '@/components/app/welcome-to-labyrinth/RecoverSecretsDialogContentChildren.tsx';
-import { HandleGenerateRecoveryCodeResponse } from '@/components/app/welcome-to-labyrinth/GenerateRecoveryCodeAlertDialogContentChildren.tsx';
-import { AxiosError } from 'axios';
+import { useEffect, useState } from 'react';
 import {
     Labyrinth,
     LabyrinthSerialized,
 } from '@sebastianp265/safe-server-side-storage-client';
+import { CustomApiError } from '@/lib/errorUtils';
 
-export enum LabyrinthLoadState {
-    LOADING,
-    NOT_INITIALIZED,
-    NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED,
-    NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE,
+export enum LabyrinthStatus {
+    INITIAL_LOADING,
+
+    AWAITING_FIRST_EPOCH_CREATION,
+    CREATING_FIRST_EPOCH,
+    SUCCESS_FIRST_EPOCH_CREATION,
+
+    AWAITING_RECOVERY_CODE,
+    PROCESSING_RECOVERY_CODE,
+    SUCCESS_RECOVERY_CODE_PROCESSED,
+
+    ERROR,
+
+    READY_TO_USE_LABYRINTH,
 }
+
+export type LabyrinthHookState =
+    | { status: LabyrinthStatus.INITIAL_LOADING }
+    | (
+        | { status: LabyrinthStatus.AWAITING_FIRST_EPOCH_CREATION }
+        | { status: LabyrinthStatus.CREATING_FIRST_EPOCH }
+        | {
+            status: LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION;
+            recoveryCode: string;
+        }
+    )
+    | (
+        | { status: LabyrinthStatus.AWAITING_RECOVERY_CODE }
+        | { status: LabyrinthStatus.PROCESSING_RECOVERY_CODE }
+        | { status: LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED }
+    )
+    | {
+        status: LabyrinthStatus.ERROR;
+        error: CustomApiError;
+        previousStatus?: LabyrinthStatus;
+    }
+    | {
+        status: LabyrinthStatus.READY_TO_USE_LABYRINTH;
+        instance: Labyrinth;
+    };
 
 function loadLabyrinthFromLocalStorage(): LabyrinthSerialized | null {
     const labyrinthJSONString = localStorage.getItem(LABYRINTH_INSTANCE_KEY);
     if (labyrinthJSONString === null) {
         return null;
     }
-
-    // TODO: Validate with zod?
     return JSON.parse(labyrinthJSONString);
 }
 
@@ -34,81 +64,130 @@ function saveLabyrinthToLocalStorage(labyrinth: Labyrinth) {
 }
 
 export default function useLabyrinth(loggedUserId: string) {
-    const labyrinthSerialized = useMemo(
-        () => loadLabyrinthFromLocalStorage(),
-        [],
-    );
-    const [initialLoadState, setInitialLoadState] = useState(
-        labyrinthSerialized === null
-            ? LabyrinthLoadState.NOT_INITIALIZED
-            : LabyrinthLoadState.LOADING,
-    );
-
-    const [labyrinth, setLabyrinth] = useState<Labyrinth | null>(null);
-    const [error] = useState<AxiosError | null>(null);
+    const [labyrinthHookState, setLabyrinthHookState] =
+        useState<LabyrinthHookState>({
+            status: LabyrinthStatus.INITIAL_LOADING,
+        });
+    const [_labyrinth, _setLabyrinth] = useState<Labyrinth | null>(null);
 
     useEffect(() => {
-        if (initialLoadState === LabyrinthLoadState.NOT_INITIALIZED) {
-            Labyrinth.checkIfLabyrinthIsInitialized(
-                labyrinthWebClientImpl,
-            ).then((response) => {
-                const loadState = response.isInitialized
-                    ? LabyrinthLoadState.NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE
-                    : LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED;
-                setInitialLoadState(loadState);
-            });
-        } else if (initialLoadState === LabyrinthLoadState.LOADING) {
-            Labyrinth.deserialize(
-                labyrinthSerialized!,
-                labyrinthWebClientImpl,
-            ).then(setLabyrinth);
+        if (labyrinthHookState.status === LabyrinthStatus.INITIAL_LOADING) {
+            const serializedLabyrinth = loadLabyrinthFromLocalStorage();
+
+            if (serializedLabyrinth) {
+                Labyrinth.deserialize(
+                    serializedLabyrinth,
+                    labyrinthWebClientImpl,
+                )
+                    .then((instance) => {
+                        setLabyrinthHookState({
+                            status: LabyrinthStatus.READY_TO_USE_LABYRINTH,
+                            instance,
+                        });
+                    })
+                    .catch((e: CustomApiError) => {
+                        setLabyrinthHookState({
+                            status: LabyrinthStatus.ERROR,
+                            error: e,
+                            previousStatus: LabyrinthStatus.INITIAL_LOADING,
+                        });
+                    });
+            } else {
+                Labyrinth.checkIfLabyrinthIsInitialized(labyrinthWebClientImpl)
+                    .then((response) => {
+                        if (response.isInitialized) {
+                            setLabyrinthHookState({
+                                status: LabyrinthStatus.AWAITING_RECOVERY_CODE,
+                            });
+                        } else {
+                            setLabyrinthHookState({
+                                status: LabyrinthStatus.AWAITING_FIRST_EPOCH_CREATION,
+                            });
+                        }
+                    })
+                    .catch((e: CustomApiError) => {
+                        setLabyrinthHookState({
+                            status: LabyrinthStatus.ERROR,
+                            error: e,
+                            previousStatus: LabyrinthStatus.INITIAL_LOADING,
+                        });
+                    });
+            }
+        } else if (
+            labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH
+        ) {
+            saveLabyrinthToLocalStorage(labyrinthHookState.instance);
         }
-    }, [initialLoadState, labyrinthSerialized]);
+    }, [labyrinthHookState.status]);
 
-    useEffect(() => {
-        if (labyrinth !== null) {
-            saveLabyrinthToLocalStorage(labyrinth);
-        }
-    }, [labyrinth]);
-
-    async function setLabyrinthFromRecoveryCode(
-        recoveryCode: string,
-    ): Promise<HandleSubmitRecoveryCodeResponse> {
-        setLabyrinth(
-            await Labyrinth.fromRecoveryCode(
-                loggedUserId,
-                recoveryCode,
-                labyrinthWebClientImpl,
-            ),
-        );
-
-        return {
-            isSuccess: true,
-        };
-    }
-
-    async function setLabyrinthFromFirstEpoch(): Promise<HandleGenerateRecoveryCodeResponse> {
-        const fromFirstEpoch = await Labyrinth.initialize(
+    function initializeLabyrinthFromRecoveryCode(recoveryCode: string): void {
+        setLabyrinthHookState({
+            status: LabyrinthStatus.PROCESSING_RECOVERY_CODE,
+        });
+        Labyrinth.fromRecoveryCode(
             loggedUserId,
+            recoveryCode,
             labyrinthWebClientImpl,
-        );
-        setLabyrinth(fromFirstEpoch.labyrinthInstance);
-
-        return {
-            recoveryCode: fromFirstEpoch.recoveryCode,
-        };
+        )
+            .then((labyrinthInstance) => {
+                setLabyrinthHookState({
+                    status: LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED,
+                });
+                _setLabyrinth(labyrinthInstance);
+            })
+            .catch((e: CustomApiError) => {
+                setLabyrinthHookState({
+                    status: LabyrinthStatus.ERROR,
+                    error: e,
+                    previousStatus: LabyrinthStatus.PROCESSING_RECOVERY_CODE,
+                });
+            });
     }
 
-    async function retryInitialization() {
-        setInitialLoadState(LabyrinthLoadState.NOT_INITIALIZED);
+    function initializeLabyrinthFromFirstEpoch(): void {
+        setLabyrinthHookState({
+            status: LabyrinthStatus.CREATING_FIRST_EPOCH,
+        });
+        Labyrinth.initialize(loggedUserId, labyrinthWebClientImpl)
+            .then((fromFirstEpoch) => {
+                setLabyrinthHookState({
+                    status: LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION,
+                    recoveryCode: fromFirstEpoch.recoveryCode,
+                });
+                _setLabyrinth(fromFirstEpoch.labyrinthInstance);
+            })
+            .catch((e: CustomApiError) => {
+                setLabyrinthHookState({
+                    status: LabyrinthStatus.ERROR,
+                    error: e,
+                    previousStatus: LabyrinthStatus.CREATING_FIRST_EPOCH,
+                });
+            });
+    }
+
+    function retryInitialization() {
+        _setLabyrinth(null);
+        setLabyrinthHookState({ status: LabyrinthStatus.INITIAL_LOADING });
+    }
+
+    function finishInitializationFromDialog() {
+        if (labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH) {
+            return;
+        }
+
+        if (_labyrinth !== null) {
+            setLabyrinthHookState({
+                status: LabyrinthStatus.READY_TO_USE_LABYRINTH,
+                instance: _labyrinth,
+            });
+        }
     }
 
     return {
-        labyrinth,
-        initialLoadState,
-        error,
+        labyrinthHookState,
+        initializeLabyrinthFromFirstEpoch,
+        initializeLabyrinthFromRecoveryCode,
         retryInitialization,
-        setLabyrinthFromRecoveryCode,
-        setLabyrinthFromFirstEpoch,
+        finishInitializationFromDialog,
     } as const;
 }

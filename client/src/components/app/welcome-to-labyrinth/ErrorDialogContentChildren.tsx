@@ -19,8 +19,7 @@ export default function ErrorDialogContentChildren({
         <>
             <AlertDialogHeader>
                 <AlertDialogTitle>
-                    Oops! An error occurred during first initialization on
-                    device
+                    Oops! An error occurred
                 </AlertDialogTitle>
                 <AlertDialogDescription>{message}</AlertDialogDescription>
             </AlertDialogHeader>

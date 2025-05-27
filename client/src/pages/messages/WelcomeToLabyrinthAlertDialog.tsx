@@ -2,43 +2,69 @@ import {
     AlertDialog,
     AlertDialogContent,
 } from '@/components/ui/alert-dialog.tsx';
-import WelcomeToLabyrinthAlertDialogContentChildren from '@/pages/messages/WelcomeToLabyrinthAlertDialogContentChildren.tsx';
-import { LabyrinthLoadState } from '@/pages/messages/hooks/useLabyrinth.ts';
-import { HandleGenerateRecoveryCodeResponse } from '@/components/app/welcome-to-labyrinth/GenerateRecoveryCodeAlertDialogContentChildren.tsx';
-import { HandleSubmitRecoveryCodeResponse } from '@/components/app/welcome-to-labyrinth/RecoverSecretsDialogContentChildren.tsx';
-import React from 'react';
+import WelcomeToLabyrinthAlertDialogContentChildren, {
+    WelcomeToLabyrinthAlertDialogContentProps,
+} from '@/pages/messages/WelcomeToLabyrinthAlertDialogContentChildren.tsx';
+import React, { useEffect } from 'react';
+import { LabyrinthStatus } from './hooks/useLabyrinth';
 
-export type WelcomeToLabyrinthProps = {
+export type WelcomeToLabyrinthAlertDialogProps = {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    labyrinthLoadState:
-        | LabyrinthLoadState.NOT_INITIALIZED
-        | LabyrinthLoadState.NOT_IN_STORAGE_AND_FIRST_EPOCH_NOT_CREATED
-        | LabyrinthLoadState.NOT_IN_STORAGE_AND_HAS_RECOVERY_CODE;
-    retryInitialization: () => Promise<void>;
-    setLabyrinthFromFirstEpoch: () => Promise<HandleGenerateRecoveryCodeResponse>;
-    setLabyrinthFromRecoveryCode: (
-        recoveryCode: string,
-    ) => Promise<HandleSubmitRecoveryCodeResponse>;
-};
+    finishInitializationFromDialog: () => void;
+} & WelcomeToLabyrinthAlertDialogContentProps;
 
 export default function WelcomeToLabyrinthAlertDialog({
     open,
     setOpen,
-    labyrinthLoadState,
+    labyrinthHookState,
     retryInitialization,
-    setLabyrinthFromFirstEpoch,
-    setLabyrinthFromRecoveryCode,
-}: Readonly<WelcomeToLabyrinthProps>) {
+    finishInitializationFromDialog,
+    initializeLabyrinthFromFirstEpoch,
+    initializeLabyrinthFromRecoveryCode,
+}: Readonly<WelcomeToLabyrinthAlertDialogProps>) {
+    useEffect(() => {
+        if (
+            labyrinthHookState.status === LabyrinthStatus.INITIAL_LOADING ||
+            labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH
+        ) {
+            setOpen(false);
+        } else {
+            setOpen(true);
+        }
+    }, [labyrinthHookState.status, setOpen]);
+
     return (
-        <AlertDialog open={open} onOpenChange={(o) => setOpen(o)}>
+        <AlertDialog
+            open={open}
+            onOpenChange={(o) => {
+                if (!o) {
+                    const isSetupInProgressOrSuccessfulAndAwaitingDialogClose = [
+                        LabyrinthStatus.AWAITING_FIRST_EPOCH_CREATION,
+                        LabyrinthStatus.CREATING_FIRST_EPOCH,
+                        LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION,
+                        LabyrinthStatus.AWAITING_RECOVERY_CODE,
+                        LabyrinthStatus.PROCESSING_RECOVERY_CODE,
+                        LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED,
+                    ].includes(labyrinthHookState.status);
+
+                    if (isSetupInProgressOrSuccessfulAndAwaitingDialogClose) {
+                        finishInitializationFromDialog();
+                    }
+                }
+                setOpen(o);
+            }}
+        >
             <AlertDialogContent>
                 <WelcomeToLabyrinthAlertDialogContentChildren
-                    setOpen={setOpen}
-                    labyrinthLoadState={labyrinthLoadState}
+                    labyrinthHookState={labyrinthHookState}
                     retryInitialization={retryInitialization}
-                    setLabyrinthFromFirstEpoch={setLabyrinthFromFirstEpoch}
-                    setLabyrinthFromRecoveryCode={setLabyrinthFromRecoveryCode}
+                    initializeLabyrinthFromFirstEpoch={
+                        initializeLabyrinthFromFirstEpoch
+                    }
+                    initializeLabyrinthFromRecoveryCode={
+                        initializeLabyrinthFromRecoveryCode
+                    }
                 />
             </AlertDialogContent>
         </AlertDialog>

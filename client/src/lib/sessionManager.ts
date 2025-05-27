@@ -1,6 +1,6 @@
 import { LOGGED_USER_ID_KEY, SESSION_EXPIRES_AT_KEY, SESSION_EXPIRATION_TIME_MIN } from '@/constants.ts';
 
-interface AuthTokenDetails {
+export interface AuthTokenDetails {
     userId: string;
     expiresAt: number;
 }

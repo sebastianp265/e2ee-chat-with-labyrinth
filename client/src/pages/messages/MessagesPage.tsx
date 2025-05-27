@@ -1,6 +1,6 @@
 import { ISessionProps } from '@/SessionCheckWrapper.tsx';
 import { useEffect, useState } from 'react';
-import { usePrivateRouteContext } from '@/main.tsx';
+import { useAuthContext } from '@/main.tsx';
 import WelcomeToLabyrinthAlertDialog from '@/pages/messages/WelcomeToLabyrinthAlertDialog.tsx';
 import ChatContent from '@/pages/messages/ChatContent.tsx';
 import useLabyrinth, {
@@ -11,7 +11,7 @@ export default function MessagesPage({
     sessionExpired,
     inactivateSession,
 }: Readonly<ISessionProps>) {
-    const { loggedUserId } = usePrivateRouteContext();
+    const { loggedUserId } = useAuthContext();
     const {
         labyrinth,
         initialLoadState,

@@ -4,6 +4,7 @@ import { CustomApiError } from '@/lib/errorUtils.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService, LoginRequestDTO, LoginResponseDTO } from '@/api/authService';
 import { sessionManager } from '@/lib/sessionManager.ts';
+import { APP_ROUTES } from '@/constants/routes.ts';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function LoginPage() {
         onSuccess: (data: LoginResponseDTO) => {
             queryClient.invalidateQueries({ queryKey: ['user'] });
             sessionManager.setUserIdOnLogin(data.userId);
-            navigate('/');
+            navigate(`/${APP_ROUTES.MESSAGES}`);
         },
     });
 

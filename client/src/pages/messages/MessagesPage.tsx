@@ -1,6 +1,6 @@
 import { ISessionProps } from '@/SessionCheckWrapper.tsx';
 import { useEffect, useState } from 'react';
-import { useAuthContext } from '@/main.tsx';
+import { useAuthContext } from '@/router.tsx';
 import WelcomeToLabyrinthAlertDialog from '@/pages/messages/WelcomeToLabyrinthAlertDialog.tsx';
 import ChatContent from '@/pages/messages/ChatContent.tsx';
 import useLabyrinth, {

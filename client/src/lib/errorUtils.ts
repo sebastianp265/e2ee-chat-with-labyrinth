@@ -50,6 +50,15 @@ export function transformAxiosError(error: Error): CustomApiError {
     const responseData = error.response?.data;
 
     if (error.response) {
+        if (statusCode === 401) {
+            return {
+                userFriendlyMessage:
+                    'Invalid username or password. Please try again.',
+                statusCode,
+                originalError: error,
+            };
+        }
+
         if (responseData != null) {
             const parsedResult =
                 BackendApiErrorDataSchema.safeParse(responseData);
@@ -78,15 +87,6 @@ export function transformAxiosError(error: Error): CustomApiError {
                     },
                 );
             }
-        }
-
-        if (statusCode === 401) {
-            return {
-                userFriendlyMessage:
-                    'Invalid username or password. Please try again.',
-                statusCode,
-                originalError: error,
-            };
         }
 
         console.error(

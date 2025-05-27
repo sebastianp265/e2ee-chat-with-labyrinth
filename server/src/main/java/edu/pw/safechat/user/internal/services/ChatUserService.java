@@ -31,7 +31,7 @@ public class ChatUserService {
     public UUID getUserIdByUsername(String username) {
         return chatUserRepository
                 .findByUsername(username)
-                .orElseThrow(ChatUserNotFoundException::new)
+                .orElseThrow(() -> new ChatUserNotFoundException(username))
                 .getId();
     }
 

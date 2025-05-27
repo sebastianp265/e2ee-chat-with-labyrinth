@@ -25,4 +25,16 @@ describe('The Login Page', () => {
         cy.get('button[aria-label="Logout"]').should('not.be.disabled').click();
         cy.url().should('include', '/login');
     });
+
+    it.only('shows an error message on failed login', () => {
+        cy.visit('/login');
+
+        cy.get('input[name=username]').type('invalid_user');
+        cy.get('input[name=password]').type('wrong_password');
+        cy.get('button[type=submit]').click();
+
+        cy.url().should('include', '/login');
+        cy.getCookie('SESSION').should('not.exist');
+        cy.contains('Invalid username or password. Please try again.').should('be.visible');
+    });
 });

@@ -2,9 +2,7 @@ package edu.pw.safechat.auth.controllers;
 
 import edu.pw.safechat.auth.dtos.LoginRequestDTO;
 import edu.pw.safechat.auth.dtos.LoginResponseDTO;
-import edu.pw.safechat.user.exceptions.ChatUserNotFoundException;
-import edu.pw.safechat.user.internal.entities.ChatUser;
-import edu.pw.safechat.user.internal.repositories.ChatUserRepository;
+import edu.pw.safechat.user.internal.services.ChatUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -32,8 +30,8 @@ public class AuthenticationController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
-    private final ChatUserRepository chatUserRepository;
-
+    private final ChatUserService chatUserService;
+    
     @PostMapping("/login")
     public LoginResponseDTO login(@RequestBody LoginRequestDTO loginRequestDTO,
                                   HttpServletRequest request,
@@ -46,9 +44,7 @@ public class AuthenticationController {
         Authentication authenticationResponse = authenticationManager
                 .authenticate(authenticationRequest);
 
-        UUID loggedUserId = chatUserRepository.findByUsername(loginRequestDTO.getUsername())
-                .map(ChatUser::getId)
-                .orElseThrow(ChatUserNotFoundException::new);
+        UUID loggedUserId = chatUserService.getUserIdByUsername(loginRequestDTO.getUsername());
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authenticationResponse);

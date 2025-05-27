@@ -1,8 +1,9 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import {
     SESSION_EXPIRATION_TIME_MIN,
     SESSION_EXPIRES_AT_KEY,
 } from '@/constants.ts';
+import { transformAxiosError, CustomApiError } from '@/lib/errorUtils.ts';
 
 const createAxiosInstance = () => {
     const client = axios.create({
@@ -29,8 +30,9 @@ const createAxiosInstance = () => {
             );
             return response;
         },
-        (error: AxiosError) => {
-            return Promise.reject(error);
+        (error: Error) => {
+            const customError: CustomApiError = transformAxiosError(error);
+            return Promise.reject(customError);
         },
     );
 

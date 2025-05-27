@@ -35,9 +35,10 @@ const formSchema = z.object({
 
 interface LoginFormProps {
     handleSubmit: (loginRequest: LoginRequestDTO) => void;
+    loginError: string | null;
 }
 
-export function LoginForm({ handleSubmit }: Readonly<LoginFormProps>) {
+export function LoginForm({ handleSubmit, loginError }: Readonly<LoginFormProps>) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -53,6 +54,11 @@ export function LoginForm({ handleSubmit }: Readonly<LoginFormProps>) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {loginError && (
+                    <div className="text-red-500 p-3 bg-red-100 border border-red-400 rounded-md">
+                        {loginError}
+                    </div>
+                )}
                 <FormField
                     control={form.control}
                     name="username"

@@ -3,8 +3,8 @@ import { userPoolToDetails } from '../../support/commands.ts';
 
 describe('Labyrinth Initialization', () => {
     const extractRecoveryCode = (text: string) => {
-        const matchArray = text.match(/Your recovery code is:\s*(\S+)/);
-        if (matchArray && matchArray[1]) {
+        const matchArray = /Your recovery code is:\s*(\S+)/.exec(text);
+        if (matchArray?.[1]) {
             return cy.wrap(matchArray[1]);
         } else {
             throw new Error('Recovery code not found in the text!');
@@ -20,15 +20,16 @@ describe('Labyrinth Initialization', () => {
         });
     };
 
+    // TODO: Refactor
     const getDialogExpectTitleAndButtonName = (
         title: string,
         button: string,
     ) => {
-        cy.get('div[role=alertdialog]').within(() => {
+        cy.get('div[role=dialog]').within(() => {
             cy.get('h2').should('have.text', title);
             cy.get('button').should('have.text', button);
         });
-        return cy.get('div[role=alertdialog]');
+        return cy.get('div[role=dialog]');
     };
 
     it('should derive the same epoch secrets across devices', () => {
@@ -42,7 +43,7 @@ describe('Labyrinth Initialization', () => {
             .find('button')
             .click();
 
-        getDialogExpectTitleAndButtonName('Success', 'Close').as(
+        getDialogExpectTitleAndButtonName('Success!', 'Close').as(
             'success-dialog',
         );
         cy.get('@success-dialog')
@@ -70,7 +71,7 @@ describe('Labyrinth Initialization', () => {
         });
         cy.get('@welcome-back-dialog').find('button').click();
 
-        getDialogExpectTitleAndButtonName('Success', 'Close')
+        getDialogExpectTitleAndButtonName('Success!', 'Close')
             .find('button')
             .click();
         getLabyrinthEpochStateFromLocalStorage().as('labyrinth-after');
@@ -106,7 +107,7 @@ describe('Labyrinth Initialization', () => {
             .type(chosenUserRecoveryCode);
         cy.get('@welcome-back-dialog').find('button').click();
 
-        getDialogExpectTitleAndButtonName('Success', 'Close')
+        getDialogExpectTitleAndButtonName('Success!', 'Close')
             .find('button')
             .click();
 

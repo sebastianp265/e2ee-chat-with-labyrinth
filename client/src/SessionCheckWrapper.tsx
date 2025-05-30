@@ -11,6 +11,7 @@ interface ISessionCheckWrapper {
     children: ReactElement;
 }
 
+// TODO: add outlet context? is it possible?
 export default function SessionCheckWrapper({
     children,
 }: Readonly<ISessionCheckWrapper>) {

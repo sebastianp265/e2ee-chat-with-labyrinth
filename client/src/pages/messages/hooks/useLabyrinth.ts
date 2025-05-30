@@ -1,6 +1,6 @@
 import { LABYRINTH_INSTANCE_KEY } from '@/constants.ts';
 import labyrinthWebClientImpl from '@/api/labyrinthWebClientImpl.ts';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     Labyrinth,
     LabyrinthSerialized,
@@ -26,27 +26,31 @@ export enum LabyrinthStatus {
 export type LabyrinthHookState =
     | { status: LabyrinthStatus.INITIAL_LOADING }
     | (
-        | { status: LabyrinthStatus.AWAITING_FIRST_EPOCH_CREATION }
-        | { status: LabyrinthStatus.CREATING_FIRST_EPOCH }
-        | {
-            status: LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION;
-            recoveryCode: string;
-        }
-    )
+          | { status: LabyrinthStatus.AWAITING_FIRST_EPOCH_CREATION }
+          | { status: LabyrinthStatus.CREATING_FIRST_EPOCH }
+          | {
+                status: LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION;
+                recoveryCode: string;
+                _instance: Labyrinth;
+            }
+      )
     | (
-        | { status: LabyrinthStatus.AWAITING_RECOVERY_CODE }
-        | { status: LabyrinthStatus.PROCESSING_RECOVERY_CODE }
-        | { status: LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED }
-    )
+          | { status: LabyrinthStatus.AWAITING_RECOVERY_CODE }
+          | { status: LabyrinthStatus.PROCESSING_RECOVERY_CODE }
+          | {
+                status: LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED;
+                _instance: Labyrinth;
+            }
+      )
     | {
-        status: LabyrinthStatus.ERROR;
-        error: CustomApiError;
-        previousStatus?: LabyrinthStatus;
-    }
+          status: LabyrinthStatus.ERROR;
+          error: CustomApiError;
+          previousStatus?: LabyrinthStatus;
+      }
     | {
-        status: LabyrinthStatus.READY_TO_USE_LABYRINTH;
-        instance: Labyrinth;
-    };
+          status: LabyrinthStatus.READY_TO_USE_LABYRINTH;
+          instance: Labyrinth;
+      };
 
 function loadLabyrinthFromLocalStorage(): LabyrinthSerialized | null {
     const labyrinthJSONString = localStorage.getItem(LABYRINTH_INSTANCE_KEY);
@@ -68,7 +72,6 @@ export default function useLabyrinth(loggedUserId: string) {
         useState<LabyrinthHookState>({
             status: LabyrinthStatus.INITIAL_LOADING,
         });
-    const [_labyrinth, _setLabyrinth] = useState<Labyrinth | null>(null);
 
     useEffect(() => {
         if (labyrinthHookState.status === LabyrinthStatus.INITIAL_LOADING) {
@@ -120,31 +123,35 @@ export default function useLabyrinth(loggedUserId: string) {
         }
     }, [labyrinthHookState.status]);
 
-    function initializeLabyrinthFromRecoveryCode(recoveryCode: string): void {
-        setLabyrinthHookState({
-            status: LabyrinthStatus.PROCESSING_RECOVERY_CODE,
-        });
-        Labyrinth.fromRecoveryCode(
-            loggedUserId,
-            recoveryCode,
-            labyrinthWebClientImpl,
-        )
-            .then((labyrinthInstance) => {
-                setLabyrinthHookState({
-                    status: LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED,
-                });
-                _setLabyrinth(labyrinthInstance);
-            })
-            .catch((e: CustomApiError) => {
-                setLabyrinthHookState({
-                    status: LabyrinthStatus.ERROR,
-                    error: e,
-                    previousStatus: LabyrinthStatus.PROCESSING_RECOVERY_CODE,
-                });
+    const initializeLabyrinthFromRecoveryCode = useCallback(
+        (recoveryCode: string): void => {
+            setLabyrinthHookState({
+                status: LabyrinthStatus.PROCESSING_RECOVERY_CODE,
             });
-    }
+            Labyrinth.fromRecoveryCode(
+                loggedUserId,
+                recoveryCode,
+                labyrinthWebClientImpl,
+            )
+                .then((labyrinthInstance) => {
+                    setLabyrinthHookState({
+                        status: LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED,
+                        _instance: labyrinthInstance,
+                    });
+                })
+                .catch((e: CustomApiError) => {
+                    setLabyrinthHookState({
+                        status: LabyrinthStatus.ERROR,
+                        error: e,
+                        previousStatus:
+                            LabyrinthStatus.PROCESSING_RECOVERY_CODE,
+                    });
+                });
+        },
+        [loggedUserId],
+    );
 
-    function initializeLabyrinthFromFirstEpoch(): void {
+    const initializeLabyrinthFromFirstEpoch = useCallback((): void => {
         setLabyrinthHookState({
             status: LabyrinthStatus.CREATING_FIRST_EPOCH,
         });
@@ -153,8 +160,8 @@ export default function useLabyrinth(loggedUserId: string) {
                 setLabyrinthHookState({
                     status: LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION,
                     recoveryCode: fromFirstEpoch.recoveryCode,
+                    _instance: fromFirstEpoch.labyrinthInstance,
                 });
-                _setLabyrinth(fromFirstEpoch.labyrinthInstance);
             })
             .catch((e: CustomApiError) => {
                 setLabyrinthHookState({
@@ -163,25 +170,25 @@ export default function useLabyrinth(loggedUserId: string) {
                     previousStatus: LabyrinthStatus.CREATING_FIRST_EPOCH,
                 });
             });
-    }
+    }, [loggedUserId]);
 
-    function retryInitialization() {
-        _setLabyrinth(null);
+    const retryInitialization = useCallback(() => {
         setLabyrinthHookState({ status: LabyrinthStatus.INITIAL_LOADING });
-    }
+    }, []);
 
-    function finishInitializationFromDialog() {
-        if (labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH) {
-            return;
-        }
-
-        if (_labyrinth !== null) {
+    const finishInitializationFromDialog = useCallback(() => {
+        if (
+            labyrinthHookState.status ===
+                LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION ||
+            labyrinthHookState.status ===
+                LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED
+        ) {
             setLabyrinthHookState({
                 status: LabyrinthStatus.READY_TO_USE_LABYRINTH,
-                instance: _labyrinth,
+                instance: labyrinthHookState._instance,
             });
         }
-    }
+    }, [labyrinthHookState]);
 
     return {
         labyrinthHookState,

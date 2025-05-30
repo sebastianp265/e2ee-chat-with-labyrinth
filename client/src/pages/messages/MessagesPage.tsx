@@ -1,14 +1,13 @@
 import { ISessionProps } from '@/SessionCheckWrapper.tsx';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useAuthContext } from '@/router.tsx';
-import WelcomeToLabyrinthAlertDialog from '@/pages/messages/WelcomeToLabyrinthAlertDialog.tsx';
 import ChatContent from '@/pages/messages/ChatContent.tsx';
 import useLabyrinth, {
     LabyrinthStatus,
 } from '@/pages/messages/hooks/useLabyrinth.ts';
+import WelcomeToLabyrinthDialog from './WelcomeToLabyrinthDialog';
 
 export default function MessagesPage({
-    sessionExpired,
     inactivateSession,
 }: Readonly<ISessionProps>) {
     const { loggedUserId } = useAuthContext();
@@ -19,13 +18,17 @@ export default function MessagesPage({
         retryInitialization,
         finishInitializationFromDialog,
     } = useLabyrinth(loggedUserId);
-    const [openDialog, setOpenDialog] = useState(false);
+
+    const labyrinth = useMemo(() => {
+        return labyrinthHookState.status ===
+            LabyrinthStatus.READY_TO_USE_LABYRINTH
+            ? labyrinthHookState.instance
+            : null;
+    }, [labyrinthHookState]);
 
     return (
         <div className="flex h-full">
-            <WelcomeToLabyrinthAlertDialog
-                open={!sessionExpired && openDialog}
-                setOpen={setOpenDialog}
+            <WelcomeToLabyrinthDialog
                 labyrinthHookState={labyrinthHookState}
                 initializeLabyrinthFromRecoveryCode={
                     initializeLabyrinthFromRecoveryCode
@@ -39,13 +42,9 @@ export default function MessagesPage({
 
             <ChatContent
                 loggedUserId={loggedUserId}
-                labyrinth={
-                    labyrinthHookState.status ===
-                    LabyrinthStatus.READY_TO_USE_LABYRINTH
-                        ? labyrinthHookState.instance
-                        : null
-                }
-                inactivateSession={inactivateSession!!}
+                labyrinth={labyrinth}
+                // TODO: Refactor to not use '!'
+                inactivateSession={inactivateSession!}
             />
         </div>
     );

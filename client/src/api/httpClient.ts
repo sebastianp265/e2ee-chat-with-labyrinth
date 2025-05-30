@@ -23,6 +23,7 @@ const createAxiosInstance = () => {
         },
         (error: Error) => {
             const customError: CustomApiError = transformAxiosError(error);
+            // TODO: Inject transform error, fix sonarlint
             return Promise.reject(customError);
         },
     );

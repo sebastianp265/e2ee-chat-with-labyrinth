@@ -15,8 +15,8 @@ describe('Opening new epochs', () => {
         cy.visit('/messages');
 
         cy.get('input').type(userPoolToDetails[alice].recoveryCode!);
-        cy.get('div[role="alertdialog"] button').click();
-        cy.get('div[role="alertdialog"] button').click();
+        cy.get('div[role="dialog"] button').click();
+        cy.get('div[role="dialog"] button').click();
     }
 
     function waitMaxInactivityTime() {

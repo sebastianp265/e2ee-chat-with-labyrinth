@@ -49,7 +49,7 @@ export default function RecoveryCodeDialogContent({
                             control={form.control}
                             name="recoveryCode"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="mt-2 mb-2">
                                     <FormLabel>Recovery code</FormLabel>
                                     <FormControl>
                                         <Input

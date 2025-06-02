@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import httpClient from '@/api/httpClient.ts';
 import { Button } from '@/components/ui/button.tsx';
-import { ISessionProps } from '@/SessionCheckWrapper.tsx';
+import { useSessionContext } from '@/SessionCheckWrapper.tsx';
 
 export type HelloGetDTO = {
     name: string;
@@ -12,22 +12,25 @@ export type HelloGetDTO = {
     sessionId: string;
 };
 
-export default function Hello({ inactivateSession }: Readonly<ISessionProps>) {
+export default function Hello() {
+    const { inactivateSession, sessionExpired } = useSessionContext();
     const [hello, setHello] = useState({} as HelloGetDTO);
     const [resend, setResend] = useState(false);
 
     useEffect(() => {
+        if (sessionExpired) return;
+
         httpClient
             .get<HelloGetDTO>('/api/auth/hello')
             .then((response) => {
                 setHello(response.data);
             })
             .catch((error) => {
-                if (error.response.status == 401) {
-                    inactivateSession?.();
+                if (error.response.status == 401 && inactivateSession) {
+                    inactivateSession();
                 }
             });
-    }, [resend, inactivateSession]);
+    }, [resend, inactivateSession, sessionExpired]);
 
     return (
         <div>

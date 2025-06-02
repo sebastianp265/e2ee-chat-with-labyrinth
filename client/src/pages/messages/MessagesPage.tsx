@@ -1,4 +1,3 @@
-import { ISessionProps } from '@/SessionCheckWrapper.tsx';
 import { useMemo } from 'react';
 import { useAuthContext } from '@/router.tsx';
 import ChatContent from '@/pages/messages/ChatContent.tsx';
@@ -6,10 +5,10 @@ import useLabyrinth, {
     LabyrinthStatus,
 } from '@/pages/messages/hooks/useLabyrinth.ts';
 import WelcomeToLabyrinthDialog from './WelcomeToLabyrinthDialog';
+import { useSessionContext } from '@/SessionCheckWrapper.tsx';
 
-export default function MessagesPage({
-    inactivateSession,
-}: Readonly<ISessionProps>) {
+export default function MessagesPage() {
+    const { inactivateSession } = useSessionContext();
     const { loggedUserId } = useAuthContext();
     const {
         labyrinthHookState,
@@ -43,8 +42,7 @@ export default function MessagesPage({
             <ChatContent
                 loggedUserId={loggedUserId}
                 labyrinth={labyrinth}
-                // TODO: Refactor to not use '!'
-                inactivateSession={inactivateSession!}
+                inactivateSession={inactivateSession}
             />
         </div>
     );

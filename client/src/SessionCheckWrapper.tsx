@@ -1,20 +1,18 @@
 import SessionExpiredAlert from '@/components/app/SessionExpiredAlert.tsx';
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sessionManager } from '@/lib/sessionManager.ts';
+import { Outlet, useOutletContext } from 'react-router-dom';
 
 export interface ISessionProps {
-    sessionExpired?: boolean;
-    inactivateSession?: () => void;
+    sessionExpired: boolean;
+    inactivateSession: () => void;
 }
 
-interface ISessionCheckWrapper {
-    children: ReactElement;
+export function useSessionContext() {
+    return useOutletContext<ISessionProps>();
 }
 
-// TODO: add outlet context? is it possible?
-export default function SessionCheckWrapper({
-    children,
-}: Readonly<ISessionCheckWrapper>) {
+export default function SessionCheckWrapper() {
     const [sessionExpired, setSessionExpired] = useState(false);
 
     const inactivateSession = () => {
@@ -23,6 +21,8 @@ export default function SessionCheckWrapper({
     };
 
     useEffect(() => {
+        let timerId: number | undefined;
+
         function checkAuthentication() {
             const sessionDetails = sessionManager.getSessionDetails();
             if (!sessionDetails) {
@@ -35,19 +35,31 @@ export default function SessionCheckWrapper({
                 inactivateSession();
                 return;
             }
-            setTimeout(checkAuthentication, sessionMsLeft);
+
+            if (timerId) {
+                clearTimeout(timerId);
+            }
+            timerId = window.setTimeout(checkAuthentication, sessionMsLeft);
         }
 
         checkAuthentication();
-    }, []);
+
+        return () => {
+            if (timerId) {
+                clearTimeout(timerId);
+            }
+        };
+    }, [inactivateSession]);
+
+    const contextValue: ISessionProps = {
+        sessionExpired,
+        inactivateSession,
+    };
 
     return (
         <>
             {sessionExpired && <SessionExpiredAlert />}
-            {React.cloneElement(children, {
-                sessionExpired,
-                inactivateSession,
-            } as ISessionProps)}
+            <Outlet context={contextValue} />
         </>
     );
 }

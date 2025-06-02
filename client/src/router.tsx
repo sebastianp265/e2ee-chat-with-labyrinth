@@ -7,7 +7,7 @@ import {
     useOutletContext,
 } from 'react-router-dom';
 import LoginPage from '@/pages/login/LoginPage.tsx';
-import SessionCheckWrapper from '@/SessionCheckWrapper.tsx';
+import SessionCheckWrapper, { ISessionProps } from '@/SessionCheckWrapper.tsx';
 import Hello from '@/pages/hello/Hello.tsx';
 import MessagesPage from '@/pages/messages/MessagesPage.tsx';
 import { sessionManager, AuthTokenDetails } from '@/lib/sessionManager.ts';
@@ -18,8 +18,8 @@ export type AuthContextData = {
 };
 
 function AuthContextOutlet() {
-    const { userId: loggedUserId } = useLoaderData() as AuthTokenDetails;
-    return <Outlet context={{ loggedUserId }} />;
+    const outletData = useLoaderData() as AuthTokenDetails;
+    return <Outlet context={{ loggedUserId: outletData.userId } satisfies AuthContextData} />;
 }
 
 export function useAuthContext() {
@@ -41,24 +41,21 @@ export const router = createBrowserRouter([
         },
         children: [
             {
-                index: true,
-                element: <Navigate to={`/${APP_ROUTES.MESSAGES}`} replace />,
-            },
-            {
-                path: APP_ROUTES.MESSAGES,
-                element: (
-                    <SessionCheckWrapper>
-                        <MessagesPage />
-                    </SessionCheckWrapper>
-                ),
-            },
-            {
-                path: APP_ROUTES.HELLO,
-                element: (
-                    <SessionCheckWrapper>
-                        <Hello />
-                    </SessionCheckWrapper>
-                ),
+                element: <SessionCheckWrapper />,
+                children: [
+                    {
+                        index: true,
+                        element: <Navigate to={`/${APP_ROUTES.MESSAGES}`} replace />,
+                    },
+                    {
+                        path: APP_ROUTES.MESSAGES,
+                        element: <MessagesPage />,
+                    },
+                    {
+                        path: APP_ROUTES.HELLO,
+                        element: <Hello />,
+                    },
+                ]
             },
         ],
     },

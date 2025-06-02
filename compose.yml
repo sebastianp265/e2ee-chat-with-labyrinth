@@ -39,7 +39,7 @@ services:
       retries: 10
 
   server_db:
-    container_name: ${SERVER_DB_HOST}
+    container_name: ${SERVER_DB_HOST_CONTAINER:-${SERVER_DB_HOST}}
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: ${SERVER_DB_NAME}
@@ -59,7 +59,7 @@ services:
       retries: 20
 
   server_temp_db:
-    container_name: ${SERVER_TEMP_DB_HOST}
+    container_name: ${SERVER_TEMP_DB_HOST_CONTAINER:-${SERVER_TEMP_DB_HOST}}
     image:
       redis:7.4-alpine
     ports:

@@ -7,7 +7,7 @@ import {
     useOutletContext,
 } from 'react-router-dom';
 import LoginPage from '@/pages/login/LoginPage.tsx';
-import SessionCheckWrapper, { ISessionProps } from '@/SessionCheckWrapper.tsx';
+import SessionCheckWrapper from '@/SessionCheckWrapper.tsx';
 import Hello from '@/pages/hello/Hello.tsx';
 import MessagesPage from '@/pages/messages/MessagesPage.tsx';
 import { sessionManager, AuthTokenDetails } from '@/lib/sessionManager.ts';

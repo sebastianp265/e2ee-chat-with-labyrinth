@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
-import { useAuthContext } from '@/router.tsx';
+import { useAuthContext } from '@/lib/AuthContext.tsx'; // Import new context hook
 import ChatContent from '@/pages/messages/ChatContent.tsx';
 import useLabyrinth, {
     LabyrinthStatus,
 } from '@/pages/messages/hooks/useLabyrinth.ts';
 import WelcomeToLabyrinthDialog from './WelcomeToLabyrinthDialog';
-import { useSessionContext } from '@/SessionCheckWrapper.tsx';
+import { useSessionContext } from '@/SessionCheckWrapper.tsx'; // This remains
 
 export default function MessagesPage() {
     const { inactivateSession } = useSessionContext();
     const { loggedUserId } = useAuthContext();
+
     const {
         labyrinthHookState,
         initializeLabyrinthFromFirstEpoch,

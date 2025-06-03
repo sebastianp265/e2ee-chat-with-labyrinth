@@ -1,24 +1,38 @@
 import SessionExpiredAlert from '@/components/app/SessionExpiredAlert.tsx';
-import { useEffect, useState } from 'react';
+import React, {
+    useEffect,
+    useState,
+    createContext,
+    useContext,
+    useCallback,
+} from 'react';
 import { sessionManager } from '@/lib/sessionManager.ts';
-import { Outlet, useOutletContext } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 export interface ISessionProps {
     sessionExpired: boolean;
     inactivateSession: () => void;
 }
 
+const SessionReactContext = createContext<ISessionProps | null>(null);
+
 export function useSessionContext() {
-    return useOutletContext<ISessionProps>();
+    const context = useContext(SessionReactContext);
+    if (!context) {
+        throw new Error(
+            'useSessionContext must be used within a SessionCheckWrapper (Provider)',
+        );
+    }
+    return context;
 }
 
 export default function SessionCheckWrapper() {
     const [sessionExpired, setSessionExpired] = useState(false);
 
-    const inactivateSession = () => {
+    const inactivateSession = useCallback(() => {
         setSessionExpired(true);
         sessionManager.clearSession();
-    };
+    }, []);
 
     useEffect(() => {
         let timerId: number | undefined;
@@ -51,15 +65,18 @@ export default function SessionCheckWrapper() {
         };
     }, [inactivateSession]);
 
-    const contextValue: ISessionProps = {
-        sessionExpired,
-        inactivateSession,
-    };
+    const contextValue: ISessionProps = React.useMemo(
+        () => ({
+            sessionExpired,
+            inactivateSession,
+        }),
+        [sessionExpired, inactivateSession],
+    );
 
     return (
-        <>
+        <SessionReactContext.Provider value={contextValue}>
             {sessionExpired && <SessionExpiredAlert />}
-            <Outlet context={contextValue} />
-        </>
+            <Outlet />
+        </SessionReactContext.Provider>
     );
 }

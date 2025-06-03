@@ -81,14 +81,11 @@ function parseBackendError(
             });
         }
     } else {
-        console.error(
-            'Backend error response did not match expected schema:',
-            {
-                responseData,
-                zodIssues: parsedResult.error.issues,
-                originalAxiosError: originalError,
-            },
-        );
+        console.error('Backend error response did not match expected schema:', {
+            responseData,
+            zodIssues: parsedResult.error.issues,
+            originalAxiosError: originalError,
+        });
     }
     return new CustomApiError(
         'The server returned an unexpected error. Please try again later.',
@@ -111,11 +108,14 @@ function handleAxiosResponseError(error: AxiosError): CustomApiError {
         return parseBackendError(responseData, statusCode, error);
     }
 
-    console.error('Unhandled server error or unmapped/malformed custom error:', {
-        statusCode,
-        responseData,
-        originalAxiosError: error,
-    });
+    console.error(
+        'Unhandled server error or unmapped/malformed custom error:',
+        {
+            statusCode,
+            responseData,
+            originalAxiosError: error,
+        },
+    );
     return new CustomApiError(
         'The server returned an unexpected error. Please try again later.',
         { statusCode, originalError: error },

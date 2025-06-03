@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.9
--- Dumped by pg_dump version 16.9
+-- Dumped from database version 16.4
+-- Dumped by pg_dump version 16.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -20,72 +20,93 @@ SET row_security = off;
 -- Data for Name: labyrinth; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.labyrinth VALUES ('ab43aa8a-5d4d-4010-823c-ed79a6c8d167', 'edcc5ad9-7620-4133-b4cd-238c1e42ddb0');
+INSERT INTO public.labyrinth
+VALUES ('7639e349-2420-41d3-8ed4-2199bb110285', 'edcc5ad9-7620-4133-b4cd-238c1e42ddb0');
 
 
 --
 -- Data for Name: device; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.device VALUES ('c1eda78d-942c-4f81-8c72-a9066bf1c09e', 'ab43aa8a-5d4d-4010-823c-ed79a6c8d167', '\x03edb11001d6d422d340a913ef09314fbf83913f32a916f1f5236141856701d1', '\xa3f2a6cbf0cade8230efe9b4c528a776835fa52cc7f0d543c97312979f286fa5', '\x2cef932eac97faa3b3ecdcda82494b3aeb38acbe3cecdcef89f758416810af3d02065c4568db4a5921f2f23029e3166073f6ca3c0e3769d54fc4fa3f096a020d', '\xb367ca734040e53802a2ce7eddfb30737935aee65dfcf2b9cde97d62c578b674', '\xae192ace9e57c66a7d3c483719fd3f969a253a8c56397fa42fec3642b143d92c993c0ab9ae1ba98f2fb4275c9c8d2f9709906efb0c0f9a740298ab9459680801', '2400-06-03 07:51:07.011349');
-INSERT INTO public.device VALUES ('eecf1c50-48ca-401f-8d1c-13bebd218c9b', 'ab43aa8a-5d4d-4010-823c-ed79a6c8d167', '\xa200ef389e09713e4a173c91517484dd9f2c76a27ab8703755c482a35e5b906d', '\xc019ade2e6f3fa67afd400fa2ed09db253e447803ae920598f4da57291619048', '\x27cdb94b40008b1ead27fd8d061c1eb5e17d3e32b0d3ee1e5f1072ba6dafca96d373517a12639d4c2ea92af3f455011d547ccf773c8e1edb04f30f532da9520f', '\x4938dab6d80ec67b96baae8951b8f79f29f62bdc9fad2a40b383225fca7b5ce5', '\x223f7568cac9a4be65b3a208747a6f3cf2bf2f5a290c4f18c94c4ba66fd7b769ea6594489367c28247a33b5a41f99831f8abaa4b238aba175d0b3c7a8e17400a', '2400-06-03 07:51:09.044972');
+INSERT INTO public.device
+VALUES ('7cc8dbc4-74c9-4de1-ad1b-5d4bbe2a4fd4', '7639e349-2420-41d3-8ed4-2199bb110285',
+        '\xe8ab1a42d270ccf464af41f5fa1f16b3b12240c5dda1542f996ccfb43ed7fc27',
+        '\x80f83b070b0cfa164db131962ce2c1453fc3bae4d2ff0ebf70b663484444ca87',
+        '\xd2b182d4d7172f4d115af3313ed6c61701b75d9f4a94e6ac62d769248db6e9bc91445e9d0289ae1e9b5c398b0ac86b4d72da38149d4bf89536132a77891c5002',
+        '\xf9fcfb71cfef8940951b29123bcaa1c9d938fe26e6e225fd6911478c79c0f3f4',
+        '\x31b81b49ef9d4106f731f4e1146811537f574249a4853cac72942460b68224937bfa55cb73769d843168d8e74ce3acb3a8f1b2ded8aa1ccecda80bc31180b302',
+        NOW());
 
 
 --
 -- Data for Name: epoch; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.epoch VALUES ('79dc2ede-f681-4256-a6a7-5485e50daf13', 'ab43aa8a-5d4d-4010-823c-ed79a6c8d167', '0');
+INSERT INTO public.epoch
+VALUES ('f67ff2c0-39b1-49db-a7c3-2f18ae046cd0', '7639e349-2420-41d3-8ed4-2199bb110285', '0');
 
 
 --
 -- Data for Name: device_epoch_membership_proof; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.device_epoch_membership_proof VALUES (114, '79dc2ede-f681-4256-a6a7-5485e50daf13', 'c1eda78d-942c-4f81-8c72-a9066bf1c09e', '\x2e9bc370747fe998e4abc2e008435caa4234e7231834e226430c8a98e218e78e');
-INSERT INTO public.device_epoch_membership_proof VALUES (115, '79dc2ede-f681-4256-a6a7-5485e50daf13', 'eecf1c50-48ca-401f-8d1c-13bebd218c9b', '\x084bed8d984a5b8556715e6354f873885f6e9cbb31b68963db0dde5ebf5b29ee');
+INSERT INTO public.device_epoch_membership_proof
+VALUES (27, 'f67ff2c0-39b1-49db-a7c3-2f18ae046cd0', '7cc8dbc4-74c9-4de1-ad1b-5d4bbe2a4fd4',
+        '\x89e65f260eed0df8f229674adb7f43082ce6faba86ec8e8ec5ddb42762fa5348');
 
 
 --
 -- Data for Name: virtual_device; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.virtual_device VALUES ('\x60d4c947308e95177321e0e2ba7dfe7c', 'ab43aa8a-5d4d-4010-823c-ed79a6c8d167', '\x008cde42b8b6b86f770e167269c5706351a67a8af2d124513db875d1193528e9', '\xceb03ba450cdf2b8293c6e36bc174c8557b3e0f57f2dc2993d78afb4dffbc5a1', '\xde9146d84af29136b7c5ca35a0f0cc2f2d09a177a09f3679d619433261a2b59ba414e1e1ff1b3e4507495a522d727a81c27fb491ccb2af38347f00a8b64cec04');
+INSERT INTO public.virtual_device
+VALUES ('\xe52af25a853a1dc5c77e365524886419', '7639e349-2420-41d3-8ed4-2199bb110285',
+        '\xe7a0bd7ac9dad716ada2977f131a15b86c681536e5a3da35c8b634aa7c10df9c',
+        '\x205e045e951487128e1ecd08293bd293527ebfc8b705532f78b73ba17e5434f6',
+        '\x919ceb5996c0ca093922ae3e28beb64f62117d0132904134f7cdc961e5b944c5326cae959ad29a18e379514f51a21a665e88f9aceb402015c9ceba339e57da0c');
 
 
 --
 -- Data for Name: virtual_device_encrypted_recovery_secrets; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.virtual_device_encrypted_recovery_secrets VALUES (69, '\x60d4c947308e95177321e0e2ba7dfe7c', '79dc2ede-f681-4256-a6a7-5485e50daf13', '\x8b4a3d3258a378d79fec505469424c8523bc27c5451f1b2bb6cdfd02ace4f22becc8eb940f62ffe763f50e4296cbe1356448ff9f5ce47fd9a3e0bfe5e7d71f22ef2a817c65f08486', '\xead75edb20e81ca84f0529675158fa02282ceba5fd577ec54688e841e19980bb1f7a1afdbadc12ebf56456dd6f076988165850371fafd411c6ff94bf', '\x3b7e582f10ac84007abd3b508be44cbaf7ba5c3f2cbcfac6a7a96f8db9', '\x90934905b45b07ad7b4fe870bcd2027b3ae564a20fe653e5cdd1bd60647b0fb8a07cb70a303bac070a2a2b0c0dce7bc6802b1149d94bf4a1d13f74e8dbb95978bb6f2dbc0ba92e6f');
+INSERT INTO public.virtual_device_encrypted_recovery_secrets
+VALUES (19, '\xe52af25a853a1dc5c77e365524886419',
+        'f67ff2c0-39b1-49db-a7c3-2f18ae046cd0',
+        '\xc818efce0902f801e9f39b616cab87fe03d4e4d97b4e8a303f16233fef7f54f79f889e8b02596a66f7297a2e8afdab4e2311c6476f3a1d991f9645e9a7ebb35e40c55a2e17975245',
+        '\xe0aab4bf3e60f986171c8e2254c0033b74f4df28d33a3fe41507bd6ed172e000175068dd03da8674334af36da442a0a4755d253813f4794370e31cb4',
+        '\xde986f28f685d3454f5ebeb6fe777be9194a4f6184eb7aab2dea6222c3',
+        '\x942cca7919b135d9fc9565c5fa5dfc94dcbe14ead827a6fcd7ab4281eccb924d34e953c5ed32562b3caa72a5cc1dffd240a319458bb3af317a03f5d415d8cd57ab6b7661ee499f01');
 
 
 --
 -- Data for Name: virtual_device_epoch_membership_proof; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.virtual_device_epoch_membership_proof VALUES (70, '79dc2ede-f681-4256-a6a7-5485e50daf13', '\x0ae61d91ffa73fd1ac572eaff0d6137bc0d1fdb4b2ed7f2b328f09f19b358ccc');
+INSERT INTO public.virtual_device_epoch_membership_proof
+VALUES (19, 'f67ff2c0-39b1-49db-a7c3-2f18ae046cd0',
+        '\x47395e88d805b639ebc2f1482f98daeab7b0d2e133c6ee02e7d3ca7faf7ee5eb');
 
 
 --
 -- Name: device_epoch_membership_proof_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.device_epoch_membership_proof_id_seq', 115, true);
+SELECT pg_catalog.setval('public.device_epoch_membership_proof_id_seq', 27, true);
 
 
 --
 -- Name: virtual_device_encrypted_recovery_secrets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.virtual_device_encrypted_recovery_secrets_id_seq', 69, true);
+SELECT pg_catalog.setval('public.virtual_device_encrypted_recovery_secrets_id_seq', 19, true);
 
 
 --
 -- Name: virtual_device_epoch_membership_proof_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.virtual_device_epoch_membership_proof_id_seq', 70, true);
+SELECT pg_catalog.setval('public.virtual_device_epoch_membership_proof_id_seq', 19, true);
 
 
 --

@@ -8,7 +8,7 @@ export const userPoolToDetails: Record<
 > = {
     user_in_labyrinth_alice: {
         visibleName: 'Alice - in labyrinth',
-        recoveryCode: '10TPXNKE9WUWT00ENJ10H0L42FAEAV9U5VKLXXXX',
+        recoveryCode: '10CMLH1L4WMMU9RN6PS843V7R6VC1ZT6RTH0XXXX',
         userId: '14c6d51b-1d4a-4be9-a5e2-df771ebf2051',
     },
     user_in_labyrinth_bob: {

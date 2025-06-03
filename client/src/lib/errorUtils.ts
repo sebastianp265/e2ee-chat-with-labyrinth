@@ -60,6 +60,68 @@ const errorCodeMessages: Record<
         'The requested chat inbox could not be found. Please try again or contact support if the issue persists.',
 };
 
+function parseBackendError(
+    responseData: any,
+    statusCode: number,
+    originalError: AxiosError,
+): CustomApiError {
+    const parsedResult = BackendApiErrorDataSchema.safeParse(responseData);
+    if (parsedResult.success) {
+        const { errorCode, errorDetails } = parsedResult.data;
+        if (errorCode && errorCodeMessages[errorCode]) {
+            const messageOrFn = errorCodeMessages[errorCode];
+            const message =
+                typeof messageOrFn === 'function'
+                    ? messageOrFn(errorDetails)
+                    : messageOrFn;
+            return new CustomApiError(message, {
+                statusCode,
+                errorCode,
+                originalError,
+            });
+        }
+    } else {
+        console.error(
+            'Backend error response did not match expected schema:',
+            {
+                responseData,
+                zodIssues: parsedResult.error.issues,
+                originalAxiosError: originalError,
+            },
+        );
+    }
+    return new CustomApiError(
+        'The server returned an unexpected error. Please try again later.',
+        { statusCode, originalError },
+    );
+}
+
+function handleAxiosResponseError(error: AxiosError): CustomApiError {
+    const statusCode = error.response?.status;
+    const responseData = error.response?.data;
+
+    if (statusCode === 401) {
+        return new CustomApiError(
+            'Invalid username or password. Please try again.',
+            { statusCode, originalError: error },
+        );
+    }
+
+    if (responseData != null && statusCode) {
+        return parseBackendError(responseData, statusCode, error);
+    }
+
+    console.error('Unhandled server error or unmapped/malformed custom error:', {
+        statusCode,
+        responseData,
+        originalAxiosError: error,
+    });
+    return new CustomApiError(
+        'The server returned an unexpected error. Please try again later.',
+        { statusCode, originalError: error },
+    );
+}
+
 export function transformAxiosError(error: Error): CustomApiError {
     if (!(error instanceof AxiosError)) {
         console.error('Unexpected non-Axios error:', error);
@@ -69,54 +131,8 @@ export function transformAxiosError(error: Error): CustomApiError {
         );
     }
 
-    const statusCode = error.response?.status;
-    const responseData = error.response?.data;
-
     if (error.response) {
-        if (statusCode === 401) {
-            return new CustomApiError(
-                'Invalid username or password. Please try again.',
-                { statusCode, originalError: error },
-            );
-        }
-
-        if (responseData != null) {
-            const parsedResult =
-                BackendApiErrorDataSchema.safeParse(responseData);
-            if (parsedResult.success) {
-                const { errorCode, errorDetails } = parsedResult.data;
-                if (errorCode && errorCodeMessages[errorCode]) {
-                    const messageOrFn = errorCodeMessages[errorCode];
-                    const message =
-                        typeof messageOrFn === 'function'
-                            ? messageOrFn(errorDetails)
-                            : messageOrFn;
-                    return new CustomApiError(message, {
-                        statusCode,
-                        errorCode,
-                        originalError: error,
-                    });
-                }
-            } else {
-                console.error(
-                    'Backend error response did not match expected schema:',
-                    {
-                        responseData,
-                        zodIssues: parsedResult.error.issues,
-                        originalAxiosError: error,
-                    },
-                );
-            }
-        }
-
-        console.error(
-            'Unhandled server error or unmapped/malformed custom error:',
-            { statusCode, responseData, originalAxiosError: error },
-        );
-        return new CustomApiError(
-            'The server returned an unexpected error. Please try again later.',
-            { statusCode, originalError: error },
-        );
+        return handleAxiosResponseError(error);
     }
 
     if (error.request) {

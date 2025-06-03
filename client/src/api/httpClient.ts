@@ -23,6 +23,11 @@ const createAxiosInstance = () => {
         },
         (error: any) => {
             const customError: CustomApiError = transformAxiosError(error);
+            if (customError.statusCode === 401) {
+                sessionManager.clearSession();
+            } else {
+                sessionManager.refreshSessionExpiry();
+            }
             return Promise.reject(customError);
         },
     );

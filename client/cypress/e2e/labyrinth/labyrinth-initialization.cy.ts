@@ -2,10 +2,13 @@ import { UserPool } from '../../../cypress';
 import { userPoolToDetails } from '../../support/commands.ts';
 
 function getLabyrinthFromLocalStorage(
+    user: UserPool,
     property?: 'epochStorage' | 'thisDevice',
 ) {
     return cy.window().then((win) => {
-        const labyrinth = win.localStorage.getItem('labyrinth');
+        const labyrinth = win.localStorage.getItem(
+            `labyrinth_instance_for_user_${userPoolToDetails[user].userId}`,
+        );
         if (labyrinth === null)
             throw Error('Labyrinth in local storage cannot be null');
         if (property) {
@@ -56,7 +59,9 @@ describe('Labyrinth Initialization', () => {
         cy.get('@success-dialog').find('button').click();
         cy.get('@success-dialog').should('not.exist');
 
-        getLabyrinthFromLocalStorage('epochStorage').as('labyrinth-before');
+        getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
+            'labyrinth-before',
+        );
         cy.changeToNewDevice();
 
         cy.login(chosenUser);
@@ -76,8 +81,10 @@ describe('Labyrinth Initialization', () => {
         getDialogExpectTitleAndButtonName('Success!', 'Close')
             .find('button')
             .click();
-        getLabyrinthFromLocalStorage('epochStorage').as('labyrinth-after');
-        getLabyrinthFromLocalStorage().then((labyrinth) => {
+        getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
+            'labyrinth-after',
+        );
+        getLabyrinthFromLocalStorage(chosenUser).then((labyrinth) => {
             cy.log('labyrinth', labyrinth);
         });
 
@@ -96,7 +103,9 @@ describe('Labyrinth Initialization', () => {
             userPoolToDetails[chosenUser].recoveryCode!;
 
         cy.loadLabyrinthForUser(chosenUser);
-        getLabyrinthFromLocalStorage('epochStorage').as('labyrinth-before');
+        getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
+            'labyrinth-before',
+        );
 
         cy.changeToNewDevice();
 
@@ -116,7 +125,9 @@ describe('Labyrinth Initialization', () => {
             .find('button')
             .click();
 
-        getLabyrinthFromLocalStorage('epochStorage').as('labyrinth-after');
+        getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
+            'labyrinth-after',
+        );
         cy.get<string>('@labyrinth-before').then((labyrinthBefore) => {
             cy.get<string>('@labyrinth-after').then((labyrinthAfter) => {
                 expect(labyrinthBefore).to.deep.equal(labyrinthAfter);

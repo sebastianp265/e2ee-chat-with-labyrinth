@@ -21,6 +21,11 @@ export const userPoolToDetails: Record<
         recoveryCode: undefined,
         userId: 'c9b7d33c-ea52-4068-98e7-fbf114ca1262',
     },
+    user_not_in_labyrinth: {
+        visibleName: 'Not in labyrinth',
+        recoveryCode: undefined,
+        userId: '6c84fbad-12c4-11ec-82a8-0242ac130003',
+    },
 };
 
 Cypress.Commands.add('login', (username) => {

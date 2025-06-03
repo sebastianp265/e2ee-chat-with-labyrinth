@@ -45,9 +45,11 @@ describe('Opening new epochs', () => {
         });
     }
 
-    function getEpochIdBySequenceIdFromLocalStorage(epochSequenceId: string) {
+    function getEpochIdBySequenceIdFromLocalStorage(loggedUserId: UserPool, epochSequenceId: string) {
         return cy.window().then((win) => {
-            const labyrinth = win.localStorage.getItem('labyrinth');
+            const labyrinth = win.localStorage.getItem(
+                `labyrinth_instance_for_user_${userPoolToDetails[loggedUserId].userId}`,
+            );
             if (!labyrinth) {
                 throw new Error();
             }
@@ -79,7 +81,7 @@ describe('Opening new epochs', () => {
 
         cy.wait(`@message-sent-to-storage`).then((interception) => {
             const usedEpochId = interception.request.body.epochId;
-            getEpochIdBySequenceIdFromLocalStorage('0').then((firstEpochId) => {
+            getEpochIdBySequenceIdFromLocalStorage(alice, '0').then((firstEpochId) => {
                 expect(usedEpochId).to.equal(firstEpochId);
             });
         });
@@ -91,7 +93,7 @@ describe('Opening new epochs', () => {
 
         cy.wait(`@message-sent-to-storage`).then((interception) => {
             const usedEpochId = interception.request.body.epochId;
-            getEpochIdBySequenceIdFromLocalStorage('1').then(
+            getEpochIdBySequenceIdFromLocalStorage(alice, '1').then(
                 (secondEpochId) => {
                     expect(usedEpochId).to.equal(secondEpochId);
                 },

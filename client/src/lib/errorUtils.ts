@@ -6,13 +6,37 @@ const BackendApiErrorDataSchema = z.object({
     errorDetails: z.record(z.string(), z.string()).nullish(),
 });
 
-export interface CustomApiError {
-    userFriendlyMessage: string;
+export class CustomApiError extends Error {
     statusCode?: number;
     errorCode?: string;
     isNetworkError?: boolean;
     isRequestSetupError?: boolean;
     originalError: any;
+
+    constructor(
+        userFriendlyMessage: string,
+        options?: {
+            statusCode?: number;
+            errorCode?: string;
+            isNetworkError?: boolean;
+            isRequestSetupError?: boolean;
+            originalError?: any;
+        },
+    ) {
+        super(userFriendlyMessage);
+        this.name = 'CustomApiError';
+        this.statusCode = options?.statusCode;
+        this.errorCode = options?.errorCode;
+        this.isNetworkError = options?.isNetworkError;
+        this.isRequestSetupError = options?.isRequestSetupError;
+        this.originalError = options?.originalError;
+
+        Object.setPrototypeOf(this, CustomApiError.prototype);
+    }
+
+    get userFriendlyMessage(): string {
+        return this.message;
+    }
 }
 
 const errorCodeMessages: Record<
@@ -39,11 +63,10 @@ const errorCodeMessages: Record<
 export function transformAxiosError(error: Error): CustomApiError {
     if (!(error instanceof AxiosError)) {
         console.error('Unexpected non-Axios error:', error);
-        return {
-            userFriendlyMessage:
-                'An unexpected error occurred. Please try again.',
-            originalError: error,
-        };
+        return new CustomApiError(
+            'An unexpected error occurred. Please try again.',
+            { originalError: error },
+        );
     }
 
     const statusCode = error.response?.status;
@@ -51,12 +74,10 @@ export function transformAxiosError(error: Error): CustomApiError {
 
     if (error.response) {
         if (statusCode === 401) {
-            return {
-                userFriendlyMessage:
-                    'Invalid username or password. Please try again.',
-                statusCode,
-                originalError: error,
-            };
+            return new CustomApiError(
+                'Invalid username or password. Please try again.',
+                { statusCode, originalError: error },
+            );
         }
 
         if (responseData != null) {
@@ -70,12 +91,11 @@ export function transformAxiosError(error: Error): CustomApiError {
                         typeof messageOrFn === 'function'
                             ? messageOrFn(errorDetails)
                             : messageOrFn;
-                    return {
-                        userFriendlyMessage: message,
+                    return new CustomApiError(message, {
                         statusCode,
                         errorCode,
                         originalError: error,
-                    };
+                    });
                 }
             } else {
                 console.error(
@@ -93,28 +113,22 @@ export function transformAxiosError(error: Error): CustomApiError {
             'Unhandled server error or unmapped/malformed custom error:',
             { statusCode, responseData, originalAxiosError: error },
         );
-        return {
-            userFriendlyMessage:
-                'The server returned an unexpected error. Please try again later.',
-            statusCode,
-            originalError: error,
-        };
+        return new CustomApiError(
+            'The server returned an unexpected error. Please try again later.',
+            { statusCode, originalError: error },
+        );
     }
 
     if (error.request) {
-        return {
-            userFriendlyMessage:
-                'Login failed. Unable to connect to the server. Please check your internet connection and try again.',
-            isNetworkError: true,
-            originalError: error,
-        };
+        return new CustomApiError(
+            'Login failed. Unable to connect to the server. Please check your internet connection and try again.',
+            { isNetworkError: true, originalError: error },
+        );
     }
 
     console.error('Request setup error:', error);
-    return {
-        userFriendlyMessage:
-            'An unexpected error occurred while preparing your request. Please try again.',
-        isRequestSetupError: true,
-        originalError: error,
-    };
+    return new CustomApiError(
+        'An unexpected error occurred while preparing your request. Please try again.',
+        { isRequestSetupError: true, originalError: error },
+    );
 }

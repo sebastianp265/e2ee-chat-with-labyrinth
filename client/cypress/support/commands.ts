@@ -51,7 +51,7 @@ Cypress.Commands.add('loadLabyrinthForUser', (username, loadFixtureOnly) => {
     const fullPath = `local-storage/${username}.json`;
     cy.fixture(fullPath).then((obj) => {
         cy.window().then((win) => {
-            win.localStorage.setItem('labyrinth', JSON.stringify(obj));
+            win.localStorage.setItem(`labyrinth_instance_for_user_${userPoolToDetails[username].userId}`, JSON.stringify(obj));
         });
         cy.log(`loaded fixture: ${fullPath}`);
     });

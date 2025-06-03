@@ -31,7 +31,7 @@ export default function LoginPage() {
         <div className="w-[60%] h-[60%] m-auto pt-[25vh]">
             <LoginForm
                 handleSubmit={loginMutation.mutate}
-                loginError={loginMutation.error?.userFriendlyMessage || null}
+                loginError={loginMutation.error?.userFriendlyMessage ?? null}
                 isPending={loginMutation.isPending}
             />
         </div>

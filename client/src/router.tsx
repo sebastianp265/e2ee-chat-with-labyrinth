@@ -8,7 +8,6 @@ import {
 } from 'react-router-dom';
 import LoginPage from '@/pages/login/LoginPage.tsx';
 import SessionCheckWrapper from '@/SessionCheckWrapper.tsx';
-import Hello from '@/pages/hello/Hello.tsx';
 import MessagesPage from '@/pages/messages/MessagesPage.tsx';
 import { sessionManager, AuthTokenDetails } from '@/lib/sessionManager.ts';
 import { APP_ROUTES } from '@/constants/routes.ts';
@@ -58,10 +57,6 @@ export const router = createBrowserRouter([
                     {
                         path: APP_ROUTES.MESSAGES,
                         element: <MessagesPage />,
-                    },
-                    {
-                        path: APP_ROUTES.HELLO,
-                        element: <Hello />,
                     },
                 ],
             },

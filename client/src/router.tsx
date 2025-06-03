@@ -19,7 +19,13 @@ export type AuthContextData = {
 
 function AuthContextOutlet() {
     const outletData = useLoaderData() as AuthTokenDetails;
-    return <Outlet context={{ loggedUserId: outletData.userId } satisfies AuthContextData} />;
+    return (
+        <Outlet
+            context={
+                { loggedUserId: outletData.userId } satisfies AuthContextData
+            }
+        />
+    );
 }
 
 export function useAuthContext() {
@@ -45,7 +51,9 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        element: <Navigate to={`/${APP_ROUTES.MESSAGES}`} replace />,
+                        element: (
+                            <Navigate to={`/${APP_ROUTES.MESSAGES}`} replace />
+                        ),
                     },
                     {
                         path: APP_ROUTES.MESSAGES,
@@ -55,7 +63,7 @@ export const router = createBrowserRouter([
                         path: APP_ROUTES.HELLO,
                         element: <Hello />,
                     },
-                ]
+                ],
             },
         ],
     },

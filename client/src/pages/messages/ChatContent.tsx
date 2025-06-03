@@ -22,6 +22,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { CustomApiError } from '@/lib/errorUtils.ts';
 
 type ChatContentProps = {
     loggedUserId: string;
@@ -87,7 +88,7 @@ export default function ChatContent({
                 encryptAndPostMessage(payload.threadId, payload.message);
             }
         },
-        [isLabyrinthInitialized],
+        [isLabyrinthInitialized, addMessageToStore, encryptAndPostMessage],
     );
     const onNewChatThreadReceivedCallback = useCallback(
         (payload: ReceivedNewChatThreadPayload) => {
@@ -96,7 +97,7 @@ export default function ChatContent({
                 encryptAndPostMessage(payload.threadId, payload.initialMessage);
             }
         },
-        [isLabyrinthInitialized],
+        [isLabyrinthInitialized, addThreadToStore, encryptAndPostMessage],
     );
 
     const { sendChatMessage, createChatThread } = useChatWebSocket(
@@ -111,8 +112,8 @@ export default function ChatContent({
     const handleLogout = () => {
         httpClient
             .post('/api/auth/logout')
-            .catch((error) => {
-                console.error('Logout failed', error);
+            .catch((error: CustomApiError) => {
+                console.error('Logout failed:', error);
             })
             .finally(() => {
                 inactivateSession();

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import httpClient from '@/api/httpClient.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { useSessionContext } from '@/SessionCheckWrapper.tsx';
+import { CustomApiError } from '@/lib/errorUtils.ts';
 
 export type HelloGetDTO = {
     name: string;
@@ -16,17 +17,20 @@ export default function Hello() {
     const { inactivateSession, sessionExpired } = useSessionContext();
     const [hello, setHello] = useState({} as HelloGetDTO);
     const [resend, setResend] = useState(false);
+    const [errorInfo, setErrorInfo] = useState<CustomApiError | null>(null);
 
     useEffect(() => {
         if (sessionExpired) return;
 
+        setErrorInfo(null);
         httpClient
             .get<HelloGetDTO>('/api/auth/hello')
             .then((response) => {
                 setHello(response.data);
             })
-            .catch((error) => {
-                if (error.response.status == 401 && inactivateSession) {
+            .catch((error: CustomApiError) => {
+                setErrorInfo(error);
+                if (error.statusCode === 401 && inactivateSession) {
                     inactivateSession();
                 }
             });
@@ -35,6 +39,11 @@ export default function Hello() {
     return (
         <div>
             <h1>Hello authenticated world!</h1>
+            {errorInfo && (
+                <p style={{ color: 'red' }}>
+                    Error: {errorInfo.userFriendlyMessage}
+                </p>
+            )}
             <h2>Name: {hello.name}</h2>
             <h2>Details: {hello.details}</h2>
             <h2>Authorities: {hello.authorities}</h2>

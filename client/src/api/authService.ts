@@ -14,7 +14,7 @@ export type LoginRequestDTO = z.infer<typeof LoginRequestSchema>;
 export type LoginResponseDTO = z.infer<typeof LoginResponseSchema>;
 
 export const authService = {
-    login: async (loginRequest: LoginRequestDTO): Promise<LoginResponseDTO> => {
+    login: async (loginRequest: LoginRequestDTO) => {
         LoginRequestSchema.parse(loginRequest);
         const { data } = await httpClient.post<LoginResponseDTO>(
             '/api/auth/login',

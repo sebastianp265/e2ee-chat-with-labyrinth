@@ -21,9 +21,8 @@ const createAxiosInstance = () => {
             sessionManager.refreshSessionExpiry();
             return response;
         },
-        (error: Error) => {
+        (error: any) => {
             const customError: CustomApiError = transformAxiosError(error);
-            // TODO: Inject transform error, fix sonarlint
             return Promise.reject(customError);
         },
     );

@@ -8,7 +8,10 @@ export type FriendDTO = {
 };
 
 export const userService = {
-    getFriends: async () =>
-        (await httpClient.get<FriendDTO[]>(`${userServicePrefix}/friends`))
-            .data,
+    getFriends: async (): Promise<FriendDTO[]> => {
+        const { data } = await httpClient.get<FriendDTO[]>(
+            `${userServicePrefix}/friends`,
+        );
+        return data;
+    },
 };

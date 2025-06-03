@@ -5,67 +5,63 @@ import {
 import { UserPool } from '../../../cypress';
 import { userPoolToDetails } from 'cypress/support/commands';
 
+function createThread(
+    withUsers: UserPool[],
+    userMessagePairs: [UserPool, string][],
+) {
+    cy.get('button[aria-label="Create new thread"]').click();
+
+    cy.get('div[cmdk-list]').should('be.hidden');
+    cy.get('input[cmdk-input]').click();
+    cy.get('div[cmdk-list]').within(() => {
+        for (const userToAdd of withUsers) {
+            cy.get(
+                `div[data-value="${userPoolToDetails[userToAdd].visibleName}"]`,
+            ).click();
+        }
+    });
+    cy.get("div[data-cy='message-input']").within(() => {
+        cy.get('textarea').type(userMessagePairs[0][1]);
+        cy.get('button').click();
+    });
+}
+
+function checkChatThreadContent(
+    users: UserPool[],
+    userMessagePairs: [UserPool, string][],
+) {
+    const threadName = `Chat between: ${users.map((u) => userPoolToDetails[u].visibleName).join(', ')}`;
+    const lastMessageAuthor = userMessagePairs[userMessagePairs.length - 1][0];
+    const lastMessageAuthorVisibleName =
+        userPoolToDetails[lastMessageAuthor].visibleName;
+
+    cy.get("div[data-cy='thread-previews-container']").within(() => {
+        cy.get('button')
+            .as('thread-preview')
+            .should(
+                'contain.text',
+                `${threadName}${lastMessageAuthorVisibleName}: ${userMessagePairs[userMessagePairs.length - 1][1]}`,
+            );
+
+        cy.get('@thread-preview').click();
+    });
+
+    cy.get("span[data-cy='thread-name']").should('have.text', `${threadName}`);
+
+    for (let i = 0; i < userMessagePairs.length; i++) {
+        cy.get(`[data-cy="messages"] > :nth-child(${i + 1})`).should(
+            'contain.text',
+            userMessagePairs[i][1],
+        );
+    }
+}
+
 describe('Creating threads', () => {
     beforeEach(() => {
         cy.intercept('POST', '/api/chat-service/threads/*/messages').as(
             'store-message',
         );
     });
-
-    function createThread(
-        withUsers: UserPool[],
-        userMessagePairs: [UserPool, string][],
-    ) {
-        cy.get('button[aria-label="Create new thread"]').click();
-
-        cy.get('div[cmdk-list]').should('be.hidden');
-        cy.get('input[cmdk-input]').click();
-        cy.get('div[cmdk-list]').within(() => {
-            for (const userToAdd of withUsers) {
-                cy.get(
-                    `div[data-value="${userPoolToDetails[userToAdd].visibleName}"]`,
-                ).click();
-            }
-        });
-        cy.get("div[data-cy='message-input']").within(() => {
-            cy.get('textarea').type(userMessagePairs[0][1]);
-            cy.get('button').click();
-        });
-    }
-
-    function checkChatThreadContent(
-        users: UserPool[],
-        userMessagePairs: [UserPool, string][],
-    ) {
-        const threadName = `Chat between: ${users.map((u) => userPoolToDetails[u].visibleName).join(', ')}`;
-        const lastMessageAuthor =
-            userMessagePairs[userMessagePairs.length - 1][0];
-        const lastMessageAuthorVisibleName =
-            userPoolToDetails[lastMessageAuthor].visibleName;
-
-        cy.get("div[data-cy='thread-previews-container']").within(() => {
-            cy.get('button')
-                .as('thread-preview')
-                .should(
-                    'contain.text',
-                    `${threadName}${lastMessageAuthorVisibleName}: ${userMessagePairs[userMessagePairs.length - 1][1]}`,
-                );
-
-            cy.get('@thread-preview').click();
-        });
-
-        cy.get("span[data-cy='thread-name']").should(
-            'have.text',
-            `${threadName}`,
-        );
-
-        for (let i = 0; i < userMessagePairs.length; i++) {
-            cy.get(`[data-cy="messages"] > :nth-child(${i + 1})`).should(
-                'contain.text',
-                userMessagePairs[i][1],
-            );
-        }
-    }
 
     function performSendingMessages(
         thisUser: UserPool,

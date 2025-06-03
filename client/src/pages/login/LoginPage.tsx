@@ -48,7 +48,7 @@ export default function LoginPage() {
                     </p>
                 </div>
                 <p className="mt-4 text-xs text-slate-500 text-center italic">
-                    For testing purposes only.
+                    You can test chatting in two different browsers or login, send a message, and then logout to switch to a different user.
                 </p>
             </div>
             <div className="w-full max-w-sm">

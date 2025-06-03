@@ -1,0 +1,6 @@
+logging:
+  level:
+    org.springframework:
+      security: DEBUG
+      web: DEBUG
+    edu.pw.chat: DEBUG

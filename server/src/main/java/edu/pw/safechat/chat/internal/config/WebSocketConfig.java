@@ -16,15 +16,15 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final ChatWebSocketHandler chatWebSocketHandler;
 
-    @Value("${CLIENT_URL}")
-    private String clientUrl;
+    @Value("${DOMAIN_URL}")
+    private String domainUrl;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry
                 .addHandler(chatWebSocketHandler, "/api/ws")
                 .addInterceptors(new HttpSessionHandshakeInterceptor())
-                .setAllowedOrigins(clientUrl);
+                .setAllowedOrigins(domainUrl);
     }
 
 }

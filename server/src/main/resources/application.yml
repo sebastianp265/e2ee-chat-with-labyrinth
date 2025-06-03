@@ -2,16 +2,9 @@ app:
   labyrinth:
     max-device-inactivity: ${LABYRINTH_MAX_DEVICE_INACTIVITY}
 
-logging:
-  level:
-    org.springframework:
-      security: DEBUG
-      web: DEBUG
-    edu.pw.chat: DEBUG
-
 spring:
   datasource:
-    url: jdbc:postgresql://${SERVER_DB_HOST}:${SERVER_DB_PORT}/${SERVER_DB_NAME}
+    url: ${SERVER_DB_URL}
     username: ${SERVER_DB_USER}
     password: ${SERVER_DB_PASSWORD}
 
@@ -22,7 +15,7 @@ spring:
 server:
   servlet:
     session:
-      timeout: 60m
+      timeout: ${SESSION_TIMEOUT}
       cookie:
         same-site: strict
         http-only: true

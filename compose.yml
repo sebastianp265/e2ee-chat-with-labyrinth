@@ -2,9 +2,10 @@ services:
   client:
     build: client
     ports:
-      - '${CLIENT_PORT}:80'
+      - '80:80'
     environment:
-      SERVER_URL: 'http://${SERVER_HOST}:${SERVER_PORT}'
+      DOMAIN_URL: ${DOMAIN_URL}
+      SERVER_URL_PROXY: http://localhost:8080
     depends_on:
       server:
         condition: service_healthy
@@ -12,17 +13,18 @@ services:
   server:
     build: server
     ports:
-      - '${SERVER_PORT}:8080'
+      - '8080:8080'
     environment:
-      CLIENT_URL: 'http://${CLIENT_HOST}:${CLIENT_PORT}'
-      SERVER_DB_HOST: ${SERVER_DB_HOST}
-      SERVER_DB_PORT: ${SERVER_DB_PORT}
-      SERVER_DB_NAME: ${SERVER_DB_NAME}
+      DOMAIN_URL: ${DOMAIN_URL}
+      SERVER_DB_URL: jdbc:postgresql://server_db:5432/server_db
       SERVER_DB_USER: ${SERVER_DB_USER}
       SERVER_DB_PASSWORD: ${SERVER_DB_PASSWORD}
 
-      SERVER_TEMP_DB_HOST: ${SERVER_TEMP_DB_HOST}
-      SERVER_TEMP_DB_PORT: ${SERVER_TEMP_DB_PORT}
+      SERVER_TEMP_DB_HOST: server_temp_db
+      SERVER_TEMP_DB_PORT: 6379
+      SERVER_TEMP_DB_PASSWORD: ${SERVER_TEMP_DB_PASSWORD}
+
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT}
 
       LABYRINTH_MAX_DEVICE_INACTIVITY: ${LABYRINTH_MAX_DEVICE_INACTIVITY}
     depends_on:
@@ -33,20 +35,20 @@ services:
     networks:
       - network_server_db
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://${SERVER_HOST}:${SERVER_PORT}/actuator/health" ]
+      test: [ "CMD", "curl", "--fail", "http://server:8080/actuator/health" ]
       interval: 10s
       timeout: 2s
       retries: 10
 
   server_db:
-    container_name: ${SERVER_DB_HOST_CONTAINER:-${SERVER_DB_HOST}}
+    container_name: server_db
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${SERVER_DB_NAME}
+      POSTGRES_DB: server_db
       POSTGRES_USER: ${SERVER_DB_USER}
       POSTGRES_PASSWORD: ${SERVER_DB_PASSWORD}
     ports:
-      - '${SERVER_DB_PORT}:5432'
+      - '5432:5432'
     volumes:
       - db:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
@@ -59,17 +61,18 @@ services:
       retries: 20
 
   server_temp_db:
-    container_name: ${SERVER_TEMP_DB_HOST_CONTAINER:-${SERVER_TEMP_DB_HOST}}
+    container_name: server
     image:
       redis:7.4-alpine
+    command: ["redis-server", "--requirepass", "${SERVER_TEMP_DB_PASSWORD}"]
     ports:
-      - '${SERVER_TEMP_DB_PORT}:6379'
+      - '6379:6379'
     volumes:
       - redis_db:/data
     networks:
       - network_server_db
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${SERVER_TEMP_DB_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

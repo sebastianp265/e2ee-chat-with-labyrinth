@@ -10,7 +10,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class CorsConfig {
 
-    @Value("${CLIENT_URL}")
+    @Value("${DOMAIN_URL}")
     private String clientUrl;
 
     @Bean

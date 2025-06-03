@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -16,9 +17,15 @@ public class RedisConfig {
     @Value("${SERVER_TEMP_DB_PORT}")
     private int port;
 
+    @Value("${SERVER_TEMP_DB_PASSWORD}")
+    private String password;
+
     @Bean
     LettuceConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(host, port);
+        var redisConfig = new RedisStandaloneConfiguration(host, port);
+        redisConfig.setPassword(password);
+
+        return new LettuceConnectionFactory(redisConfig);
     }
 
     @Bean

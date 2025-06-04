@@ -11,6 +11,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  data:
+    jdbc:
+      dialect: postgresql
 
 server:
   servlet:

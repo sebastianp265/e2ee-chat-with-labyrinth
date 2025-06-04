@@ -4,18 +4,25 @@ services:
     ports:
       - '80:80'
     environment:
-      VITE_DOMAIN_URL: ${DOMAIN_URL}
-      SERVER_URL_PROXY: http://server:8080
+      VITE_DOMAIN_URL: http://${DOMAIN_SERVER_NAME}
+      DOMAIN_SERVER_NAME: ${DOMAIN_SERVER_NAME}
+      SERVER_URL_PROXY: http://server:8080/
+    volumes:
+      - ./client/nginx/default.conf:/etc/nginx/conf.d/default.conf.template
+    command: /bin/sh -c "echo '--- Environment Variables ---' && echo DOMAIN_SERVER_NAME=\"$${DOMAIN_SERVER_NAME}\" && echo SERVER_URL_PROXY=\"$${SERVER_URL_PROXY}\" && echo '--- Running envsubst ---' && envsubst '\${DOMAIN_SERVER_NAME} \${SERVER_URL_PROXY}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && echo '--- Generated default.conf ---' && cat /etc/nginx/conf.d/default.conf && echo '--- Starting Nginx ---' && nginx -g 'daemon off;'"
+    networks:
+      - app_network
     depends_on:
       server:
         condition: service_healthy
 
   server:
     build: server
+    container_name: server
     ports:
       - '8080:8080'
     environment:
-      DOMAIN_URL: ${DOMAIN_URL}
+      DOMAIN_URL: http://${DOMAIN_SERVER_NAME}
       SERVER_DB_URL: jdbc:postgresql://server_db:5432/server_db
       SERVER_DB_USER: ${SERVER_DB_USER}
       SERVER_DB_PASSWORD: ${SERVER_DB_PASSWORD}
@@ -33,7 +40,7 @@ services:
       server_temp_db:
         condition: service_healthy
     networks:
-      - network_server_db
+      - app_network
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://server:8080/actuator/health" ]
       interval: 10s
@@ -53,15 +60,15 @@ services:
       - db:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
     networks:
-      - network_server_db
+      - app_network
     healthcheck:
-      test: pg_isready -U postgres -d server
+      test: pg_isready -U postgres -d server_db
       interval: 2s
       timeout: 2s
       retries: 20
 
   server_temp_db:
-    container_name: server
+    container_name: server_temp_db
     image:
       redis:7.4-alpine
     command: ["redis-server", "--requirepass", "${SERVER_TEMP_DB_PASSWORD}"]
@@ -70,7 +77,7 @@ services:
     volumes:
       - redis_db:/data
     networks:
-      - network_server_db
+      - app_network
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "${SERVER_TEMP_DB_PASSWORD}", "ping" ]
       interval: 10s
@@ -83,4 +90,4 @@ volumes:
   redis_db:
 
 networks:
-  network_server_db:
+  app_network:

@@ -10,7 +10,7 @@ let messagesPerConnection = {};
 
 export default defineConfig({
     e2e: {
-        baseUrl: process.env.VITE_DOMAIN_URL,
+        baseUrl: "http://localhost",
         setupNodeEvents(on) {
             on('task', {
                 async runSQLs({ filenames }) {

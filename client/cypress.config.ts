@@ -16,7 +16,7 @@ export default defineConfig({
                 async runSQLs({ filenames }) {
                     const client = new pg.Client({
                         user: 'postgres',
-                        password: 'postgres',
+                        password: 'postgres_password',
                         host: 'localhost',
                         database: 'server',
                         ssl: false,

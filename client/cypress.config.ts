@@ -18,7 +18,7 @@ export default defineConfig({
                         user: 'postgres',
                         password: 'postgres_password',
                         host: 'localhost',
-                        database: 'server',
+                        database: 'server_db',
                         ssl: false,
                         port: 5432,
                     });
@@ -36,7 +36,9 @@ export default defineConfig({
                     return null;
                 },
                 async clearRedis() {
-                    const client = createClient();
+                    const client = createClient({
+                        password: "redis_password"
+                    });
 
                     await client.connect();
 

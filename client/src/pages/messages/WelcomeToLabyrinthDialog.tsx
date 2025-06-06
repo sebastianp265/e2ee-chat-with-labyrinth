@@ -7,10 +7,13 @@ import { LabyrinthStatus } from './hooks/useLabyrinth';
 
 export default function WelcomeToLabyrinthDialog({
     labyrinthHookState,
+    sessionExpired,
     ...otherDialogContentProps
-}: Readonly<WelcomeToLabyrinthDialogContentProps>) {
+}: Readonly<
+    WelcomeToLabyrinthDialogContentProps & { sessionExpired: boolean }
+>) {
     const isClosed = useMemo(() => {
-        return [
+        return sessionExpired && [
             LabyrinthStatus.INITIAL_LOADING,
             LabyrinthStatus.READY_TO_USE_LABYRINTH,
         ].includes(labyrinthHookState.status);

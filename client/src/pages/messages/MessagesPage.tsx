@@ -8,7 +8,7 @@ import WelcomeToLabyrinthDialog from './WelcomeToLabyrinthDialog';
 import { useSessionContext } from '@/SessionCheckWrapper.tsx'; // This remains
 
 export default function MessagesPage() {
-    const { inactivateSession } = useSessionContext();
+    const { sessionExpired, inactivateSession } = useSessionContext();
     const { loggedUserId } = useAuthContext();
 
     const {
@@ -38,6 +38,7 @@ export default function MessagesPage() {
                 }
                 retryInitialization={retryInitialization}
                 finishInitializationFromDialog={finishInitializationFromDialog}
+                sessionExpired={sessionExpired}
             />
 
             <ChatContent

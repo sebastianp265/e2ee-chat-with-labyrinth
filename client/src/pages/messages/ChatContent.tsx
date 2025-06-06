@@ -8,7 +8,7 @@ import useChatWebSocket, {
     ReceivedNewChatMessagePayload,
     ReceivedNewChatThreadPayload,
 } from '@/pages/messages/hooks/useChatWebSocket.ts';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import useFriendsData from '@/pages/messages/hooks/useFriendsData.ts';
 import { Labyrinth } from '@sebastianp265/safe-server-side-storage-client';
 import useThreadsData from '@/pages/messages/hooks/useThreadsData.ts';
@@ -73,7 +73,14 @@ export default function ChatContent({
         addMessageToStore,
         addThreadToStore,
         encryptAndPostMessage,
+        error,
     } = useThreadsData(labyrinth);
+
+    useEffect(() => {
+        if(error?.statusCode === 401) {
+            inactivateSession()
+        }
+    }, [error]);
 
     const { friends } = useFriendsData();
 

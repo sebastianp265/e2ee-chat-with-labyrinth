@@ -14,7 +14,7 @@ export default function WelcomeToLabyrinthDialog({
 >) {
     const isClosed = useMemo(() => {
         return (
-            sessionExpired &&
+            sessionExpired ||
             [
                 LabyrinthStatus.INITIAL_LOADING,
                 LabyrinthStatus.READY_TO_USE_LABYRINTH,

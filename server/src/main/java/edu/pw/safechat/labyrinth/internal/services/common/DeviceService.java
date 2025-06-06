@@ -1,19 +1,18 @@
 package edu.pw.safechat.labyrinth.internal.services.common;
 
 import edu.pw.safechat.labyrinth.dtos.common.DevicePublicKeyBundleDTO;
+import edu.pw.safechat.labyrinth.internal.config.LabyrinthConfigurationProperties;
 import edu.pw.safechat.labyrinth.internal.entities.Device;
 import edu.pw.safechat.labyrinth.internal.entities.Labyrinth;
 import edu.pw.safechat.labyrinth.internal.mappers.DeviceMapper;
 import edu.pw.safechat.labyrinth.internal.repositories.DeviceRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -24,8 +23,7 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final DeviceMapper deviceMapper;
 
-    @Value("${app.labyrinth.max-device-inactivity}")
-    private Duration maxDeviceInactivity;
+    private final LabyrinthConfigurationProperties labyrinthConfigurationProperties;
 
     public Device createAndSave(
             DevicePublicKeyBundleDTO devicePublicKeyBundleDTO,
@@ -55,13 +53,13 @@ public class DeviceService {
     public boolean didAnyDeviceExceedInactivityLimit(Labyrinth labyrinth) {
         return deviceRepository.existsByLabyrinthAndLastActiveAtLessThan(
                 labyrinth,
-                Instant.now().minus(maxDeviceInactivity)
+                Instant.now().minus(labyrinthConfigurationProperties.getMaxDeviceInactivity())
         );
     }
 
     public boolean isDeviceActive(Device device) {
         return device.getLastActiveAt()
-                .plus(maxDeviceInactivity)
+                .plus(labyrinthConfigurationProperties.getMaxDeviceInactivity())
                 .isBefore(Instant.now());
     }
 

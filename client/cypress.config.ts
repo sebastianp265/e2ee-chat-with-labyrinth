@@ -10,7 +10,7 @@ let messagesPerConnection = {};
 
 export default defineConfig({
     e2e: {
-        baseUrl: "http://localhost",
+        baseUrl: 'http://localhost',
         setupNodeEvents(on) {
             on('task', {
                 async runSQLs({ filenames }) {
@@ -37,7 +37,7 @@ export default defineConfig({
                 },
                 async clearRedis() {
                     const client = createClient({
-                        password: "redis_password"
+                        password: 'redis_password',
                     });
 
                     await client.connect();

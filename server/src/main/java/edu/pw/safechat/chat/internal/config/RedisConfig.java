@@ -1,6 +1,6 @@
 package edu.pw.safechat.chat.internal.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -9,21 +9,15 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 
 @Configuration
+@RequiredArgsConstructor
 public class RedisConfig {
 
-    @Value("${SERVER_TEMP_DB_HOST}")
-    private String host;
-
-    @Value("${SERVER_TEMP_DB_PORT}")
-    private int port;
-
-    @Value("${SERVER_TEMP_DB_PASSWORD}")
-    private String password;
+    private final RedisConfigurationProperties redisConfigurationProperties;
 
     @Bean
     LettuceConnectionFactory redisConnectionFactory() {
-        var redisConfig = new RedisStandaloneConfiguration(host, port);
-        redisConfig.setPassword(password);
+        var redisConfig = new RedisStandaloneConfiguration(redisConfigurationProperties.getHost(), redisConfigurationProperties.getPort());
+        redisConfig.setPassword(redisConfigurationProperties.getPassword());
 
         return new LettuceConnectionFactory(redisConfig);
     }

@@ -52,15 +52,22 @@ export type LabyrinthHookState =
           instance: Labyrinth;
       };
 
-function loadLabyrinthFromLocalStorage(loggedUserId: string): LabyrinthSerialized | null {
-    const labyrinthJSONString = localStorage.getItem(`${LABYRINTH_INSTANCE_KEY}${loggedUserId}`);
+function loadLabyrinthFromLocalStorage(
+    loggedUserId: string,
+): LabyrinthSerialized | null {
+    const labyrinthJSONString = localStorage.getItem(
+        `${LABYRINTH_INSTANCE_KEY}${loggedUserId}`,
+    );
     if (labyrinthJSONString === null) {
         return null;
     }
     return JSON.parse(labyrinthJSONString);
 }
 
-function saveLabyrinthToLocalStorage(loggedUserId: string, labyrinth: Labyrinth) {
+function saveLabyrinthToLocalStorage(
+    loggedUserId: string,
+    labyrinth: Labyrinth,
+) {
     localStorage.setItem(
         `${LABYRINTH_INSTANCE_KEY}${loggedUserId}`,
         JSON.stringify(labyrinth.serialize()),
@@ -75,7 +82,8 @@ export default function useLabyrinth(loggedUserId: string) {
 
     useEffect(() => {
         if (labyrinthHookState.status === LabyrinthStatus.INITIAL_LOADING) {
-            const serializedLabyrinth = loadLabyrinthFromLocalStorage(loggedUserId);
+            const serializedLabyrinth =
+                loadLabyrinthFromLocalStorage(loggedUserId);
 
             if (serializedLabyrinth) {
                 Labyrinth.deserialize(
@@ -119,7 +127,10 @@ export default function useLabyrinth(loggedUserId: string) {
         } else if (
             labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH
         ) {
-            saveLabyrinthToLocalStorage(loggedUserId, labyrinthHookState.instance);
+            saveLabyrinthToLocalStorage(
+                loggedUserId,
+                labyrinthHookState.instance,
+            );
         }
     }, [labyrinthHookState.status]);
 

@@ -1,12 +1,15 @@
 services:
   client:
-    build: client
+    build:
+      context: client
+      args:
+        VITE_DOMAIN_URL: http://${DOMAIN_SERVER_NAME}
+        VITE_SESSION_TIMEOUT: ${SESSION_TIMEOUT}
     ports:
       - '80:80'
     environment:
-      VITE_DOMAIN_URL: http://${DOMAIN_SERVER_NAME}
       DOMAIN_SERVER_NAME: ${DOMAIN_SERVER_NAME}
-      SERVER_URL_PROXY: http://server:8080/
+      SERVER_URL_PROXY: http://server:8080/api/
     volumes:
       - ./client/nginx/default.conf.template:/etc/nginx/templates/default.conf.template
     networks:
@@ -33,6 +36,8 @@ services:
       SESSION_TIMEOUT: ${SESSION_TIMEOUT}
 
       LABYRINTH_MAX_DEVICE_INACTIVITY: ${LABYRINTH_MAX_DEVICE_INACTIVITY}
+
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
     depends_on:
       server_db:
         condition: service_healthy

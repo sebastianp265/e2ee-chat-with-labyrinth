@@ -1,6 +1,33 @@
-logging:
-  level:
-    org.springframework:
-      security: DEBUG
-      web: DEBUG
-    edu.pw.chat: DEBUG
+app:
+  labyrinth:
+    max-device-inactivity: 1m
+  client:
+    url: http://localhost:4173
+  temp-db:
+    host: localhost
+    port: 6379
+    password: redis_password
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/server_db
+    username: postgres
+    password: postgres_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  data:
+    jdbc:
+      dialect: postgresql # TODO: Remove
+
+server:
+  servlet:
+    session:
+      timeout: 1m
+      cookie:
+        same-site: strict
+        http-only: true
+        path: "/api/"
+        name: "SESSION"
+        secure: false # TODO: Change after adding secure TLS support

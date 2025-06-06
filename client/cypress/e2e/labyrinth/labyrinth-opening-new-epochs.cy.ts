@@ -45,7 +45,10 @@ describe('Opening new epochs', () => {
         });
     }
 
-    function getEpochIdBySequenceIdFromLocalStorage(loggedUserId: UserPool, epochSequenceId: string) {
+    function getEpochIdBySequenceIdFromLocalStorage(
+        loggedUserId: UserPool,
+        epochSequenceId: string,
+    ) {
         return cy.window().then((win) => {
             const labyrinth = win.localStorage.getItem(
                 `labyrinth_instance_for_user_${userPoolToDetails[loggedUserId].userId}`,
@@ -81,9 +84,11 @@ describe('Opening new epochs', () => {
 
         cy.wait(`@message-sent-to-storage`).then((interception) => {
             const usedEpochId = interception.request.body.epochId;
-            getEpochIdBySequenceIdFromLocalStorage(alice, '0').then((firstEpochId) => {
-                expect(usedEpochId).to.equal(firstEpochId);
-            });
+            getEpochIdBySequenceIdFromLocalStorage(alice, '0').then(
+                (firstEpochId) => {
+                    expect(usedEpochId).to.equal(firstEpochId);
+                },
+            );
         });
 
         changeToNewDeviceAndInsertRecoveryCode();

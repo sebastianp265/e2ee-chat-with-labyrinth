@@ -35,26 +35,42 @@ export default function LoginPage() {
                 </h3>
                 <div className="space-y-2 text-sm">
                     <p className="text-slate-600">
-                        <span className="font-medium text-slate-700">Usernames:</span>{" "}
-                        <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">alice</code>,{" "}
-                        <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">bob</code>,{" "}
-                        <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">carol</code>
+                        <span className="font-medium text-slate-700">
+                            Usernames:
+                        </span>{' '}
+                        <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">
+                            alice
+                        </code>
+                        ,{' '}
+                        <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">
+                            bob
+                        </code>
+                        ,{' '}
+                        <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">
+                            carol
+                        </code>
                     </p>
                     <p className="text-slate-600">
-                        <span className="font-medium text-slate-700">Password:</span>{" "}
+                        <span className="font-medium text-slate-700">
+                            Password:
+                        </span>{' '}
                         <code className="px-1 py-0.5 bg-slate-200 rounded text-slate-700">
                             123456
                         </code>
                     </p>
                 </div>
                 <p className="mt-4 text-xs text-slate-500 text-center italic">
-                    You can test chatting in two different browsers or login, send a message, and then logout to switch to a different user.
+                    You can test chatting in two different browsers or login,
+                    send a message, and then logout to switch to a different
+                    user.
                 </p>
             </div>
             <div className="w-full max-w-sm">
                 <LoginForm
                     handleSubmit={loginMutation.mutate}
-                    loginError={loginMutation.error?.userFriendlyMessage ?? null}
+                    loginError={
+                        loginMutation.error?.userFriendlyMessage ?? null
+                    }
                     isPending={loginMutation.isPending}
                 />
             </div>

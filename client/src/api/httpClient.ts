@@ -3,8 +3,16 @@ import { sessionManager } from '@/lib/sessionManager.ts';
 import { transformAxiosError, CustomApiError } from '@/lib/errorUtils.ts';
 
 const createAxiosInstance = () => {
+    const baseURL =
+        import.meta.env.MODE === 'development'
+            ? import.meta.env.VITE_SERVER_URL
+            : import.meta.env.VITE_DOMAIN_URL;
+    if (!baseURL) {
+        throw new Error('Necessary environment variables are not set');
+    }
+
     const client = axios.create({
-        baseURL: import.meta.env.VITE_DOMAIN_URL,
+        baseURL,
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -23,6 +31,7 @@ const createAxiosInstance = () => {
         },
         (error: any) => {
             const customError: CustomApiError = transformAxiosError(error);
+            console.log(customError.statusCode);
             if (customError.statusCode === 401) {
                 sessionManager.clearSession();
             } else {

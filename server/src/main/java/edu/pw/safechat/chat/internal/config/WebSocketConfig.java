@@ -1,6 +1,7 @@
 package edu.pw.safechat.chat.internal.config;
 
 import edu.pw.safechat.chat.handlers.ChatWebSocketHandler;
+import edu.pw.safechat.common.config.ClientConfigurationProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -16,15 +17,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final ChatWebSocketHandler chatWebSocketHandler;
 
-    @Value("${DOMAIN_URL}")
-    private String domainUrl;
+    private final ClientConfigurationProperties clientConfigurationProperties;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry
                 .addHandler(chatWebSocketHandler, "/api/ws")
                 .addInterceptors(new HttpSessionHandshakeInterceptor())
-                .setAllowedOrigins(domainUrl);
+                .setAllowedOrigins(clientConfigurationProperties.getUrl());
     }
 
 }

@@ -1,6 +1,12 @@
 app:
   labyrinth:
     max-device-inactivity: ${LABYRINTH_MAX_DEVICE_INACTIVITY}
+  client:
+    url: ${DOMAIN_URL}
+  temp-db:
+    host: ${SERVER_TEMP_DB_HOST}
+    port: ${SERVER_TEMP_DB_PORT}
+    password: ${SERVER_TEMP_DB_PASSWORD}
 
 spring:
   datasource:
@@ -13,7 +19,7 @@ spring:
       ddl-auto: validate
   data:
     jdbc:
-      dialect: postgresql
+      dialect: postgresql # Todo: remove
 
 server:
   servlet:

@@ -3,7 +3,7 @@ services:
     build:
       context: client
       args:
-        VITE_DOMAIN_URL: http://${DOMAIN_SERVER_NAME}
+        VITE_DOMAIN_NAME: ${DOMAIN_SERVER_NAME}
         VITE_SESSION_TIMEOUT: ${SESSION_TIMEOUT}
     ports:
       - '80:80'

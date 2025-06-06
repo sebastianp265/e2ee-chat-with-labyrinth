@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { z } from 'zod';
+import { DOMAIN_NAME } from '@/constants.ts';
 
 const WebSocketChatMessageSchema = z.object({
     id: z.string(),
@@ -64,7 +65,7 @@ export default function useChatWebSocket(
     ) => void,
 ) {
     const { sendMessage, lastJsonMessage, readyState } = useWebSocket(
-        'ws://localhost:8080/api/ws',
+        `ws://${DOMAIN_NAME}/api/ws`,
         {
             onOpen: () => console.log('WebSocket connection opened!'),
             onClose: () => console.log('WebSocket connection closed!'),

@@ -1,18 +1,11 @@
 import axios from 'axios';
 import { sessionManager } from '@/lib/sessionManager.ts';
 import { transformAxiosError, CustomApiError } from '@/lib/errorUtils.ts';
+import { DOMAIN_NAME } from '@/constants.ts';
 
 const createAxiosInstance = () => {
-    const baseURL =
-        import.meta.env.MODE === 'development'
-            ? import.meta.env.VITE_SERVER_URL
-            : import.meta.env.VITE_DOMAIN_URL;
-    if (!baseURL) {
-        throw new Error('Necessary environment variables are not set');
-    }
-
     const client = axios.create({
-        baseURL,
+        baseURL: `http://${DOMAIN_NAME}`,
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

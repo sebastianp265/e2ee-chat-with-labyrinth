@@ -26,7 +26,7 @@ describe('Opening new epochs', () => {
             `/api/labyrinth-service/epochs/open-based-on-current/*/by-device/*`,
         ).as('open-epoch');
 
-        cy.wait(31 * 1000);
+        cy.wait(16 * 1000);
         cy.reload();
 
         cy.wait('@open-epoch');

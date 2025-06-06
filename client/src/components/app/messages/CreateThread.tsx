@@ -92,6 +92,7 @@ export default function CreateThread({
                         ),
                     })
                 }
+                disableSubmit={selectedFriends.length === 0}
             />
         </>
     );

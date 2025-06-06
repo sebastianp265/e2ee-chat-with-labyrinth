@@ -4,10 +4,12 @@ import { ChangeEvent, useState } from 'react';
 
 export type MessageInputProps = {
     handleSendMessage: (message: string) => void;
+    disableSubmit?: boolean;
 };
 
 export default function MessageInput({
     handleSendMessage,
+    disableSubmit,
 }: Readonly<MessageInputProps>) {
     const [messageToSend, setMessageToSend] = useState('');
 
@@ -28,7 +30,11 @@ export default function MessageInput({
                 onChange={handleMessageToSendChange}
                 className="resize-none min-h-0"
             ></Textarea>
-            <Button onClick={onSendMessage} className="mt-auto mb-auto">
+            <Button
+                onClick={onSendMessage}
+                disabled={disableSubmit || messageToSend === ''}
+                className="mt-auto mb-auto"
+            >
                 Send
             </Button>
         </div>

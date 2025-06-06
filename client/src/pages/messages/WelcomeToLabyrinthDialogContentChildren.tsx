@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { LabyrinthHookState, LabyrinthStatus } from './hooks/useLabyrinth';
 import RecoveryCodeDialogContent from '@/components/app/welcome-to-labyrinth/RecoveryCodeDialogContent';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useSessionContext } from '@/SessionCheckWrapper.tsx';
 
 export type WelcomeToLabyrinthDialogContentProps = {
     labyrinthHookState: LabyrinthHookState;
@@ -19,8 +20,13 @@ export default function WelcomeToLabyrinthDialogContentChildren({
     initializeLabyrinthFromRecoveryCode,
     finishInitializationFromDialog,
 }: Readonly<WelcomeToLabyrinthDialogContentProps>) {
+    const { inactivateSession } = useSessionContext();
+
     switch (labyrinthHookState.status) {
         case LabyrinthStatus.ERROR:
+            if (labyrinthHookState.error.statusCode === 401) {
+                inactivateSession();
+            }
             return (
                 <GenericDialogContent
                     title="Oops! An error occurred."

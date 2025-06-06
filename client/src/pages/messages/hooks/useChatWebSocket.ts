@@ -55,6 +55,7 @@ export type NewChatThreadToSendPayload = {
 
 export default function useChatWebSocket(
     shouldConnect: boolean,
+    sessionExpired: boolean,
     onNewChatMessageReceivedCallback: (
         receivedNewChatMessagePayload: ReceivedNewChatMessagePayload,
     ) => void,
@@ -69,7 +70,7 @@ export default function useChatWebSocket(
             onClose: () => console.log('WebSocket connection closed!'),
             onMessage: (event) => console.log('Received message:', event.data),
             onError: (event) => console.error('WebSocket error:', event),
-            shouldReconnect: () => true,
+            shouldReconnect: () => !sessionExpired,
         },
         shouldConnect,
     );

@@ -28,6 +28,7 @@ type ChatContentProps = {
     loggedUserId: string;
     labyrinth: Labyrinth | null;
     inactivateSession: () => void;
+    sessionExpired: boolean;
 };
 
 function getThreadDataFromStore(
@@ -65,6 +66,7 @@ export default function ChatContent({
     loggedUserId,
     labyrinth,
     inactivateSession,
+    sessionExpired,
 }: Readonly<ChatContentProps>) {
     const {
         threadsDataStore,
@@ -109,6 +111,7 @@ export default function ChatContent({
 
     const { sendChatMessage, createChatThread } = useChatWebSocket(
         isLabyrinthInitialized,
+        sessionExpired,
         onNewChatMessageReceivedCallback,
         onNewChatThreadReceivedCallback,
     );

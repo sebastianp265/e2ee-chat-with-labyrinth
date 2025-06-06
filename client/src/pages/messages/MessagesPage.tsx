@@ -45,6 +45,7 @@ export default function MessagesPage() {
                 loggedUserId={loggedUserId}
                 labyrinth={labyrinth}
                 inactivateSession={inactivateSession}
+                sessionExpired={sessionExpired}
             />
         </div>
     );

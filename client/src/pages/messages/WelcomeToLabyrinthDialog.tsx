@@ -13,10 +13,13 @@ export default function WelcomeToLabyrinthDialog({
     WelcomeToLabyrinthDialogContentProps & { sessionExpired: boolean }
 >) {
     const isClosed = useMemo(() => {
-        return sessionExpired && [
-            LabyrinthStatus.INITIAL_LOADING,
-            LabyrinthStatus.READY_TO_USE_LABYRINTH,
-        ].includes(labyrinthHookState.status);
+        return (
+            sessionExpired &&
+            [
+                LabyrinthStatus.INITIAL_LOADING,
+                LabyrinthStatus.READY_TO_USE_LABYRINTH,
+            ].includes(labyrinthHookState.status)
+        );
     }, [labyrinthHookState.status]);
 
     if (isClosed) {

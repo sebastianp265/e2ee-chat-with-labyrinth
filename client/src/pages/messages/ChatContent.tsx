@@ -79,8 +79,8 @@ export default function ChatContent({
     } = useThreadsData(labyrinth);
 
     useEffect(() => {
-        if(error?.statusCode === 401) {
-            inactivateSession()
+        if (error?.statusCode === 401) {
+            inactivateSession();
         }
     }, [error]);
 

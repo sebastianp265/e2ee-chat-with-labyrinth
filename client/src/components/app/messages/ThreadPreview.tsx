@@ -26,7 +26,7 @@ function ThreadPreview({
             className={`${chosenThreadId === threadId ? 'bg-input' : 'hover:bg-accent'} 
             flex flex-col border p-2 rounded-xl w-full text-left`}
         >
-            <h3 className="font-bold text-base">{threadName}</h3>
+            <h3 className="font-bold text-sm">{threadName}</h3>
             <span className="text-xs">
                 {lastMessageAuthorVisibleName + ': ' + lastMessage}
             </span>

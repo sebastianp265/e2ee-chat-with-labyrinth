@@ -20,7 +20,7 @@ export default function WelcomeToLabyrinthDialog({
                 LabyrinthStatus.READY_TO_USE_LABYRINTH,
             ].includes(labyrinthHookState.status)
         );
-    }, [labyrinthHookState.status]);
+    }, [sessionExpired, labyrinthHookState.status]);
 
     if (isClosed) {
         return null;

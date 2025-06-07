@@ -7,8 +7,8 @@ import {
 export type ThreadsDataStore = {
     map: {
         [threadId: string]: {
-            threadName: string | null;
             messages: Message[];
+            threadName: string | null;
             membersVisibleNameByUserId: {
                 [userId: string]: string;
             };
@@ -48,21 +48,27 @@ export function threadsDataReducer(
             const { threadId, message } = action.payload;
 
             if (Object.hasOwn(state.map, threadId)) {
-                return {
-                    map: {
-                        ...state.map,
-                        [threadId]: {
-                            ...state.map[threadId],
-                            messages: combineMessages(
-                                state.map[threadId].messages,
-                                message,
-                            ),
-                        },
+                const map = {
+                    ...state.map,
+                    [threadId]: {
+                        ...state.map[threadId],
+                        messages: combineMessages(
+                            state.map[threadId].messages,
+                            message,
+                        ),
                     },
-                    keys: [
-                        threadId,
-                        ...state.keys.filter((key) => key !== threadId),
-                    ],
+                };
+                return {
+                    map,
+                    keys: Object.entries(map)
+                        .sort(
+                            (a, b) =>
+                                b[1].messages[b[1].messages.length - 1]
+                                    .timestamp -
+                                a[1].messages[a[1].messages.length - 1]
+                                    .timestamp,
+                        )
+                        .map((e) => e[0]),
                 };
             }
 

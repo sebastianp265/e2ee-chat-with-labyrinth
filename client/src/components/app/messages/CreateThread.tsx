@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button.tsx';
 import MessageInput from '@/components/app/messages/MessageInput.tsx';
 import { NewChatThreadToSendPayload } from '@/pages/messages/hooks/useChatWebSocket.ts';
+import { UserMinus } from 'lucide-react';
 
 export type Friend = {
     userId: string;
@@ -32,7 +33,7 @@ export default function CreateThread({
     );
     return (
         <>
-            <div>
+            <div className="flex gap-2">
                 {selectedFriends.map((selectedFriend) => (
                     <div
                         key={selectedFriend.userId}
@@ -47,16 +48,17 @@ export default function CreateThread({
                                     ),
                                 )
                             }
-                            size="sm"
-                            className="h-auto"
+                            size="icon"
+                            className="w-6 h-6"
                         >
-                            X
+                            <UserMinus />
                         </Button>
                     </div>
                 ))}
             </div>
             <Command>
                 <CommandInput
+                    placeholder="Click here to select friends to create thread with"
                     onFocus={() => setOpen(true)}
                     onBlur={() => {
                         if (optionClicked) {

@@ -102,6 +102,9 @@ export default function ChatContent({
         (payload: ReceivedNewChatThreadPayload) => {
             if (isLabyrinthInitialized) {
                 addThreadToStore(payload);
+                if (payload.initialMessage.authorId === loggedUserId) {
+                    setChosenThreadId(payload.threadId);
+                }
                 encryptAndPostMessage(payload.threadId, payload.initialMessage);
             }
         },
@@ -135,7 +138,7 @@ export default function ChatContent({
                                     className="rounded-full"
                                     disabled={!isLabyrinthInitialized}
                                 >
-                                    <PlusSquare className="h-4 w-4" />
+                                    <PlusSquare />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>

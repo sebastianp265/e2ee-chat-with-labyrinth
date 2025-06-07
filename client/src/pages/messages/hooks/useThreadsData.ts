@@ -169,6 +169,12 @@ export default function useThreadsData(labyrinth: Labyrinth | null) {
     }, [addThreadToStore, labyrinth]);
 
     useEffect(() => {
+        if (chosenThreadId === null && threadsDataStore.keys.length > 0) {
+            setChosenThreadId(threadsDataStore.keys[0]);
+        }
+    }, [chosenThreadId, threadsDataStore]);
+
+    useEffect(() => {
         if (chosenThreadId === null || labyrinth === null) return;
 
         chatService

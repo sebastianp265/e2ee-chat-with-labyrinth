@@ -50,8 +50,8 @@ export default function TestNote() {
                 message, and then logout to switch to a different user.
             </p>
             <p className="mt-4 text-xs text-slate-500 text-center italic">
-                You can reset this device state and server state by clicking on
-                this button:
+                You can also reset this device state and server state by
+                clicking on this button:
             </p>
             <div className="flex justify-center mt-2 text-xs text-slate-500 text-center italic">
                 <Button

@@ -11,6 +11,7 @@ export type WelcomeToLabyrinthDialogContentProps = {
     initializeLabyrinthFromFirstEpoch: () => void;
     initializeLabyrinthFromRecoveryCode: (recoveryCode: string) => void;
     finishInitializationFromDialog: () => void;
+    handleLogout: () => void;
 };
 
 export default function WelcomeToLabyrinthDialogContentChildren({
@@ -19,6 +20,7 @@ export default function WelcomeToLabyrinthDialogContentChildren({
     initializeLabyrinthFromFirstEpoch,
     initializeLabyrinthFromRecoveryCode,
     finishInitializationFromDialog,
+    handleLogout,
 }: Readonly<WelcomeToLabyrinthDialogContentProps>) {
     const { inactivateSession } = useSessionContext();
 
@@ -32,7 +34,12 @@ export default function WelcomeToLabyrinthDialogContentChildren({
                     title="Oops! An error occurred."
                     description={labyrinthHookState.error.userFriendlyMessage}
                     footer={
-                        <Button onClick={retryInitialization}>Try Again</Button>
+                        <>
+                            <Button onClick={handleLogout}>Logout</Button>
+                            <Button onClick={retryInitialization}>
+                                Try Again
+                            </Button>
+                        </>
                     }
                 />
             );

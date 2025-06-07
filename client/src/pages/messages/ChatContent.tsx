@@ -13,8 +13,6 @@ import useFriendsData from '@/pages/messages/hooks/useFriendsData.ts';
 import { Labyrinth } from '@sebastianp265/safe-server-side-storage-client';
 import useThreadsData from '@/pages/messages/hooks/useThreadsData.ts';
 import { ThreadsDataStore } from '@/pages/messages/utils/threadsData.ts';
-import httpClient from '@/api/httpClient.ts';
-import { useNavigate } from 'react-router-dom';
 import { LogOut, PlusSquare } from 'lucide-react';
 import {
     Tooltip,
@@ -22,13 +20,13 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { CustomApiError } from '@/lib/errorUtils.ts';
 
 type ChatContentProps = {
     loggedUserId: string;
     labyrinth: Labyrinth | null;
     inactivateSession: () => void;
     sessionExpired: boolean;
+    handleLogout: () => void;
 };
 
 function getThreadDataFromStore(
@@ -67,6 +65,7 @@ export default function ChatContent({
     labyrinth,
     inactivateSession,
     sessionExpired,
+    handleLogout,
 }: Readonly<ChatContentProps>) {
     const {
         threadsDataStore,
@@ -117,19 +116,6 @@ export default function ChatContent({
     );
 
     const [createThreadOpen, setCreateThreadOpen] = useState<boolean>(false);
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        httpClient
-            .post('/api/auth/logout')
-            .catch((error: CustomApiError) => {
-                console.error('Logout failed:', error);
-            })
-            .finally(() => {
-                inactivateSession();
-                navigate('/login');
-            });
-    };
 
     return (
         <>

@@ -56,6 +56,7 @@ export type NewChatThreadToSendPayload = {
 
 export default function useChatWebSocket(
     shouldConnect: boolean,
+    inactivateSession: () => void,
     sessionExpired: boolean,
     onNewChatMessageReceivedCallback: (
         receivedNewChatMessagePayload: ReceivedNewChatMessagePayload,
@@ -70,7 +71,10 @@ export default function useChatWebSocket(
             onOpen: () => console.log('WebSocket connection opened!'),
             onClose: () => console.log('WebSocket connection closed!'),
             onMessage: (event) => console.log('Received message:', event.data),
-            onError: (event) => console.error('WebSocket error:', event),
+            onError: (event) => {
+                console.error('WebSocket error:', event);
+                inactivateSession();
+            },
             shouldReconnect: () => !sessionExpired,
         },
         shouldConnect,
@@ -90,6 +94,7 @@ export default function useChatWebSocket(
                 onNewChatThreadReceivedCallback(socketMessage.payload);
                 break;
         }
+        inactivateSession()
     }, [
         lastJsonMessage,
         onNewChatMessageReceivedCallback,
@@ -110,6 +115,7 @@ export default function useChatWebSocket(
                 console.error(
                     `Couldn't send message, ready state = ${readyState}`,
                 );
+                inactivateSession()
             }
         },
         [readyState, sendMessage],
@@ -129,6 +135,7 @@ export default function useChatWebSocket(
                 console.error(
                     `Couldn't send message, ready state = ${readyState}`,
                 );
+                inactivateSession()
             }
         },
         [readyState, sendMessage],

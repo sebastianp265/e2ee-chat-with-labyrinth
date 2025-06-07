@@ -47,10 +47,11 @@ export default function WelcomeToLabyrinthDialogContentChildren({
         case LabyrinthStatus.PROCESSING_RECOVERY_CODE:
             return (
                 <GenericDialogContent
-                    description={
+                    title="Loading..."
+                    body={
                         <div className="flex items-center justify-center gap-2">
                             <LoadingSpinner />
-                            Loading...
+                            Please wait...
                         </div>
                     }
                 />
@@ -88,6 +89,7 @@ export default function WelcomeToLabyrinthDialogContentChildren({
             return (
                 <RecoveryCodeDialogContent
                     onRecoveryCodeSubmit={initializeLabyrinthFromRecoveryCode}
+                    handleLogout={handleLogout}
                 />
             );
         }

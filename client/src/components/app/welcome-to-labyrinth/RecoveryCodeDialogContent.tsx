@@ -21,10 +21,12 @@ const FormSchema = z.object({
 
 export type RecoveryCodeDialogProps = {
     onRecoveryCodeSubmit: (recoveryCode: string) => void;
+    handleLogout: () => void;
 };
 
 export default function RecoveryCodeDialogContent({
     onRecoveryCodeSubmit,
+    handleLogout,
 }: Readonly<RecoveryCodeDialogProps>) {
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
@@ -62,7 +64,12 @@ export default function RecoveryCodeDialogContent({
                             )}
                         />
                     }
-                    footer={<Button type="submit">Submit</Button>}
+                    footer={
+                        <>
+                            <Button onClick={handleLogout}>Logout</Button>
+                            <Button type="submit">Submit</Button>
+                        </>
+                    }
                 />
             </form>
         </Form>

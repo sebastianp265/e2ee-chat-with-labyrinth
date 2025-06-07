@@ -2,6 +2,7 @@ package edu.pw.safechat.labyrinth.internal.services;
 
 import edu.pw.safechat.labyrinth.dtos.OpenFirstEpochBodyDTO;
 import edu.pw.safechat.labyrinth.dtos.OpenFirstEpochResponseDTO;
+import edu.pw.safechat.labyrinth.exceptions.AlreadyRegisteredToLabyrinthException;
 import edu.pw.safechat.labyrinth.internal.entities.Device;
 import edu.pw.safechat.labyrinth.internal.entities.Epoch;
 import edu.pw.safechat.labyrinth.internal.entities.Labyrinth;
@@ -30,6 +31,9 @@ public class OpenFirstEpochService {
             OpenFirstEpochBodyDTO openFirstEpochBodyDTO,
             UUID inboxId
     ) {
+        if(labyrinthService.existsByChatInboxId(inboxId)) {
+            throw new AlreadyRegisteredToLabyrinthException();
+        }
         Labyrinth labyrinth = labyrinthService.createAndSave(inboxId);
 
         Epoch epoch = epochService.createAndSave(

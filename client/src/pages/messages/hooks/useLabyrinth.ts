@@ -125,11 +125,14 @@ export default function useLabyrinth(loggedUserId: string) {
                     });
             }
         } else if (
-            labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH
+            labyrinthHookState.status ===
+                LabyrinthStatus.SUCCESS_RECOVERY_CODE_PROCESSED ||
+            labyrinthHookState.status ===
+                LabyrinthStatus.SUCCESS_FIRST_EPOCH_CREATION
         ) {
             saveLabyrinthToLocalStorage(
                 loggedUserId,
-                labyrinthHookState.instance,
+                labyrinthHookState._instance,
             );
         }
     }, [labyrinthHookState.status]);

@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center pt-[15vh] sm:pt-[20vh]">
-            <TestNote/>
+            <TestNote />
             <div className="w-full max-w-sm">
                 <LoginForm
                     handleSubmit={loginMutation.mutate}

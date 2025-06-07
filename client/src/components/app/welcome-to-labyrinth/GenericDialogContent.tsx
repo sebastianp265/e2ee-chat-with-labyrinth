@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog.tsx';
 
 export type GenericDialogContentProps = {
-    title?: string;
+    title: string;
     description?: string | React.ReactNode;
     body?: React.ReactNode;
     footer?: React.ReactNode;
@@ -23,8 +23,12 @@ export default function GenericDialogContent({
         <>
             <DialogHeader>
                 {title && <DialogTitle>{title}</DialogTitle>}
-                {description && (
+                {description ? (
                     <DialogDescription>{description}</DialogDescription>
+                ) : (
+                    <DialogDescription className="sr-only">
+                        {title}
+                    </DialogDescription>
                 )}
             </DialogHeader>
             {body}

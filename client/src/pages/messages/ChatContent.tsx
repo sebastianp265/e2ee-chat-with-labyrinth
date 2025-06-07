@@ -110,6 +110,7 @@ export default function ChatContent({
 
     const { sendChatMessage, createChatThread } = useChatWebSocket(
         isLabyrinthInitialized,
+        inactivateSession,
         sessionExpired,
         onNewChatMessageReceivedCallback,
         onNewChatThreadReceivedCallback,

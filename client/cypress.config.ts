@@ -10,7 +10,7 @@ let messagesPerConnection = {};
 
 export default defineConfig({
     e2e: {
-        baseUrl: 'http://localhost',
+        baseUrl: 'http://localhost:4173',
         setupNodeEvents(on) {
             on('task', {
                 async runSQLs({ filenames }) {

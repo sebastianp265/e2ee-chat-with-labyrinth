@@ -134,6 +134,13 @@ export default function useLabyrinth(loggedUserId: string) {
                 loggedUserId,
                 labyrinthHookState._instance,
             );
+        } else if (
+            labyrinthHookState.status === LabyrinthStatus.READY_TO_USE_LABYRINTH
+        ) {
+            saveLabyrinthToLocalStorage(
+                loggedUserId,
+                labyrinthHookState.instance,
+            );
         }
     }, [labyrinthHookState.status]);
 

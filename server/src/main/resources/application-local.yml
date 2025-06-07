@@ -1,6 +1,6 @@
 app:
   labyrinth:
-    max-device-inactivity: 1m
+    max-device-inactivity: 12s
   client:
     url: http://localhost:4173
   temp-db:

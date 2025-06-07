@@ -15,7 +15,7 @@ describe('Opening new epochs', () => {
         cy.visit('/messages');
 
         cy.get('input').type(userPoolToDetails[alice].recoveryCode!);
-        cy.contains('div[role="dialog"] button', 'Close').click();
+        cy.contains('div[role="dialog"] button', 'Submit').click();
         cy.contains('div[role="dialog"] button', 'Close').click();
     }
 

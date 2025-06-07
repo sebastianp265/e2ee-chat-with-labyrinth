@@ -28,12 +28,16 @@ function extractRecoveryCode(text: string) {
     }
 }
 
-function getDialogExpectTitleAndButtonName(title: string, button: string) {
-    cy.get('div[role=dialog]').within(() => {
-        cy.contains('h2', title);
-        cy.contains('button', button);
-    });
+function getDialog() {
     return cy.get('div[role=dialog]');
+}
+
+function getTitle(text: string) {
+    return cy.contains('h2', text);
+}
+
+function getCloseButton(closeButtonText: string) {
+    return cy.contains('button', closeButtonText);
 }
 
 describe('Labyrinth Initialization', () => {
@@ -41,24 +45,17 @@ describe('Labyrinth Initialization', () => {
         const chosenUser: UserPool = 'user_not_in_labyrinth';
         cy.login(chosenUser);
         cy.visit('/messages');
-        getDialogExpectTitleAndButtonName(
-            'Welcome to chat with secure message storage!',
-            'Generate Recovery Code',
-        )
-            .find('button')
-            .click();
+        getDialog().within(() => {
+            getTitle('Welcome to chat with secure message storage!');
+            getCloseButton('Generate Recovery Code').click();
 
-        getDialogExpectTitleAndButtonName('Success!', 'Close').as(
-            'success-dialog',
-        );
-        cy.get('@success-dialog')
-            .find('p')
-            .invoke('text')
-            .then(extractRecoveryCode)
-            .as('recovery-code');
-        cy.get('@success-dialog').find('button').click();
-        cy.get('@success-dialog').should('not.exist');
-
+            getTitle('Success!');
+            cy.get('p')
+                .invoke('text')
+                .then(extractRecoveryCode)
+                .as('recovery-code');
+            getCloseButton('Close').click();
+        });
         getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
             'labyrinth-before',
         );
@@ -67,28 +64,22 @@ describe('Labyrinth Initialization', () => {
         cy.login(chosenUser);
         cy.visit('/messages');
 
-        getDialogExpectTitleAndButtonName('Welcome back!', 'Submit').as(
-            'welcome-back-dialog',
-        );
-        cy.get<string>('@recovery-code').then((recoveryCode) => {
-            return cy
-                .get('@welcome-back-dialog')
-                .find('input')
-                .type(recoveryCode);
-        });
-        cy.get('@welcome-back-dialog').find('button').click();
+        getDialog().within(() => {
+            getTitle('Welcome back!');
+            cy.get<string>('@recovery-code').then((recoveryCode) => {
+                return cy.get('input').type(recoveryCode);
+            });
+            getCloseButton('Submit').click();
 
-        getDialogExpectTitleAndButtonName('Success!', 'Close')
-            .find('button')
-            .click();
+            getTitle('Success!');
+            getCloseButton('Close').click();
+        });
         getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
             'labyrinth-after',
         );
         getLabyrinthFromLocalStorage(chosenUser).then((labyrinth) => {
             cy.log('labyrinth', labyrinth);
         });
-
-        cy.get('@welcome-back-dialog').should('not.exist');
 
         cy.get<string>('@labyrinth-before').then((labyrinthBefore) => {
             cy.get<string>('@labyrinth-after').then((labyrinthAfter) => {
@@ -112,18 +103,14 @@ describe('Labyrinth Initialization', () => {
         cy.login(chosenUser);
         cy.visit('/messages');
 
-        getDialogExpectTitleAndButtonName('Welcome back!', 'Submit').as(
-            'welcome-back-dialog',
-        );
+        getDialog().within(() => {
+            getTitle('Welcome back!');
+            cy.get('input').type(chosenUserRecoveryCode);
+            getCloseButton('Submit').click();
 
-        cy.get('@welcome-back-dialog')
-            .find('input')
-            .type(chosenUserRecoveryCode);
-        cy.get('@welcome-back-dialog').find('button').click();
-
-        getDialogExpectTitleAndButtonName('Success!', 'Close')
-            .find('button')
-            .click();
+            getTitle('Success!');
+            getCloseButton('Close').click();
+        });
 
         getLabyrinthFromLocalStorage(chosenUser, 'epochStorage').as(
             'labyrinth-after',

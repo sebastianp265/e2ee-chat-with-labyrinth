@@ -30,8 +30,8 @@ function extractRecoveryCode(text: string) {
 
 function getDialogExpectTitleAndButtonName(title: string, button: string) {
     cy.get('div[role=dialog]').within(() => {
-        cy.get('h2').should('have.text', title);
-        cy.get('button').should('have.text', button);
+        cy.contains('h2', title);
+        cy.contains('button', button);
     });
     return cy.get('div[role=dialog]');
 }

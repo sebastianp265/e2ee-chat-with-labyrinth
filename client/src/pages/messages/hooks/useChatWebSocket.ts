@@ -85,16 +85,21 @@ export default function useChatWebSocket(
         if (lastJsonMessage === null) return;
 
         const socketMessage =
-            ReceivedSocketMessageSchema.parse(lastJsonMessage);
-        switch (socketMessage.type) {
-            case 'NEW_CHAT_MESSAGE':
-                onNewChatMessageReceivedCallback(socketMessage.payload);
-                break;
-            case 'NEW_CHAT_THREAD':
-                onNewChatThreadReceivedCallback(socketMessage.payload);
-                break;
+            ReceivedSocketMessageSchema.safeParse(lastJsonMessage);
+        if (socketMessage.success) {
+            switch (socketMessage.data.type) {
+                case 'NEW_CHAT_MESSAGE':
+                    onNewChatMessageReceivedCallback(
+                        socketMessage.data.payload,
+                    );
+                    break;
+                case 'NEW_CHAT_THREAD':
+                    onNewChatThreadReceivedCallback(socketMessage.data.payload);
+                    break;
+            }
+        } else {
+            inactivateSession();
         }
-        inactivateSession()
     }, [
         lastJsonMessage,
         onNewChatMessageReceivedCallback,
@@ -115,7 +120,7 @@ export default function useChatWebSocket(
                 console.error(
                     `Couldn't send message, ready state = ${readyState}`,
                 );
-                inactivateSession()
+                inactivateSession();
             }
         },
         [readyState, sendMessage],
@@ -135,7 +140,7 @@ export default function useChatWebSocket(
                 console.error(
                     `Couldn't send message, ready state = ${readyState}`,
                 );
-                inactivateSession()
+                inactivateSession();
             }
         },
         [readyState, sendMessage],

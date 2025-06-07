@@ -69,7 +69,10 @@ export default function useChatWebSocket(
         `ws://${DOMAIN_NAME}/api/ws`,
         {
             onOpen: () => console.log('WebSocket connection opened!'),
-            onClose: () => console.log('WebSocket connection closed!'),
+            onClose: () => {
+                console.log('WebSocket connection closed!');
+                inactivateSession();
+            },
             onMessage: (event) => console.log('Received message:', event.data),
             onError: (event) => {
                 console.error('WebSocket error:', event);

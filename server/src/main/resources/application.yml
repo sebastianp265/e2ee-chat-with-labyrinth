@@ -14,6 +14,12 @@ spring:
     username: ${SERVER_DB_USER}
     password: ${SERVER_DB_PASSWORD}
 
+  # TODO: Remove after testing
+  sql:
+    init:
+      mode: always
+      separator: "^^^ END OF SCRIPT ^^^"
+
   jpa:
     hibernate:
       ddl-auto: validate

@@ -51,6 +51,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    public void resetAllSessions() {
+        currentSessions.clear();
+    }
+
     // TODO: Handle possible exceptions
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws Exception {

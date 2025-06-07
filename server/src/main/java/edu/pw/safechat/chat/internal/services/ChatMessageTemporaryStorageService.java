@@ -1,6 +1,7 @@
 package edu.pw.safechat.chat.internal.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +35,14 @@ public class ChatMessageTemporaryStorageService {
 
     public void removeMessage(UUID userIdToSendTo, long timestamp) {
         redisTemplate.opsForZSet().removeRangeByScore("user:" + userIdToSendTo, timestamp, timestamp);
+    }
+
+    // TODO: remove after testing
+    public void removeAllMessages() {
+        redisTemplate.execute((RedisCallback<Object>) connection -> {
+            connection.serverCommands().flushDb();
+            return null;
+        });
     }
 
 }

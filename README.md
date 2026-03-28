@@ -2,7 +2,7 @@
 
 # About
 
-A secure messaging app using my own library **[safe-server-side-storage-client](https://github.com/sebastianp265/safe-server-side-storage-client)** for safe server-side message storage. The library is based on **[Labyrinth](https://engineering.fb.com/wp-content/uploads/2023/12/TheLabyrinthEncryptedMessageStorageProtocol_12-6-2023.pdf)**, an encrypted message storage protocol developed by **Meta**. This project forms the foundation of my research for engineering thesis. Apart from the abstract, the thesis is written in Polish. My work can be found in this [document](https://github.com/sebastianp265/safe-server-side-storage-client/blob/main/phd.pdf).
+A secure messaging app using my own library **[safe-server-side-storage-client](https://github.com/sebastianp265/safe-server-side-storage-client)** for safe server-side message storage. The library is based on **[Labyrinth](https://engineering.fb.com/wp-content/uploads/2023/12/TheLabyrinthEncryptedMessageStorageProtocol_12-6-2023.pdf)**, an encrypted message storage protocol developed by **Meta**. This project forms the foundation of my research for engineering thesis. Apart from the abstract, the thesis is written in Polish and can be found in this [document](https://github.com/sebastianp265/safe-server-side-storage-client/blob/main/phd.pdf).
 
 # Why is it safe?
 
